@@ -1350,7 +1350,7 @@ total;
 ========================= */
 
 
-function generateBill(){
+async function generateBill(){
 
 
 if(cart.length === 0){
@@ -1969,8 +1969,32 @@ b.id !== id
 );
 
 
-saveBills();
+saveBills();  
+try {
 
+  await addDoc(
+    collection(db, "bills"),
+    {
+      customerName: customerName,
+      billNumber: billNumber,
+      total: total
+    }
+  );
+
+  console.log("Bill Firebase me save ho gaya");
+
+} catch (error) {
+
+  console.error(
+    "Firebase bill save error:",
+    error
+  );
+
+  alert(
+    "Bill phone me save ho gaya, lekin Firebase me save nahi hua."
+  );
+
+}
 showBillHistory();
 
 updateDashboard();
@@ -2090,8 +2114,26 @@ showBillHistory();
 
 updateDashboard();
 
+<script type="module">
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
-</script>
+import {
+  getFirestore,
+  collection,
+  addDoc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7jFeH8DOdWrTccinIxiX7LhnaI5uxXLw",
+  authDomain: "upharshringar-billing.firebaseapp.com",
+  projectId: "upharshringar-billing",
+  storageBucket: "upharshringar-billing.firebasestorage.app",
+  messagingSenderId: "87629988272",
+  appId: "1:87629988272:web:23a0ca6526519a63a7d675"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app); 
 
 
 </body>
