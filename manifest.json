@@ -1,1 +1,9 @@
-
+{
+  "name": "Uphar Shringar Billing",
+  "short_name": "Billing",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#e91e63",
+  "icons": []
+}
