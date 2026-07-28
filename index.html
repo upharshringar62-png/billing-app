@@ -58,6 +58,7 @@ button{
   color:white;
   border:none;
   font-weight:bold;
+  cursor:pointer;
 }
 
 button:active{
@@ -65,28 +66,58 @@ button:active{
 }
 
 .product{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  padding:10px 0;
+  padding:12px 0;
   border-bottom:1px solid #eee;
 }
 
-.product button{
+.product-info{
+  margin-bottom:8px;
+}
+
+.product-actions{
+  display:flex;
+  gap:6px;
+}
+
+.product-actions button{
   width:auto;
-  padding:8px 14px;
+  flex:1;
+  padding:9px;
+}
+
+.edit-btn{
+  background:#1976d2;
+}
+
+.delete-btn{
+  background:#d32f2f;
+}
+
+.add-btn{
+  background:#e91e63;
 }
 
 .cart-item{
-  padding:10px 0;
+  padding:12px 0;
   border-bottom:1px solid #eee;
+}
+
+.cart-controls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+}
+
+.cart-controls button{
+  width:45px;
+  padding:8px;
 }
 
 .remove{
   background:#d32f2f;
-  width:auto;
-  padding:6px 10px;
+  width:auto !important;
+  padding:8px 12px !important;
 }
 
 .total{
@@ -100,6 +131,61 @@ button:active{
   color:#777;
   font-size:14px;
 }
+
+.sale-price{
+  color:#e91e63;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.old-price{
+  text-decoration:line-through;
+  color:#888;
+}
+
+.search-box{
+  margin-bottom:10px;
+}
+
+#editMode{
+  display:none;
+  background:#fff3cd;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:10px;
+  color:#856404;
+  font-weight:bold;
+}
+
+.bill-box{
+  background:white;
+  padding:15px;
+}
+
+@media print{
+
+  body *{
+    visibility:hidden;
+  }
+
+  #billSection,
+  #billSection *{
+    visibility:visible;
+  }
+
+  #billSection{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    box-shadow:none;
+  }
+
+  #billSection button{
+    display:none;
+  }
+
+}
 </style>
 </head>
 
@@ -107,159 +193,313 @@ button:active{
 
 <header>
   <h2>🧾 Uphar Shringar Billing</h2>
+
   <div class="small" style="color:white;">
-    Offline Billing App
+    Billing App
   </div>
 </header>
 
+
 <div class="container">
 
-<!-- ADD PRODUCT -->
+
+<!-- ADD / EDIT PRODUCT -->
+
 <div class="card">
-<h3>➕ Product Add Karo</h3>
 
-<input id="productName" placeholder="Product Name">
+<h3 id="formTitle">
+➕ Product Add Karo
+</h3>
 
-<input id="productPrice"
-       type="number"
-       placeholder="MRP ₹">
+<div id="editMode">
+✏️ Product Edit Mode On
+</div>
 
-<input id="productDiscount"
-       type="number"
-       placeholder="Discount %">
+<input
+id="productName"
+placeholder="Product Name"
+>
 
-<button onclick="addProduct()">
-  Product Save Karo
+<input
+id="productPrice"
+type="number"
+placeholder="MRP ₹"
+>
+
+<input
+id="productDiscount"
+type="number"
+placeholder="Discount %"
+>
+
+<button
+id="saveProductBtn"
+onclick="addProduct()"
+>
+Product Save Karo
+</button>
+
+<button
+id="cancelEditBtn"
+onclick="cancelEdit()"
+style="display:none;background:#777;"
+>
+Cancel Edit
 </button>
 
 </div>
 
 
 <!-- PRODUCT LIST -->
+
 <div class="card">
 
 <h3>🛍️ Products</h3>
 
+<input
+class="search-box"
+id="searchProduct"
+placeholder="🔍 Product Search Karo..."
+oninput="showProducts()"
+>
+
 <div id="productList">
-  Koi product nahi hai.
+Koi product nahi hai.
 </div>
 
 </div>
 
 
-<!-- CART -->
+<!-- CURRENT BILL -->
+
 <div class="card">
 
 <h3>🛒 Current Bill</h3>
 
-<input id="customerName"
-       placeholder="Customer Name (Optional)">
+<input
+id="customerName"
+placeholder="Customer Name (Optional)"
+>
 
-<input id="customerMobile"
-       placeholder="Mobile Number (Optional)">
+<input
+id="customerMobile"
+placeholder="Mobile Number (Optional)"
+>
 
 <div id="cartList">
-  Cart empty hai.
+Cart empty hai.
 </div>
 
 <div class="total">
-  Total: ₹<span id="grandTotal">0</span>
+Total: ₹<span id="grandTotal">0</span>
 </div>
 
 <select id="paymentMethod">
-<option value="Cash">💵 Cash</option>
-<option value="UPI">📱 UPI</option>
-<option value="Other">💳 Other</option>
+
+<option value="Cash">
+💵 Cash
+</option>
+
+<option value="UPI">
+📱 UPI
+</option>
+
+<option value="Other">
+💳 Other
+</option>
+
 </select>
 
 <button onclick="generateBill()">
-  🧾 Bill Generate Karo
+🧾 Bill Generate Karo
 </button>
 
 </div>
 
 
 <!-- BILL -->
-<div class="card" id="billSection" style="display:none;">
+
+<div
+class="card"
+id="billSection"
+style="display:none;"
+>
 
 <h3>🧾 Bill</h3>
 
-<div id="billContent"></div>
+<div
+id="billContent"
+class="bill-box"
+></div>
 
 <button onclick="window.print()">
-  🖨️ Bill Print Karo
+🖨️ Bill Print Karo
 </button>
 
 </div>
+
 
 </div>
 
 
 <script>
 
+
+/* PRODUCTS */
+
 let products =
-JSON.parse(localStorage.getItem("billingProducts")) || [];
+JSON.parse(
+localStorage.getItem("billingProducts")
+) || [];
+
+
+/* CART */
 
 let cart = [];
 
 
-/* PRODUCT ADD */
+/* EDIT ID */
+
+let editingProductId = null;
+
+
+
+/* ADD PRODUCT */
 
 function addProduct(){
 
   let name =
-  document.getElementById("productName").value.trim();
+  document
+  .getElementById("productName")
+  .value
+  .trim();
 
-  let price =
-  Number(document.getElementById("productPrice").value);
+
+  let mrp =
+  Number(
+  document
+  .getElementById("productPrice")
+  .value
+  );
+
 
   let discount =
-  Number(document.getElementById("productDiscount").value) || 0;
+  Number(
+  document
+  .getElementById("productDiscount")
+  .value
+  ) || 0;
 
 
-  if(!name || !price){
+  if(!name || !mrp){
 
-    alert("Product Name aur Price bharna zaroori hai.");
+    alert(
+    "Product Name aur MRP bharna zaroori hai."
+    );
 
     return;
+
+  }
+
+
+  if(discount < 0 || discount > 100){
+
+    alert(
+    "Discount 0 se 100 ke beech hona chahiye."
+    );
+
+    return;
+
   }
 
 
   let sellingPrice =
-  price - (price * discount / 100);
-
-
-  products.push({
-
-    id:Date.now(),
-
-    name:name,
-
-    mrp:price,
-
-    discount:discount,
-
-    price:Math.round(sellingPrice)
-
-  });
-
-
-  localStorage.setItem(
-    "billingProducts",
-    JSON.stringify(products)
+  Math.round(
+    mrp - (mrp * discount / 100)
   );
 
 
-  document.getElementById("productName").value="";
+  /* EDIT */
 
-  document.getElementById("productPrice").value="";
+  if(editingProductId !== null){
 
-  document.getElementById("productDiscount").value="";
+    let product =
+    products.find(
+      p => p.id === editingProductId
+    );
 
+
+    if(product){
+
+      product.name = name;
+
+      product.mrp = mrp;
+
+      product.discount = discount;
+
+      product.price = sellingPrice;
+
+    }
+
+
+    alert(
+    "Product successfully update ho gaya."
+    );
+
+
+    cancelEdit();
+
+  }
+
+
+  /* NEW PRODUCT */
+
+  else{
+
+    products.push({
+
+      id:Date.now(),
+
+      name:name,
+
+      mrp:mrp,
+
+      discount:discount,
+
+      price:sellingPrice
+
+    });
+
+
+    alert(
+    "Product successfully save ho gaya."
+    );
+
+  }
+
+
+  saveProducts();
 
   showProducts();
 
 }
+
+
+
+/* SAVE PRODUCTS */
+
+function saveProducts(){
+
+  localStorage.setItem(
+
+    "billingProducts",
+
+    JSON.stringify(products)
+
+  );
+
+}
+
 
 
 /* SHOW PRODUCTS */
@@ -267,12 +507,33 @@ function addProduct(){
 function showProducts(){
 
   let box =
-  document.getElementById("productList");
+  document
+  .getElementById("productList");
 
 
-  if(products.length===0){
+  let search =
+  document
+  .getElementById("searchProduct")
+  .value
+  .toLowerCase()
+  .trim();
 
-    box.innerHTML="Koi product nahi hai.";
+
+  let filteredProducts =
+  products.filter(
+
+    p =>
+    p.name
+    .toLowerCase()
+    .includes(search)
+
+  );
+
+
+  if(filteredProducts.length === 0){
+
+    box.innerHTML =
+    "Koi product nahi mila.";
 
     return;
 
@@ -280,34 +541,260 @@ function showProducts(){
 
 
   box.innerHTML =
-  products.map(p => `
+
+  filteredProducts
+
+  .map(p => `
 
     <div class="product">
 
-      <div>
+      <div class="product-info">
 
-        <b>${p.name}</b><br>
+        <b>
+        ${p.name}
+        </b>
+
+        <br>
 
         <span class="small">
-        MRP ₹${p.mrp}
-        | ${p.discount}% OFF
+
+        MRP:
+        <span class="old-price">
+        ₹${p.mrp}
+        </span>
+
+        |
+
+        ${p.discount}% OFF
+
         </span>
 
         <br>
 
-        <b>₹${p.price}</b>
+        <span class="sale-price">
+
+        ₹${p.price}
+
+        </span>
 
       </div>
 
-      <button onclick="addToCart(${p.id})">
-        Add
-      </button>
+
+      <div class="product-actions">
+
+
+        <button
+        class="add-btn"
+        onclick="addToCart(${p.id})"
+        >
+
+        🛒 Add
+
+        </button>
+
+
+        <button
+        class="edit-btn"
+        onclick="editProduct(${p.id})"
+        >
+
+        ✏️ Edit
+
+        </button>
+
+
+        <button
+        class="delete-btn"
+        onclick="deleteProduct(${p.id})"
+        >
+
+        🗑️ Delete
+
+        </button>
+
+
+      </div>
 
     </div>
 
-  `).join("");
+  `)
+
+  .join("");
 
 }
+
+
+
+/* EDIT PRODUCT */
+
+function editProduct(id){
+
+  let product =
+  products.find(
+    p => p.id === id
+  );
+
+
+  if(!product) return;
+
+
+  editingProductId = id;
+
+
+  document
+  .getElementById("productName")
+  .value =
+  product.name;
+
+
+  document
+  .getElementById("productPrice")
+  .value =
+  product.mrp;
+
+
+  document
+  .getElementById("productDiscount")
+  .value =
+  product.discount;
+
+
+  document
+  .getElementById("formTitle")
+  .innerText =
+  "✏️ Product Edit Karo";
+
+
+  document
+  .getElementById("editMode")
+  .style.display =
+  "block";
+
+
+  document
+  .getElementById("saveProductBtn")
+  .innerText =
+  "Update Product";
+
+
+  document
+  .getElementById("cancelEditBtn")
+  .style.display =
+  "block";
+
+
+  window.scrollTo({
+
+    top:0,
+
+    behavior:"smooth"
+
+  });
+
+}
+
+
+
+/* CANCEL EDIT */
+
+function cancelEdit(){
+
+  editingProductId = null;
+
+
+  document
+  .getElementById("productName")
+  .value = "";
+
+
+  document
+  .getElementById("productPrice")
+  .value = "";
+
+
+  document
+  .getElementById("productDiscount")
+  .value = "";
+
+
+  document
+  .getElementById("formTitle")
+  .innerText =
+  "➕ Product Add Karo";
+
+
+  document
+  .getElementById("editMode")
+  .style.display =
+  "none";
+
+
+  document
+  .getElementById("saveProductBtn")
+  .innerText =
+  "Product Save Karo";
+
+
+  document
+  .getElementById("cancelEditBtn")
+  .style.display =
+  "none";
+
+}
+
+
+
+/* DELETE PRODUCT */
+
+function deleteProduct(id){
+
+  let product =
+  products.find(
+    p => p.id === id
+  );
+
+
+  if(!product) return;
+
+
+  let confirmDelete =
+  confirm(
+
+    "Kya aap " +
+    product.name +
+    " ko delete karna chahte ho?"
+
+  );
+
+
+  if(!confirmDelete) return;
+
+
+  products =
+  products.filter(
+    p => p.id !== id
+  );
+
+
+  cart =
+  cart.filter(
+    item => item.id !== id
+  );
+
+
+  saveProducts();
+
+  showProducts();
+
+  showCart();
+
+
+  alert(
+  "Product delete ho gaya."
+  );
+
+}
+
 
 
 /* ADD TO CART */
@@ -315,21 +802,27 @@ function showProducts(){
 function addToCart(id){
 
   let product =
-  products.find(p => p.id === id);
+  products.find(
+    p => p.id === id
+  );
 
 
   if(!product) return;
 
 
   let existing =
-  cart.find(item => item.id === id);
+  cart.find(
+    item => item.id === id
+  );
 
 
   if(existing){
 
     existing.qty++;
 
-  }else{
+  }
+
+  else{
 
     cart.push({
 
@@ -347,34 +840,46 @@ function addToCart(id){
 }
 
 
+
 /* SHOW CART */
 
 function showCart(){
 
   let box =
-  document.getElementById("cartList");
+  document
+  .getElementById("cartList");
 
 
-  if(cart.length===0){
+  if(cart.length === 0){
 
-    box.innerHTML="Cart empty hai.";
+    box.innerHTML =
+    "Cart empty hai.";
 
-    document.getElementById("grandTotal")
-    .innerText="0";
+
+    document
+    .getElementById("grandTotal")
+    .innerText =
+    "0";
+
 
     return;
 
   }
 
 
-  let total=0;
+  let total = 0;
 
 
   box.innerHTML =
-  cart.map(item => {
+
+  cart
+
+  .map(item => {
 
     let itemTotal =
-    item.price * item.qty;
+    item.price *
+    item.qty;
+
 
     total += itemTotal;
 
@@ -383,56 +888,163 @@ function showCart(){
 
       <div class="cart-item">
 
-        <b>${item.name}</b>
+        <b>
+        ${item.name}
+        </b>
 
         <br>
 
         ₹${item.price}
-        × ${item.qty}
-        = ₹${itemTotal}
 
-        <br>
+        ×
 
-        <button
-        class="remove"
-        onclick="removeFromCart(${item.id})">
+        ${item.qty}
 
-        Remove
+        =
 
-        </button>
+        <b>
+        ₹${itemTotal}
+        </b>
+
+
+        <div class="cart-controls">
+
+
+          <button
+          onclick="decreaseQty(${item.id})"
+          >
+
+          −
+
+          </button>
+
+
+          <b>
+          ${item.qty}
+          </b>
+
+
+          <button
+          onclick="increaseQty(${item.id})"
+          >
+
+          +
+
+          </button>
+
+
+          <button
+          class="remove"
+          onclick="removeFromCart(${item.id})"
+          >
+
+          Remove
+
+          </button>
+
+
+        </div>
 
       </div>
 
     `;
 
-  }).join("");
+  })
+
+  .join("");
 
 
-  document.getElementById("grandTotal")
-  .innerText=total;
+  document
+  .getElementById("grandTotal")
+  .innerText =
+  total;
 
 }
 
 
-/* REMOVE */
 
-function removeFromCart(id){
+/* INCREASE */
 
-  cart =
-  cart.filter(item => item.id !== id);
+function increaseQty(id){
+
+  let item =
+  cart.find(
+    i => i.id === id
+  );
+
+
+  if(item){
+
+    item.qty++;
+
+  }
+
 
   showCart();
 
 }
 
 
+
+/* DECREASE */
+
+function decreaseQty(id){
+
+  let item =
+  cart.find(
+    i => i.id === id
+  );
+
+
+  if(!item) return;
+
+
+  if(item.qty > 1){
+
+    item.qty--;
+
+  }
+
+  else{
+
+    removeFromCart(id);
+
+    return;
+
+  }
+
+
+  showCart();
+
+}
+
+
+
+/* REMOVE FROM CART */
+
+function removeFromCart(id){
+
+  cart =
+  cart.filter(
+    item => item.id !== id
+  );
+
+
+  showCart();
+
+}
+
+
+
 /* GENERATE BILL */
 
 function generateBill(){
 
-  if(cart.length===0){
+  if(cart.length === 0){
 
-    alert("Pehle product cart mein add karo.");
+    alert(
+    "Pehle product cart mein add karo."
+    );
 
     return;
 
@@ -440,102 +1052,216 @@ function generateBill(){
 
 
   let customerName =
-  document.getElementById("customerName")
-  .value || "Walk-in Customer";
+
+  document
+  .getElementById("customerName")
+  .value
+  .trim()
+
+  ||
+
+  "Walk-in Customer";
 
 
   let customerMobile =
-  document.getElementById("customerMobile")
-  .value || "-";
+
+  document
+  .getElementById("customerMobile")
+  .value
+  .trim()
+
+  ||
+
+  "-";
 
 
   let payment =
-  document.getElementById("paymentMethod")
+
+  document
+  .getElementById("paymentMethod")
   .value;
 
 
   let total =
+
   cart.reduce(
+
     (sum,item) =>
-    sum + item.price * item.qty,
+
+    sum +
+
+    item.price *
+
+    item.qty,
+
     0
+
   );
 
 
   let billNumber =
-  "BILL-" + Date.now();
+
+  "BILL-" +
+
+  Date.now();
 
 
   let date =
-  new Date().toLocaleString("en-IN");
+
+  new Date()
+
+  .toLocaleString(
+
+    "en-IN"
+
+  );
 
 
   let itemsHTML =
-  cart.map(item => `
+
+  cart
+
+  .map(item => `
 
     <p>
+
     ${item.name}
-    × ${item.qty}
-    — ₹${item.price * item.qty}
+
+    ×
+
+    ${item.qty}
+
+    —
+
+    ₹${item.price * item.qty}
+
     </p>
 
-  `).join("");
+  `)
+
+  .join("");
 
 
-  document.getElementById("billContent")
+  document
+
+  .getElementById("billContent")
+
   .innerHTML = `
 
-    <h2>Uphar Shringar & Gifts</h2>
+    <h2>
+    Uphar Shringar & Gifts
+    </h2>
+
 
     <p>
-    <b>Bill No:</b>
+
+    <b>
+    Bill No:
+    </b>
+
     ${billNumber}
+
     </p>
 
+
     <p>
-    <b>Date:</b>
+
+    <b>
+    Date:
+    </b>
+
     ${date}
+
     </p>
+
 
     <hr>
 
+
     <p>
-    <b>Customer:</b>
+
+    <b>
+    Customer:
+    </b>
+
     ${customerName}
+
     </p>
+
 
     <p>
-    <b>Mobile:</b>
+
+    <b>
+    Mobile:
+    </b>
+
     ${customerMobile}
+
     </p>
 
+
     <hr>
+
 
     ${itemsHTML}
 
+
     <hr>
+
 
     <h2>
-    Total: ₹${total}
+
+    Total:
+
+    ₹${total}
+
     </h2>
 
+
     <p>
-    Payment: ${payment}
+
+    Payment:
+
+    ${payment}
+
     </p>
+
 
     <hr>
 
+
     <center>
-    Thank You! Visit Again ❤️
+
+    Thank You!
+
+    Visit Again ❤️
+
     </center>
 
   `;
 
 
-  document.getElementById("billSection")
-  .style.display="block";
+  document
+
+  .getElementById("billSection")
+
+  .style.display =
+
+  "block";
+
+
+  document
+
+  .getElementById("billSection")
+
+  .scrollIntoView({
+
+    behavior:"smooth"
+
+  });
 
 }
+
 
 
 /* START */
