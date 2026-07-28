@@ -1,1 +1,550 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Uphar Shringar Billing</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f5f5f5;
+  color:#222;
+}
+
+header{
+  background:#e91e63;
+  color:white;
+  padding:15px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+  padding:15px;
+}
+
+.card{
+  background:white;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:12px;
+  box-shadow:0 2px 8px #ddd;
+}
+
+input,select,button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:16px;
+}
+
+button{
+  background:#e91e63;
+  color:white;
+  border:none;
+  font-weight:bold;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+.product{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+}
+
+.product button{
+  width:auto;
+  padding:8px 14px;
+}
+
+.cart-item{
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+}
+
+.remove{
+  background:#d32f2f;
+  width:auto;
+  padding:6px 10px;
+}
+
+.total{
+  font-size:22px;
+  font-weight:bold;
+  text-align:right;
+  margin-top:15px;
+}
+
+.small{
+  color:#777;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🧾 Uphar Shringar Billing</h2>
+  <div class="small" style="color:white;">
+    Offline Billing App
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ADD PRODUCT -->
+<div class="card">
+<h3>➕ Product Add Karo</h3>
+
+<input id="productName" placeholder="Product Name">
+
+<input id="productPrice"
+       type="number"
+       placeholder="MRP ₹">
+
+<input id="productDiscount"
+       type="number"
+       placeholder="Discount %">
+
+<button onclick="addProduct()">
+  Product Save Karo
+</button>
+
+</div>
+
+
+<!-- PRODUCT LIST -->
+<div class="card">
+
+<h3>🛍️ Products</h3>
+
+<div id="productList">
+  Koi product nahi hai.
+</div>
+
+</div>
+
+
+<!-- CART -->
+<div class="card">
+
+<h3>🛒 Current Bill</h3>
+
+<input id="customerName"
+       placeholder="Customer Name (Optional)">
+
+<input id="customerMobile"
+       placeholder="Mobile Number (Optional)">
+
+<div id="cartList">
+  Cart empty hai.
+</div>
+
+<div class="total">
+  Total: ₹<span id="grandTotal">0</span>
+</div>
+
+<select id="paymentMethod">
+<option value="Cash">💵 Cash</option>
+<option value="UPI">📱 UPI</option>
+<option value="Other">💳 Other</option>
+</select>
+
+<button onclick="generateBill()">
+  🧾 Bill Generate Karo
+</button>
+
+</div>
+
+
+<!-- BILL -->
+<div class="card" id="billSection" style="display:none;">
+
+<h3>🧾 Bill</h3>
+
+<div id="billContent"></div>
+
+<button onclick="window.print()">
+  🖨️ Bill Print Karo
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+let products =
+JSON.parse(localStorage.getItem("billingProducts")) || [];
+
+let cart = [];
+
+
+/* PRODUCT ADD */
+
+function addProduct(){
+
+  let name =
+  document.getElementById("productName").value.trim();
+
+  let price =
+  Number(document.getElementById("productPrice").value);
+
+  let discount =
+  Number(document.getElementById("productDiscount").value) || 0;
+
+
+  if(!name || !price){
+
+    alert("Product Name aur Price bharna zaroori hai.");
+
+    return;
+  }
+
+
+  let sellingPrice =
+  price - (price * discount / 100);
+
+
+  products.push({
+
+    id:Date.now(),
+
+    name:name,
+
+    mrp:price,
+
+    discount:discount,
+
+    price:Math.round(sellingPrice)
+
+  });
+
+
+  localStorage.setItem(
+    "billingProducts",
+    JSON.stringify(products)
+  );
+
+
+  document.getElementById("productName").value="";
+
+  document.getElementById("productPrice").value="";
+
+  document.getElementById("productDiscount").value="";
+
+
+  showProducts();
+
+}
+
+
+/* SHOW PRODUCTS */
+
+function showProducts(){
+
+  let box =
+  document.getElementById("productList");
+
+
+  if(products.length===0){
+
+    box.innerHTML="Koi product nahi hai.";
+
+    return;
+
+  }
+
+
+  box.innerHTML =
+  products.map(p => `
+
+    <div class="product">
+
+      <div>
+
+        <b>${p.name}</b><br>
+
+        <span class="small">
+        MRP ₹${p.mrp}
+        | ${p.discount}% OFF
+        </span>
+
+        <br>
+
+        <b>₹${p.price}</b>
+
+      </div>
+
+      <button onclick="addToCart(${p.id})">
+        Add
+      </button>
+
+    </div>
+
+  `).join("");
+
+}
+
+
+/* ADD TO CART */
+
+function addToCart(id){
+
+  let product =
+  products.find(p => p.id === id);
+
+
+  if(!product) return;
+
+
+  let existing =
+  cart.find(item => item.id === id);
+
+
+  if(existing){
+
+    existing.qty++;
+
+  }else{
+
+    cart.push({
+
+      ...product,
+
+      qty:1
+
+    });
+
+  }
+
+
+  showCart();
+
+}
+
+
+/* SHOW CART */
+
+function showCart(){
+
+  let box =
+  document.getElementById("cartList");
+
+
+  if(cart.length===0){
+
+    box.innerHTML="Cart empty hai.";
+
+    document.getElementById("grandTotal")
+    .innerText="0";
+
+    return;
+
+  }
+
+
+  let total=0;
+
+
+  box.innerHTML =
+  cart.map(item => {
+
+    let itemTotal =
+    item.price * item.qty;
+
+    total += itemTotal;
+
+
+    return `
+
+      <div class="cart-item">
+
+        <b>${item.name}</b>
+
+        <br>
+
+        ₹${item.price}
+        × ${item.qty}
+        = ₹${itemTotal}
+
+        <br>
+
+        <button
+        class="remove"
+        onclick="removeFromCart(${item.id})">
+
+        Remove
+
+        </button>
+
+      </div>
+
+    `;
+
+  }).join("");
+
+
+  document.getElementById("grandTotal")
+  .innerText=total;
+
+}
+
+
+/* REMOVE */
+
+function removeFromCart(id){
+
+  cart =
+  cart.filter(item => item.id !== id);
+
+  showCart();
+
+}
+
+
+/* GENERATE BILL */
+
+function generateBill(){
+
+  if(cart.length===0){
+
+    alert("Pehle product cart mein add karo.");
+
+    return;
+
+  }
+
+
+  let customerName =
+  document.getElementById("customerName")
+  .value || "Walk-in Customer";
+
+
+  let customerMobile =
+  document.getElementById("customerMobile")
+  .value || "-";
+
+
+  let payment =
+  document.getElementById("paymentMethod")
+  .value;
+
+
+  let total =
+  cart.reduce(
+    (sum,item) =>
+    sum + item.price * item.qty,
+    0
+  );
+
+
+  let billNumber =
+  "BILL-" + Date.now();
+
+
+  let date =
+  new Date().toLocaleString("en-IN");
+
+
+  let itemsHTML =
+  cart.map(item => `
+
+    <p>
+    ${item.name}
+    × ${item.qty}
+    — ₹${item.price * item.qty}
+    </p>
+
+  `).join("");
+
+
+  document.getElementById("billContent")
+  .innerHTML = `
+
+    <h2>Uphar Shringar & Gifts</h2>
+
+    <p>
+    <b>Bill No:</b>
+    ${billNumber}
+    </p>
+
+    <p>
+    <b>Date:</b>
+    ${date}
+    </p>
+
+    <hr>
+
+    <p>
+    <b>Customer:</b>
+    ${customerName}
+    </p>
+
+    <p>
+    <b>Mobile:</b>
+    ${customerMobile}
+    </p>
+
+    <hr>
+
+    ${itemsHTML}
+
+    <hr>
+
+    <h2>
+    Total: ₹${total}
+    </h2>
+
+    <p>
+    Payment: ${payment}
+    </p>
+
+    <hr>
+
+    <center>
+    Thank You! Visit Again ❤️
+    </center>
+
+  `;
+
+
+  document.getElementById("billSection")
+  .style.display="block";
+
+}
+
+
+/* START */
+
+showProducts();
+
+showCart();
+
+</script>
+
+</body>
+</html>
