@@ -437,7 +437,10 @@ Total:
 
 </select>
 
-
+<button onclick="connectPrinter()">
+🔵 Connect Thermal Printer
+</button>
+  
 <button onclick="generateBill()">
 
 🧾 Bill Generate Karo
@@ -2135,6 +2138,51 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app); 
 
+// ================================
+// BLUETOOTH PRINTER TEST
+// ================================
+
+let printerDevice = null;
+let printerCharacteristic = null;
+
+async function connectPrinter() {
+
+  try {
+
+    printerDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        "0000ffe0-0000-1000-8000-00805f9b34fb"
+      ]
+    });
+
+    alert(
+      "Printer mil gaya: " +
+      printerDevice.name
+    );
+
+    const server =
+      await printerDevice.gatt.connect();
+
+    alert("Printer Bluetooth se connect ho gaya.");
+
+    console.log(
+      "Connected Printer:",
+      printerDevice.name
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Printer connect nahi hua: " +
+      error.message
+    );
+
+  }
+
+}
 
 </body>
 </html>
