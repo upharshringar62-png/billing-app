@@ -2117,72 +2117,7 @@ showBillHistory();
 
 updateDashboard();
 
-<script type="module">
- import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-
-import {
-  getFirestore,
-  collection,
-  addDoc
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC7jFeH8DOdWrTccinIxiX7LhnaI5uxXLw",
-  authDomain: "upharshringar-billing.firebaseapp.com",
-  projectId: "upharshringar-billing",
-  storageBucket: "upharshringar-billing.firebasestorage.app",
-  messagingSenderId: "87629988272",
-  appId: "1:87629988272:web:23a0ca6526519a63a7d675"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app); 
-
-// ================================
-// BLUETOOTH PRINTER TEST
-// ================================
-
-let printerDevice = null;
-let printerCharacteristic = null;
-
-async function connectPrinter() {
-
-  try {
-
-    printerDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [
-        "0000ffe0-0000-1000-8000-00805f9b34fb"
-      ]
-    });
-
-    alert(
-      "Printer mil gaya: " +
-      printerDevice.name
-    );
-
-    const server =
-      await printerDevice.gatt.connect();
-
-    alert("Printer Bluetooth se connect ho gaya.");
-
-    console.log(
-      "Connected Printer:",
-      printerDevice.name
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Printer connect nahi hua: " +
-      error.message
-    );
-
-  }
-
-}
-
+</script>
+  
 </body>
 </html>
