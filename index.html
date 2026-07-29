@@ -2089,8 +2089,80 @@ showCart();
 showBillHistory();
 
 updateDashboard();
+  // Firebase me bill save karo
+
+if (window.saveBillToFirebase) {
+
+  await window.saveBillToFirebase(
+    customerName,
+    billNumber,
+    total
+  );
+
+}
 
 </script>
-  
+ <script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7jFeH8DOdWrTccinIxiX7LhnaI5uxXLw",
+  authDomain: "upharshringar-billing.firebaseapp.com",
+  projectId: "upharshringar-billing",
+  storageBucket: "upharshringar-billing.firebasestorage.app",
+  messagingSenderId: "87629988272",
+  appId: "1:87629988272:web:23a0ca6526519a63a7d675"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+
+// Firebase Bill Save Function
+
+window.saveBillToFirebase = async function(
+  customerName,
+  billNumber,
+  total
+){
+
+  try{
+
+    await addDoc(
+      collection(db, "bills"),
+      {
+        customerName: customerName,
+        billNumber: billNumber,
+        total: total,
+        createdAt: new Date().toISOString()
+      }
+    );
+
+    console.log(
+      "Bill Firebase me save ho gaya"
+    );
+
+  }catch(error){
+
+    console.error(
+      "Firebase bill save error:",
+      error
+    );
+
+  }
+
+};
+
+</script> 
 </body>
 </html>
