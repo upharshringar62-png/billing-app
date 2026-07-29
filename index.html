@@ -1431,7 +1431,18 @@ new Date()
 
 
 /* SAVE BILL */
+  
+// Firebase me bill save karo
 
+if (window.saveBillToFirebase) {
+
+  await window.saveBillToFirebase(
+    customerName,
+    billNumber,
+    total
+  );
+
+}
 
 let billData = {
 
