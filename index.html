@@ -1973,33 +1973,6 @@ b.id !== id
 
 
 saveBills();  
-try {
-
-  await addDoc(
-    collection(db, "bills"),
-    {
-      customerName: customerName,
-      billNumber: billNumber,
-      total: total
-    }
-  );
-
-  console.log("Bill Firebase me save ho gaya");
-
-} catch (error) {
-
-  console.error(
-    "Firebase bill save error:",
-    error
-  );
-
-  alert(
-    "Bill phone me save ho gaya, lekin Firebase me save nahi hua."
-  );
-
-}
-showBillHistory();
-
 updateDashboard();
 
 
