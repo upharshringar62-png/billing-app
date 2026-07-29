@@ -2124,7 +2124,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
-   
+// =========================
+// FIREBASE PRODUCT SAVE
+// =========================
+
+window.saveProductToFirebase = async function(product) {
+
+  try {
+
+    await addDoc(
+      collection(db, "products"),
+      {
+        name: product.name,
+        mrp: product.mrp,
+        discount: product.discount,
+        price: product.price,
+        createdAt: new Date().toISOString()
+      }
+    );
+
+    console.log("Product Firebase me save ho gaya");
+
+  } catch (error) {
+
+    console.error(
+      "Firebase product save error:",
+      error
+    );
+
+    alert(
+      "Product phone me save ho gaya, lekin Firebase me save nahi hua."
+    );
+
+  }
+
+};   
+
 // ================================
 // BLUETOOTH THERMAL PRINTER
 // ================================
