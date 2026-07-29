@@ -2135,7 +2135,121 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
+   
+// ================================
+// BLUETOOTH THERMAL PRINTER
+// ================================
 
+let printerDevice = null;
+let printerCharacteristic = null;
+
+window.connectPrinter = async function () {
+
+  try {
+
+    printerDevice = await navigator.bluetooth.requestDevice({
+
+      acceptAllDevices: true,
+
+      optionalServices: [
+        "0000ffe0-0000-1000-8000-00805f9b34fb",
+        "0000ff00-0000-1000-8000-00805f9b34fb"
+      ]
+
+    });
+
+
+    const server =
+      await printerDevice.gatt.connect();
+
+
+    const services =
+      await server.getPrimaryServices();
+
+
+    console.log(
+      "Printer Services:",
+      services
+    );
+
+
+    for (const service of services) {
+
+      console.log(
+        "Service UUID:",
+        service.uuid
+      );
+
+
+      const characteristics =
+        await service.getCharacteristics();
+
+
+      for (const characteristic of characteristics) {
+
+        console.log(
+          "Characteristic UUID:",
+          characteristic.uuid,
+          "Write:",
+          characteristic.properties.write,
+          "WriteWithoutResponse:",
+          characteristic.properties.writeWithoutResponse
+        );
+
+
+        if (
+          characteristic.properties.write ||
+          characteristic.properties.writeWithoutResponse
+        ) {
+
+          printerCharacteristic =
+            characteristic;
+
+        }
+
+      }
+
+    }
+
+
+    if (!printerCharacteristic) {
+
+      alert(
+        "Printer connect ho gaya, lekin print characteristic nahi mili."
+      );
+
+      return;
+
+    }
+
+
+    alert(
+      "✅ SC588 Printer Connect Ho Gaya!"
+    );
+
+
+    console.log(
+      "Print Characteristic:",
+      printerCharacteristic.uuid
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Printer Error:",
+      error
+    );
+
+
+    alert(
+      "Printer connect nahi hua: " +
+      error.message
+    );
+
+  }
+
+};
 
 // Firebase Bill Save Function
 
