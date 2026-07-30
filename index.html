@@ -2172,6 +2172,22 @@ window.connectPrinter = async function () {
           "CHARACTERISTIC UUID:",
           characteristic.uuid
         );
+        if (printerCharacteristic) {
+  alert("✅ Printer Print Ready!");
+} else {
+  alert("❌ Print Characteristic nahi mili.");
+}
+        if (
+  characteristic.properties.write ||
+  characteristic.properties.writeWithoutResponse
+) {
+  printerCharacteristic = characteristic;
+
+  console.log(
+    "✅ Printer Write Characteristic:",
+    characteristic.uuid
+  );
+}
 
         console.log(
           "Properties:",
