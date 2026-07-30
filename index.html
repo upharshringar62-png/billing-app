@@ -2122,6 +2122,186 @@ const firebaseConfig = {
 
 
 const app = initializeApp(firebaseConfig);
+ const db = getFirestore(app);
+
+// ================================
+// BLUETOOTH PRINTER
+// ================================
+
+let printerDevice = null;
+let printerServer = null;
+let printerCharacteristic = null;
+
+window.connectPrinter = async function () {
+
+  try {
+
+    printerDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        "0000ffe0-0000-1000-8000-00805f9b34fb",
+        "0000ff00-0000-1000-8000-00805f9b34fb",
+        "49535343-fe7d-4ae5-8fa9-9fafd205e455"
+      ]
+    });
+
+    printerServer =
+      await printerDevice.gatt.connect();
+
+    const services =
+      await printerServer.getPrimaryServices();
+
+    printerCharacteristic = null;
+
+    for (const service of services) {
+
+      const characteristics =
+        await service.getCharacteristics();
+
+      for (const characteristic of characteristics) {
+
+        if (
+          characteristic.properties.write ||
+          characteristic.properties.writeWithoutResponse
+        ) {
+
+          printerCharacteristic =
+            characteristic;
+
+          console.log(
+            "Printer Characteristic:",
+            characteristic.uuid
+          );
+
+          break;
+
+        }
+
+      }
+
+      if (printerCharacteristic) break;
+
+    }
+
+    if (!printerCharacteristic) {
+
+      alert(
+        "❌ Printer connect hua, lekin print characteristic nahi mili."
+      );
+
+      return;
+
+    }
+
+    alert(
+      "✅ Printer Connect Ho Gaya!"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Printer Error:\n" +
+      error.message
+    );
+
+  }
+
+};
+  // ================================
+// BLUETOOTH PRINT
+// ================================
+
+window.printBluetooth = async function (text) {
+
+  if (!printerCharacteristic) {
+    alert("❌ Pahle Printer Connect Karo.");
+    return false;
+  }
+
+  try {
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text + "\n\n\n");
+
+    if (printerCharacteristic.properties.writeWithoutResponse) {
+      await printerCharacteristic.writeValueWithoutResponse(data);
+    } else {
+      await printerCharacteristic.writeValue(data);
+    }
+
+    alert("✅ Bluetooth Print Ho Gaya.");
+
+    return true;
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("❌ Print Error:\n" + error.message);
+
+    return false;
+
+  }
+
+}; 
+  // ================================
+// FIREBASE FUNCTIONS
+// ================================
+
+window.saveProductToFirebase = async function(product){
+
+  try{
+
+    await addDoc(
+      collection(db,"products"),
+      {
+        name:product.name,
+        mrp:product.mrp,
+        discount:product.discount,
+        price:product.price,
+        createdAt:new Date().toISOString()
+      }
+    );
+
+    console.log("✅ Product Firebase me save ho gaya");
+
+  }catch(error){
+
+    console.error(error);
+
+  }
+
+};
+
+window.saveBillToFirebase = async function(
+  customerName,
+  billNumber,
+  total
+){
+
+  try{
+
+    await addDoc(
+      collection(db,"bills"),
+      {
+        customerName,
+        billNumber,
+        total,
+        createdAt:new Date().toISOString()
+      }
+    );
+
+    console.log("✅ Bill Firebase me save ho gaya");
+
+  }catch(error){
+
+    console.error(error);
+
+  }
+
+}; 
 // ================================
 // SC588 BLUETOOTH SERVICE SCANNER
 // ================================
