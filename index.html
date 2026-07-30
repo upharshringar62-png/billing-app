@@ -1646,29 +1646,6 @@ document
 
 document
 .getElementById("billSection")
-let billText = `
-UPHAR SHRINGAR & GIFTS
-
-Bill No: ${billNumber}
-Date: ${date}
-
-Customer: ${customerName}
-Mobile: ${customerMobile}
-
-------------------------
-${cart.map(item =>
-`${item.name} x${item.qty} = ₹${item.price * item.qty}`
-).join("\n")}
-------------------------
-
-TOTAL: ₹${total}
-Payment: ${payment}
-
-Thank You!
-Visit Again ❤️
-`;
-
-await window.printBluetooth(billText);  
 .scrollIntoView({
 
 behavior:"smooth"
