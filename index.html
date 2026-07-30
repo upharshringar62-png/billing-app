@@ -2305,6 +2305,57 @@ window.saveBillToFirebase = async function(
 // ================================
 
 const db = getFirestore(app);
+let printerDevice = null;
+let printerCharacteristic = null;
+
+window.connectPrinter = async function () {
+
+  try {
+
+    printerDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        "000018f0-0000-1000-8000-00805f9b34fb",
+        "0000ffe0-0000-1000-8000-00805f9b34fb"
+      ]
+    });
+
+    const server = await printerDevice.gatt.connect();
+
+    const services = await server.getPrimaryServices();
+
+    for (const service of services) {
+
+      const chars = await service.getCharacteristics();
+
+      for (const c of chars) {
+
+        if (
+          c.properties.write ||
+          c.properties.writeWithoutResponse
+        ) {
+
+          printerCharacteristic = c;
+
+          alert("✅ Printer Connected");
+          return;
+
+        }
+
+      }
+
+    }
+
+    alert("❌ Printer write characteristic nahi mili.");
+
+  } catch (e) {
+
+    console.error(e);
+    alert("❌ " + e.message);
+
+  }
+
+};   
    
 // =========================
 // FIREBASE PRODUCT SAVE
@@ -2347,57 +2398,40 @@ window.saveProductToFirebase = async function(product) {
 // ================================
 
 let printerCharacteristic = null;
-window.printBluetooth = async function (text) {
+window.printBluetooth = async function(text){
 
-  if (!printerCharacteristic) {
+  if(!printerCharacteristic){
     alert("Pehle printer connect karo.");
     return;
   }
 
-  const encoder = new TextEncoder();
-
-  await printerCharacteristic.writeValue(
-    encoder.encode(text + "\n\n\n")
-  );
-
-};
-
-
-// Firebase Bill Save Function
-
-window.saveBillToFirebase = async function(
-  customerName,
-  billNumber,
-  total
-){
-
   try{
 
-    await addDoc(
-      collection(db, "bills"),
-      {
-        customerName: customerName,
-        billNumber: billNumber,
-        total: total,
-        createdAt: new Date().toISOString()
-      }
+    const encoder = new TextEncoder();
+
+    await printerCharacteristic.writeValueWithoutResponse(
+      encoder.encode(text + "\n\n\n")
     );
 
-    console.log(
-      "Bill Firebase me save ho gaya"
-    );
+  }catch(e){
 
-  }catch(error){
+    try{
 
-    console.error(
-      "Firebase bill save error:",
-      error
-    );
+      await printerCharacteristic.writeValue(
+        new TextEncoder().encode(text + "\n\n\n")
+      );
+
+    }catch(error){
+
+      alert("❌ Print Failed");
+
+      console.error(error);
+
+    }
 
   }
 
 };
-
 </script> 
 </body>
 </html>
