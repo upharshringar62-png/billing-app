@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="hi">
 <head><!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
 (function() {
@@ -31,7 +31,6 @@ header{background:#e91e63;color:white;padding:15px;text-align:center;position:st
 .card{background:white;padding:15px;margin-bottom:15px;border-radius:12px;box-shadow:0 2px 8px #ddd}
 input,select,button{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ccc;font-size:16px}
 button{background:#e91e63;color:white;border:none;font-weight:bold;cursor:pointer}
-button:active{transform:scale(.98)}
 .dashboard{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 6px #ddd}
 .stat h2{margin:5px 0;color:#e91e63}
@@ -48,52 +47,39 @@ button:active{transform:scale(.98)}
 .history-item{border-bottom:1px solid #eee;padding:12px 0}.history-actions{display:flex;gap:8px}.history-actions button{flex:1}.view-btn{background:#1976d2}
 .printer-ok{background:#d1e7dd;border:2px solid #198754;padding:10px;border-radius:10px;margin:8px 0}
 .printer-bad{background:#f8d7da;border:2px solid #dc3545;padding:10px;border-radius:10px;margin:8px 0}
-@media print{body *{visibility:hidden}#billSection,#billSection *{visibility:visible}#billSection{position:absolute;left:0;top:0;width:100%;box-shadow:none}#billSection button{display:none}}
 </style>
 </head>
 <body>
 <header><h2>🧾 Uphar Shringar Billing - FIXED</h2><div style="font-size:14px;">PSF588 Direct Ready - 5C:57:9E:27:D4:4F</div></header>
 <div class="container">
-
-<div class="card">
-<h3>📊 Sales Dashboard</h3>
-<div class="dashboard">
+<div class="card"><h3>📊 Sales Dashboard</h3><div class="dashboard">
 <div class="stat"><div>🛍️ Products</div><h2 id="totalProducts">0</h2></div>
 <div class="stat"><div>🧾 Total Bills</div><h2 id="totalBills">0</h2></div>
 <div class="stat"><div>📅 Today Bills</div><h2 id="todayBills">0</h2></div>
 <div class="stat"><div>💰 Today Sales</div><h2>₹<span id="todaySales">0</span></h2></div>
 <div class="stat"><div>💵 Total Sales</div><h2>₹<span id="totalSales">0</span></h2></div>
-</div>
-</div>
-
+</div></div>
 <div class="card"><h3 id="formTitle">➕ Product Add Karo</h3><div id="editMode" class="edit-mode">✏️ Product Edit Mode On</div>
 <input id="productName" placeholder="Product Name"><input id="productPrice" type="number" placeholder="MRP ₹"><input id="productDiscount" type="number" placeholder="Discount %"><button id="saveProductBtn" onclick="addProduct()">Product Save Karo</button><button id="cancelEditBtn" onclick="cancelEdit()" style="display:none;background:#777;">Cancel Edit</button></div>
-
 <div class="card"><h3>🛍️ Products</h3><input id="searchProduct" placeholder="🔍 Product Search Karo..." oninput="showProducts()"><div id="productList">Koi product nahi hai.</div></div>
-
 <div class="card"><h3>🛒 Current Bill</h3>
-<input id="customerName" placeholder="Customer Name (Optional)"><input id="customerMobile" placeholder="Mobile Number (Optional)"><div id="cartList">Cart empty hai.</div>
+<input id="customerName" placeholder="Customer Name"><input id="customerMobile" placeholder="Mobile Number"><div id="cartList">Cart empty hai.</div>
 <div class="total">Total: ₹<span id="grandTotal">0</span></div>
 <select id="paymentMethod"><option value="Cash">💵 Cash</option><option value="UPI">📱 UPI</option><option value="Other">💳 Other</option></select>
-
 <div id="printerStatus" class="printer-bad">❌ Printer Not Connected - MAC: 5C:57:9E:27:D4:4F</div>
 <button onclick="connectPrinter()" style="background:#0d6efd;font-size:18px">🔵 Connect Thermal Printer PSF588</button>
 <button onclick="generateBill()" style="background:#111">🧾 Bill Generate Karo</button>
 <div id="debugLog" style="font-size:11px;background:#111;color:#0f0;padding:6px;border-radius:6px;max-height:80px;overflow:auto;margin-top:6px"></div>
 </div>
-
 <div class="card" id="billSection" style="display:none;"><h3>🧾 Bill</h3><div id="billContent" class="bill-box"></div>
 <button onclick="printBluetoothDirect()" style="background:#0d6efd;font-size:18px">🖨️ DIRECT THERMAL PRINT - PSF588</button>
 <button onclick="window.print()">🖨️ Normal Print</button>
 </div>
-
 <div class="card"><h3>📜 Bill History</h3><input id="searchBill" placeholder="🔍 Bill Number ya Customer Search Karo..." oninput="showBillHistory()"><div id="billHistory">Abhi koi bill nahi hai.</div></div>
 </div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyC7jFeH8DOdWrTccinIxiX7LhnaI5uxXLw",
   authDomain: "upharshringar-billing.firebaseapp.com",
@@ -104,113 +90,65 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// ===== SINGLE PRINTER VARIABLES - NO DUPLICATE =====
-let printerDevice = null;
-let printerServer = null;
-let printerCharacteristic = null;
-let lastBillText = "";
-
-function log(m){document.getElementById('debugLog').innerHTML+=m+"<br>"; console.log(m);}
-
-// ===== CONNECT PRINTER - FIXED =====
-window.connectPrinter = async function(){
-  log("Connect clicked");
-  if(!navigator.bluetooth){
-    alert("❌ Is browser me Bluetooth support nahi hai. Chrome me kholo - https:// se");
-    return;
-  }
+let printerDevice=null;let printerServer=null;let printerCharacteristic=null;let lastBillText="";
+function log(m){document.getElementById('debugLog').innerHTML+=m+"<br>";}
+window.connectPrinter=async function(){
+  log("Connect clicked");if(!navigator.bluetooth){alert("Chrome me https:// se kholo");return;}
   try{
-    log("Requesting device PSF588...");
-    printerDevice = await navigator.bluetooth.requestDevice({
-      filters: [{namePrefix: 'PSF'}, {namePrefix: 'SC'}, {namePrefix: 'MPT'}],
-      optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb","0000ff00-0000-1000-8000-00805f9b34fb","49535343-fe7d-4ae5-8fa9-9fafd205e455","000018f0-0000-1000-8000-00805f9b34fb"]
+    printerDevice=await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:'PSF'},{namePrefix:'SC'}],
+      optionalServices:["0000ffe0-0000-1000-8000-00805f9b34fb","0000ff00-0000-1000-8000-00805f9b34fb","49535343-fe7d-4ae5-8fa9-9fafd205e455","000018f0-0000-1000-8000-00805f9b34fb"]
     });
-    log("Device: "+printerDevice.name);
-    printerServer = await printerDevice.gatt.connect();
-    log("GATT connected");
-    let service = null;
-    // Try known service UUIDs
-    for(let uuid of ["0000ffe0-0000-1000-8000-00805f9b34fb","49535343-fe7d-4ae5-8fa9-9fafd205e455","0000ff00-0000-1000-8000-00805f9b34fb","000018f0-0000-1000-8000-00805f9b34fb"]){
-      try{ service = await printerServer.getPrimaryService(uuid); if(service){log("Service found: "+uuid); break;} }catch(e){}
-    }
-    if(!service){
-      let all = await printerServer.getPrimaryServices();
-      log("All services: "+all.length);
-      service = all[0];
-    }
-    let chars = await service.getCharacteristics();
-    log("Characteristics: "+chars.length);
-    for(let c of chars){
-      log("Char "+c.uuid+" write:"+c.properties.write+" WNR:"+c.properties.writeWithoutResponse);
-      if(c.properties.write || c.properties.writeWithoutResponse){
-        printerCharacteristic = c;
-        break;
-      }
-    }
-    if(!printerCharacteristic){
-      alert("❌ Printer connect hua par write characteristic nahi mili. Dusra printer try karo.");
-      return;
-    }
+    log("Device: "+printerDevice.name);printerServer=await printerDevice.gatt.connect();log("GATT connected");
+    let service=null;for(let uuid of ["0000ffe0-0000-1000-8000-00805f9b34fb","49535343-fe7d-4ae5-8fa9-9fafd205e455","0000ff00-0000-1000-8000-00805f9b34fb","000018f0-0000-1000-8000-00805f9b34fb"]){try{service=await printerServer.getPrimaryService(uuid);if(service){log("Service: "+uuid);break;}}catch(e){}}
+    if(!service){let all=await printerServer.getPrimaryServices();service=all[0];}
+    let chars=await service.getCharacteristics();log("Chars: "+chars.length);
+    for(let c of chars){log("Char "+c.uuid);if(c.properties.write||c.properties.writeWithoutResponse){printerCharacteristic=c;break;}}
+    if(!printerCharacteristic){alert("Write characteristic nahi mili");return;}
     document.getElementById('printerStatus').className="printer-ok";
-    document.getElementById('printerStatus').innerHTML="✅ Connected: "+printerDevice.name+" ("+printerDevice.id.slice(0,8)+")";
-    alert("✅ Printer Connected: "+printerDevice.name);
-  }catch(err){
-    log("❌ "+err.message);
-    alert("Error: "+err.message+"\n\nTip: 1) https:// se kholo 2) Location ON rakho 3) Printer ON rakho");
-  }
+    document.getElementById('printerStatus').innerHTML="✅ Connected: "+printerDevice.name;
+    alert("✅ Connected: "+printerDevice.name);
+  }catch(err){log("❌ "+err.message);alert("Error: "+err.message);}
 };
-
-// ===== DIRECT PRINT =====
-window.printBluetoothDirect = async function(){
-  if(!printerCharacteristic){
-  let billNumber="BILL-"+Date.now();
-  let date=new Date().toLocaleString("en-IN");
-  if(window.saveBillToFirebase){ await window.saveBillToFirebase(customerName,billNumber,total); }
-  let billData={id:Date.now(),billNumber,customerName,customerMobile,payment,total,date,items:cart.map(item=>({name:item.name,price:item.price,qty:item.qty}))};
-  bills.unshift(billData); saveBills();
-  let itemsHTML=cart.map(item=>`<p>${item.name} × ${item.qty} — ₹${item.price*item.qty}</p>`).join("");
-  let printText=`\x1B\x40\nUPHAR SHRINGAR & GIFTS\nBill No: ${billNumber}\nDate: ${date}\nCustomer: ${customerName}\nMobile: ${customerMobile}\n----------------\n`;
-  cart.forEach(i=>{printText+=`${i.name} x${i.qty} = ${i.price*i.qty}\n`});
-  printText+=`----------------\nTOTAL: Rs.${total}\nPayment: ${payment}\nThank You! Visit Again\n\n\n`;
-  window.setLastBillText(printText);
-  document.getElementById("billContent").innerHTML=`<h2>Uphar Shringar & Gifts</h2><p><b>Bill No:</b> ${billNumber}</p><p><b>Date:</b> ${date}</p><hr><p><b>Customer:</b> ${customerName}</p><p><b>Mobile:</b> ${customerMobile}</p><hr>${itemsHTML}<hr><h2>Total: ₹${total}</h2><p>Payment: ${payment}</p><hr><center>Thank You! Visit Again ❤️</center>`;
-  document.getElementById("billSection").style.display="block";
-  showBillHistory(); updateDashboard();
-  cart=[]; showCart(); document.getElementById("customerName").value=""; document.getElementById("customerMobile").value="";
-  document.getElementById("billSection").scrollIntoView({behavior:"smooth"});
-}
-function showBillHistory(){
-  let box=document.getElementById("billHistory");
-  let search=document.getElementById("searchBill").value.toLowerCase().trim();
-  let filtered=bills.filter(b=>b.billNumber.toLowerCase().includes(search)||b.customerName.toLowerCase().includes(search));
-  if(filtered.length===0){box.innerHTML="Abhi koi bill nahi mila.";return;}
-  box.innerHTML=filtered.map(b=>`<div class="history-item"><b>🧾 ${b.billNumber}</b><br>👤 ${b.customerName}<br>💰 ₹${b.total}<br>💵 ${b.payment}<br>🕐 ${b.date}<div class="history-actions"><button class="view-btn" onclick="viewOldBill(${b.id})">View Bill</button><button class="delete-btn" onclick="deleteBill(${b.id})">Delete</button></div></div>`).join("");
-}
-function viewOldBill(id){
-  let bill=bills.find(b=>b.id===id); if(!bill)return;
-  let itemsHTML=bill.items.map(item=>`<p>${item.name} × ${item.qty} — ₹${item.price*item.qty}</p>`).join("");
-  let txt=`\x1B\x40\nUPHAR SHRINGAR\nBill: ${bill.billNumber}\nDate: ${bill.date}\nCustomer: ${bill.customerName}\n`;
-  bill.items.forEach(i=>txt+=`${i.name} x${i.qty} = ${i.price*i.qty}\n`);
-  txt+=`TOTAL: ${bill.total}\n\n\n`;
-  window.setLastBillText(txt);
-  document.getElementById("billContent").innerHTML=`<h2>Uphar Shringar & Gifts</h2><p><b>Bill No:</b> ${bill.billNumber}</p><p><b>Date:</b> ${bill.date}</p><hr><p><b>Customer:</b> ${bill.customerName}</p><p><b>Mobile:</b> ${bill.customerMobile}</p><hr>${itemsHTML}<hr><h2>Total: ₹${bill.total}</h2><p>Payment: ${bill.payment}</p><hr><center>Thank You! Visit Again ❤️</center>`;
-  document.getElementById("billSection").style.display="block";
-  document.getElementById("billSection").scrollIntoView({behavior:"smooth"});
-}
-function deleteBill(id){ if(!confirm("Kya aap is bill ko delete karna chahte ho?"))return; bills=bills.filter(b=>b.id!==id); saveBills(); showBillHistory(); updateDashboard(); }
-function updateDashboard(){
-  let today=new Date().toLocaleDateString("en-IN");
-  let todayBills=bills.filter(b=>{let billDate=new Date(b.id).toLocaleDateString("en-IN"); return billDate===today;});
-  let todaySales=todayBills.reduce((sum,b)=>sum+b.total,0);
-  let totalSales=bills.reduce((sum,b)=>sum+b.total,0);
-  document.getElementById("totalProducts").innerText=products.length;
-  document.getElementById("totalBills").innerText=bills.length;
-  document.getElementById("todayBills").innerText=todayBills.length;
-  document.getElementById("todaySales").innerText=todaySales;
-  document.getElementById("totalSales").innerText=totalSales;
-}
-showProducts(); showCart(); showBillHistory(); updateDashboard();
+window.printBluetoothDirect=async function(){
+  if(!printerCharacteristic){alert("Pehle Connect karo");return;}
+  if(!lastBillText){alert("Pehle bill generate karo");return;}
+  try{
+    let encoder=new TextEncoder();let data=encoder.encode(lastBillText+"\n\n\n");
+    for(let i=0;i<data.length;i+=100){
+      let chunk=data.slice(i,i+100);
+      try{if(printerCharacteristic.properties.writeWithoutResponse){await printerCharacteristic.writeValueWithoutResponse(chunk);}else{await printerCharacteristic.writeValue(chunk);}}catch(e){await printerCharacteristic.writeValueWithoutResponse(chunk);}
+      await new Promise(r=>setTimeout(r,40));
+    }
+    alert("✅ Direct Print Ho Gaya!");
+  }catch(e){alert("Print Error: "+e.message);}
+};
+window.saveBillToFirebase=async function(customerName,billNumber,total){
+  try{await addDoc(collection(db,"bills"),{customerName,billNumber,total,createdAt:new Date().toISOString()});log("Firebase bill saved");}catch(e){log("Firebase error");}
+};
+window.setLastBillText=(t)=>{lastBillText=t;}
+</script>
+<script>
+let products=JSON.parse(localStorage.getItem("billingProducts"))||[];let bills=JSON.parse(localStorage.getItem("billingHistory"))||[];let cart=[];let editingProductId=null;
+function saveProducts(){localStorage.setItem("billingProducts",JSON.stringify(products))}
+function saveBills(){localStorage.setItem("billingHistory",JSON.stringify(bills))}
+function addProduct(){let name=document.getElementById("productName").value.trim();let mrp=Number(document.getElementById("productPrice").value);let discount=Number(document.getElementById("productDiscount").value)||0;if(!name||!mrp){alert("Name aur MRP bharo");return;}let sellingPrice=Math.round(mrp-(mrp*discount/100));if(editingProductId!==null){let p=products.find(p=>p.id===editingProductId);if(p){p.name=name;p.mrp=mrp;p.discount=discount;p.price=sellingPrice;}alert("Update ho gaya");cancelEdit();}else{products.push({id:Date.now(),name,mrp,discount,price:sellingPrice});alert("Save ho gaya");}saveProducts();showProducts();updateDashboard();}
+function showProducts(){let box=document.getElementById("productList");let search=document.getElementById("searchProduct").value.toLowerCase().trim();let filtered=products.filter(p=>p.name.toLowerCase().includes(search));if(filtered.length===0){box.innerHTML="Koi product nahi mila.";return;}box.innerHTML=filtered.map(p=>`<div class="product"><div><b>${p.name}</b><br><span class="small">MRP: <span class="old-price">₹${p.mrp}</span> | ${p.discount}% OFF</span><br><span class="sale-price">₹${p.price}</span></div><div class="product-actions"><button onclick="addToCart(${p.id})">🛒 Add</button><button class="edit-btn" onclick="editProduct(${p.id})">✏️ Edit</button><button class="delete-btn" onclick="deleteProduct(${p.id})">🗑️ Delete</button></div></div>`).join("");}
+function editProduct(id){let product=products.find(p=>p.id===id);if(!product)return;editingProductId=id;document.getElementById("productName").value=product.name;document.getElementById("productPrice").value=product.mrp;document.getElementById("productDiscount").value=product.discount;document.getElementById("formTitle").innerText="✏️ Product Edit Karo";document.getElementById("editMode").style.display="block";document.getElementById("saveProductBtn").innerText="Update Product";document.getElementById("cancelEditBtn").style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
+function cancelEdit(){editingProductId=null;document.getElementById("productName").value="";document.getElementById("productPrice").value="";document.getElementById("productDiscount").value="";document.getElementById("formTitle").innerText="➕ Product Add Karo";document.getElementById("editMode").style.display="none";document.getElementById("saveProductBtn").innerText="Product Save Karo";document.getElementById("cancelEditBtn").style.display="none";}
+function deleteProduct(id){let product=products.find(p=>p.id===id);if(!product)return;if(!confirm("Delete "+product.name+"?"))return;products=products.filter(p=>p.id!==id);cart=cart.filter(item=>item.id!==id);saveProducts();showProducts();showCart();updateDashboard();alert("Delete ho gaya");}
+function addToCart(id){let product=products.find(p=>p.id===id);if(!product)return;let existing=cart.find(item=>item.id===id);if(existing){existing.qty++;}else{cart.push({...product,qty:1});}showCart();}
+function increaseQty(id){let item=cart.find(i=>i.id===id);if(item){item.qty++;}showCart();}
+function decreaseQty(id){let item=cart.find(i=>i.id===id);if(!item)return;if(item.qty>1){item.qty--;}else{removeFromCart(id);return;}showCart();}
+function removeFromCart(id){cart=cart.filter(item=>item.id!==id);showCart();}
+function showCart(){let box=document.getElementById("cartList");if(cart.length===0){box.innerHTML="Cart empty hai.";document.getElementById("grandTotal").innerText="0";return;}let total=0;box.innerHTML=cart.map(item=>{let itemTotal=item.price*item.qty;total+=itemTotal;return `<div class="cart-item"><b>${item.name}</b><br>₹${item.price} × ${item.qty} = <b>₹${itemTotal}</b><div class="cart-controls"><button onclick="decreaseQty(${item.id})">−</button><b>${item.qty}</b><button onclick="increaseQty(${item.id})">+</button><button class="remove" onclick="removeFromCart(${item.id})">Remove</button></div></div>`}).join("");document.getElementById("grandTotal").innerText=total;}
+async function generateBill(){if(cart.length===0){alert("Pehle product add karo");return;}let customerName=document.getElementById("customerName").value.trim()||"Walk-in Customer";let customerMobile=document.getElementById("customerMobile").value.trim()||"-";let payment=document.getElementById("paymentMethod").value;let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);let billNumber="BILL-"+Date.now();let date=new Date().toLocaleString("en-IN");if(window.saveBillToFirebase){await window.saveBillToFirebase(customerName,billNumber,total);}let billData={id:Date.now(),billNumber,customerName,customerMobile,payment,total,date,items:cart.map(item=>({name:item.name,price:item.price,qty:item.qty}))};bills.unshift(billData);saveBills();let itemsHTML=cart.map(item=>`<p>${item.name} × ${item.qty} — ₹${item.price*item.qty}</p>`).join("");let printText=`\x1B\x40\nUPHAR SHRINGAR & GIFTS\nBill No: ${billNumber}\nDate: ${date}\nCustomer: ${customerName}\nMobile: ${customerMobile}\n----------------\n`;cart.forEach(i=>{printText+=`${i.name} x${i.qty} = ${i.price*i.qty}\n`});printText+=`----------------\nTOTAL: Rs.${total}\nPayment: ${payment}\nThank You!\n\n\n`;window.setLastBillText(printText);document.getElementById("billContent").innerHTML=`<h2>Uphar Shringar & Gifts</h2><p><b>Bill No:</b> ${billNumber}</p><p><b>Date:</b> ${date}</p><hr><p><b>Customer:</b> ${customerName}</p><p><b>Mobile:</b> ${customerMobile}</p><hr>${itemsHTML}<hr><h2>Total: ₹${total}</h2><p>Payment: ${payment}</p><hr><center>Thank You! Visit Again ❤️</center>`;document.getElementById("billSection").style.display="block";showBillHistory();updateDashboard();cart=[];showCart();document.getElementById("customerName").value="";document.getElementById("customerMobile").value="";document.getElementById("billSection").scrollIntoView({behavior:"smooth"});}
+function showBillHistory(){let box=document.getElementById("billHistory");let search=document.getElementById("searchBill").value.toLowerCase().trim();let filtered=bills.filter(b=>b.billNumber.toLowerCase().includes(search)||b.customerName.toLowerCase().includes(search));if(filtered.length===0){box.innerHTML="Abhi koi bill nahi mila.";return;}box.innerHTML=filtered.map(b=>`<div class="history-item"><b>🧾 ${b.billNumber}</b><br>👤 ${b.customerName}<br>💰 ₹${b.total}<br>💵 ${b.payment}<br>🕐 ${b.date}<div class="history-actions"><button class="view-btn" onclick="viewOldBill(${b.id})">View Bill</button><button class="delete-btn" onclick="deleteBill(${b.id})">Delete</button></div></div>`).join("");}
+function viewOldBill(id){let bill=bills.find(b=>b.id===id);if(!bill)return;let itemsHTML=bill.items.map(item=>`<p>${item.name} × ${item.qty} — ₹${item.price*item.qty}</p>`).join("");let txt=`\x1B\x40\nUPHAR SHRINGAR\nBill: ${bill.billNumber}\nDate: ${bill.date}\nCustomer: ${bill.customerName}\n`;bill.items.forEach(i=>txt+=`${i.name} x${i.qty} = ${i.price*i.qty}\n`);txt+=`TOTAL: ${bill.total}\n\n\n`;window.setLastBillText(txt);document.getElementById("billContent").innerHTML=`<h2>Uphar Shringar & Gifts</h2><p><b>Bill No:</b> ${bill.billNumber}</p><p><b>Date:</b> ${bill.date}</p><hr><p><b>Customer:</b> ${bill.customerName}</p><p><b>Mobile:</b> ${bill.customerMobile}</p><hr>${itemsHTML}<hr><h2>Total: ₹${bill.total}</h2><p>Payment: ${bill.payment}</p><hr><center>Thank You! Visit Again ❤️</center>`;document.getElementById("billSection").style.display="block";document.getElementById("billSection").scrollIntoView({behavior:"smooth"});}
+function deleteBill(id){if(!confirm("Delete this bill?"))return;bills=bills.filter(b=>b.id!==id);saveBills();showBillHistory();updateDashboard();}
+function updateDashboard(){let today=new Date().toLocaleDateString("en-IN");let todayBills=bills.filter(b=>{let billDate=new Date(b.id).toLocaleDateString("en-IN");return billDate===today;});let todaySales=todayBills.reduce((sum,b)=>sum+b.total,0);let totalSales=bills.reduce((sum,b)=>sum+b.total,0);document.getElementById("totalProducts").innerText=products.length;document.getElementById("totalBills").innerText=bills.length;document.getElementById("todayBills").innerText=todayBills.length;document.getElementById("todaySales").innerText=todaySales;document.getElementById("totalSales").innerText=totalSales;}
+showProducts();showCart();showBillHistory();updateDashboard();
 </script>
 </body>
 </html>
+  
