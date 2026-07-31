@@ -422,6 +422,18 @@ function handlePreview(){
 }
 
 function closePreview(){
+ function handleRealPrint(){
+  closePreview();
+  // Normal print (PDF / Thermal)
+  setTimeout(()=>{
+    window.print();
+  }, 200);
+
+  // Agar Bluetooth printer hai to
+  if(typeof printViaBluetooth === 'function'){
+    printViaBluetooth();
+  }
+ }
   document.getElementById('previewModal').classList.add('hidden');
 }
 
