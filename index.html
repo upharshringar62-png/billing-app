@@ -363,8 +363,18 @@ function renderProducts(){
       </div>
     `;
     card.onclick = ()=> incQty(p.id);
-    grid.appendChild(card);
+        grid.appendChild(card);
   });
+
+  // ===== NEW ITEM CARD - HAR CATEGORY ME DIKHEGA =====
+  const newCard = document.createElement('div');
+  newCard.className = 'bg-white rounded-xl border border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[140px] cursor-pointer';
+  newCard.innerHTML = `
+    <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">+</div>
+    <div class="text-[14px] font-bold mt-3 text-blue-600">NEW ITEM</div>
+  `;
+  newCard.onclick = ()=> addNewItemInCat();
+  grid.appendChild(newCard);
 }
 
 // ================= QTY FUNCTIONS =================
