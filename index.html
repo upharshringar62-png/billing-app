@@ -41,7 +41,7 @@
 <!-- ================= LEFT CATEGORY SIDEBAR ================= -->
 <aside class="w-[130px] bg-white border-r shrink-0 flex flex-col">
   <div class="p-2">
-    <button id="newCatBtn" class="w-full bg-[#2e3ae8] text-white rounded-lg h-10 text-[11px] font-bold">
+    <button id="newCatBtn" class="bg-[#2e3ae8] text-white rounded-full h-7 px-3 text-[10px] font-bold ml-1">
       + NEW CATEGORY
     </button>
   </div>
@@ -418,6 +418,13 @@ function closeDrawer(){
 }
 
 document.getElementById('menuBtn').onclick = openDrawer;
+ document.getElementById('newCatBtn').onclick = ()=>{
+  let name = prompt('New Category name likho:');
+  if(name){
+    categories.push({id: Date.now().toString(), name: name});
+    renderCategories();
+  }
+};
 document.getElementById('drawerOverlay').onclick = closeDrawer;
 
 // ================= SEARCH =================
@@ -485,7 +492,7 @@ async function reconnectBluetooth(){
     document.getElementById('printerStatus').innerText = 'Disconnected';
   }
 }
-
+document.getElementById('printBtn').onclick = ()=>{ handlePreview(); };
 document.getElementById('btConnectBtn').onclick = connectBluetooth;
 
 // ================= INIT =================
