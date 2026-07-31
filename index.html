@@ -423,6 +423,19 @@ function handlePreview(){
 
 function closePreview(){
  function handleRealPrint(){
+  const content = document.getElementById('previewList').innerHTML;
+  const total = document.getElementById('previewTotal').innerText;
+  const printWindow = window.open('', '', 'height=600,width=300');
+  printWindow.document.write('<html><head><title>Bill</title></head><body>');
+  printWindow.document.write('<h2>Upchar Singhar & Girls</h2>');
+  printWindow.document.write(content);
+  printWindow.document.write('<h3>Total: '+total+'</h3>');
+  printWindow.document.write('<p>Thank you visit again!</p>');
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  printWindow.print();
+}
+ function handleRealPrint(){
   closePreview();
   // Normal print (PDF / Thermal)
   setTimeout(()=>{
