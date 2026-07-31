@@ -258,7 +258,20 @@ let products = [
 let cart = {};
 let selectedCat = 'all';
 let searchText = '';
-
+// DELETE CATEGORY FUNCTION
+function deleteCategory(id){
+  if(id==='all'){
+    alert('All Items delete nahi hoga!');
+    return;
+  }
+  let confirmDel = confirm('Ye category delete karna hai?');
+  if(confirmDel){
+    categories = categories.filter(c=>c.id!==id);
+    if(selectedCat===id) selectedCat='all';
+    renderCategories();
+    renderProducts();
+  }
+}
 // ================= RENDER CATEGORIES =================
 function renderCategories(){
   const el = document.getElementById('catList');
