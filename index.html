@@ -284,7 +284,7 @@ function renderCategories(){
         <div class="text-[13px] font-medium">${c.name}</div>
         <div class="text-[11px] text-gray-400">(0.0)</div>
       </div>
-      <button class="text-gray-300">⋮</button>
+      <button onclick="event.stopPropagation(); deleteCategory('${c.id}')" class="text-red-500 text-[16px] font-bold">🗑️</button>
     `;
     div.onclick = ()=>{
       selectedCat = c.id;
