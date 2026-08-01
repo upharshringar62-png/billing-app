@@ -497,8 +497,10 @@ function closePreview(){
 }
 
 function handleRealPrint(){
-  const content = document.getElementById('previewList').innerHTML;
-  const total = document.getElementById('previewTotal').innerText;
+  closePreview();
+
+  alert('Print ready hai. Bluetooth printer connect karke print karein.');
+}
   
   let printArea = document.getElementById('printArea');
   if(!printArea){
