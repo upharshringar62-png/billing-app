@@ -225,7 +225,7 @@
 </div>
 
 <!-- ===== LONG PRESS WALA MODAL ===== -->
-<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4"
+<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4">
   <div class="bg-white rounded-lg w-full max-w-[300px] p-5">
     <h3 class="font-bold text-[16px]">Modify Product</h3>
     <p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p>
@@ -385,8 +385,11 @@ function renderProducts(){
   card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
   card.onmouseup = () => clearTimeout(longPressTimer);
   card.ontouchstart = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-  card.ontouch
-        grid.appendChild(card);
+  card.ontouchend = () => {
+  clearTimeout(longPressTimer);
+};
+
+grid.appendChild(card);
   });
 
   // ===== NEW ITEM CARD - HAR CATEGORY ME DIKHEGA =====
@@ -500,8 +503,23 @@ function showActionModal(id){
   document.getElementById('actionProductName').innerText = `Do you want to modify '${prod.name}'?`;
   document.getElementById('productActionModal').classList.remove('hidden');
 }
-function closeActionModal(){ document.getElementById('productActionModal').classList.add('hidden'); }
-  if(confirm('Delete?')){ products = products.filter(p=>p.id!=selectedProductId); localStorage.setItem('products', JSON.stringify(products)); closeActionModal(); renderProducts(); }
+function closeActionModal(){
+  document.getElementById('productActionModal').classList.add('hidden');
+}
+
+function deleteProduct(){
+  if(!selectedProductId) return;
+
+  if(confirm('Delete this product?')){
+    products = products.filter(p => p.id != selectedProductId);
+
+    localStorage.setItem('products', JSON.stringify(products));
+
+    closeActionModal();
+    renderProducts();
+    renderCategories();
+    updateTotal();
+  }
 }
 function openModifyModal(){
   let prod = products.find(p=>p.id==selectedProductId);
@@ -511,12 +529,24 @@ function openModifyModal(){
   document.getElementById('productActionModal').classList.add('hidden');
   document.getElementById('editProductModal').classList.remove('hidden');
 }
-function closeEditModal(){ document.getElementById('editProductModal').classList.add('hidden'); }
-  let prod = products.find(p=>p.id==selectedProductId);
+function closeEditModal(){
+  document.getElementById('editProductModal').classList.add('hidden');
+}
+
+function saveUpdatedProduct(){
+  let prod = products.find(p => p.id == selectedProductId);
+  if(!prod) return;
+
   prod.name = document.getElementById('editProductName').value;
-  prod.price = parseFloat(document.getElementById('editProductPrice').value);
+  prod.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
+
   localStorage.setItem('products', JSON.stringify(products));
-  closeEditModal(); renderProducts(); alert('Updated!');
+
+  closeEditModal();
+  renderProducts();
+  updateTotal();
+
+  alert('Updated!');
 }
 function deleteCategory(id){
   if(confirm('Category delete?')){ categories = categories.filter(c=>c.id!=id); localStorage.setItem('categories', JSON.stringify(categories)); renderCategories(); }
