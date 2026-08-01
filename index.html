@@ -236,15 +236,55 @@
     </div>
   </div>
 </div>
-
 <div id="editProductModal" class="fixed inset-0 bg-[#f5f5f5] hidden z-[101] overflow-y-auto">
-  <div class="bg-[#3f51b5] text-white p-3 flex gap-3"><button onclick="closeEditModal()">←</button><h2 class="font-bold">Update Product</h2></div>
-  <div class="p-4">
-    <img id="editProductImage" class="h-20 mx-auto bg-white border rounded">
-    <input id="editProductName" class="w-full mt-4 border p-3 rounded-lg font-bold" placeholder="Product Name">
-    <input id="editProductPrice" type="number" class="w-full mt-3 border p-3 rounded-lg" placeholder="Sale Price">
-    <button onclick="saveUpdatedProduct()" class="w-full bg-[#3f51b5] text-white py-3 rounded-lg font-bold mt-4">Update Product</button>
+
+  <div class="bg-[#3f51b5] text-white p-3 flex gap-3">
+    <button onclick="closeEditModal()">←</button>
+    <h2 class="font-bold">Update Product</h2>
   </div>
+
+  <div class="p-4">
+
+    <!-- PRODUCT IMAGE -->
+    <div class="flex flex-col items-center">
+
+      <img id="editProductImage"
+           class="h-20 w-20 object-contain mx-auto bg-white border rounded-lg">
+
+      <!-- Image select -->
+      <input type="file"
+             id="editProductImageInput"
+             accept="image/*"
+             hidden>
+
+      <button type="button"
+              onclick="document.getElementById('editProductImageInput').click()"
+              class="mt-3 bg-[#eef0ff] text-[#3f51b5] px-5 py-2 rounded-full text-[12px] font-bold">
+        📷 CHANGE IMAGE
+      </button>
+
+    </div>
+
+    <!-- PRODUCT NAME -->
+    <input id="editProductName"
+           class="w-full mt-4 border p-3 rounded-lg font-bold"
+           placeholder="Product Name">
+
+    <!-- PRODUCT PRICE -->
+    <input id="editProductPrice"
+           type="number"
+           class="w-full mt-3 border p-3 rounded-lg"
+           placeholder="Sale Price">
+
+    <!-- UPDATE -->
+    <button onclick="saveUpdatedProduct()"
+            class="w-full bg-[#3f51b5] text-white py-3 rounded-lg font-bold mt-4">
+      Update Product
+    </button>
+
+  </div>
+</div>
+    
 </div>
 <script>
 // ================= DATA =================
@@ -526,13 +566,13 @@ function openModifyModal(){
   document.getElementById('editProductName').value = prod.name;
   document.getElementById('editProductPrice').value = prod.price;
   document.getElementById('editProductImage').src = prod.img || '';
+ document.getElementById('editProductImageInput').value = '';
   document.getElementById('productActionModal').classList.add('hidden');
   document.getElementById('editProductModal').classList.remove('hidden');
 }
 function closeEditModal(){
   document.getElementById('editProductModal').classList.add('hidden');
 }
-
 function saveUpdatedProduct(){
   let prod = products.find(p => p.id == selectedProductId);
   if(!prod) return;
@@ -540,13 +580,36 @@ function saveUpdatedProduct(){
   prod.name = document.getElementById('editProductName').value;
   prod.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
 
-  localStorage.setItem('products', JSON.stringify(products));
+  // New image agar select ki hai
+  const imageInput = document.getElementById('editProductImageInput');
 
-  closeEditModal();
-  renderProducts();
-  updateTotal();
+  if(imageInput.files && imageInput.files[0]){
+    const reader = new FileReader();
 
-  alert('Updated!');
+    reader.onload = function(e){
+      prod.img = e.target.result;
+
+      localStorage.setItem('products', JSON.stringify(products));
+
+      closeEditModal();
+      renderProducts();
+      updateTotal();
+
+      alert('Product Updated!');
+    };
+
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+
+    // Image change nahi ki
+    localStorage.setItem('products', JSON.stringify(products));
+
+    closeEditModal();
+    renderProducts();
+    updateTotal();
+
+    alert('Product Updated!');
+  }
 }
 function deleteCategory(id){
   if(confirm('Category delete?')){ categories = categories.filter(c=>c.id!=id); localStorage.setItem('categories', JSON.stringify(categories)); renderCategories(); }
