@@ -222,7 +222,32 @@
     </div> 
   </div>
 </div>
+</div>
 
+<!-- ===== LONG PRESS WALA MODAL ===== -->
+<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4">
+  <div class="bg-white rounded-lg w-full max-w-[300px] p-5">
+    <h3 class="font-bold text-[16px]">Modify Product</h3>
+    <p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p>
+    <div class="flex justify-between mt-4">
+      <button onclick="deleteProduct()" class="text-red-500 font-bold">DELETE</button>
+      <button onclick="closeActionModal()" class="text-gray-500 font-bold">CANCEL</button>
+      <button onclick="openModifyModal()" class="text-green-600 font-bold">MODIFY</button>
+    </div>
+  </div>
+</div>
+
+<div id="editProductModal" class="fixed inset-0 bg-[#f5f5f5] hidden z-[101] overflow-y-auto">
+  <div class="bg-[#3f51b5] text-white p-3 flex gap-3"><button onclick="closeEditModal()">←</button><h2 class="font-bold">Update Product</h2></div>
+  <div class="p-4">
+    <img id="editProductImage" class="h-20 mx-auto bg-white border rounded">
+    <input id="editProductName" class="w-full mt-4 border p-3 rounded-lg font-bold" placeholder="Product Name">
+    <input id="editProductPrice" type="number" class="w-full mt-3 border p-3 rounded-lg" placeholder="Sale Price">
+    <button onclick="saveUpdatedProduct()" class="w-full bg-[#3f51b5] text-white py-3 rounded-lg font-bold mt-4">Update Product</button>
+  </div>
+</div>
+
+<script>
 <script>
 // ================= DATA =================
 let categories = [
@@ -432,6 +457,7 @@ function handleRealPrint(){
   }
 }
 function renderPreview(){
+ 
   const list = document.getElementById('previewList');
   list.innerHTML = '';
   let total = 0;
@@ -459,6 +485,43 @@ function renderPreview(){
     list.innerHTML = '<div class="text-center text-gray-400 text-[13px] mt-10">No items</div>';
   }
 }
+ }
+
+// ====== NEW LONG PRESS + DELETE CODE ======
+let longPressTimer = null;
+let selectedProductId = null;
+
+function showActionModal(id){
+  selectedProductId = id;
+  let prod = products.find(p=>p.id==id);
+  document.getElementById('actionProductName').innerText = `Do you want to modify '${prod.name}'?`;
+  document.getElementById('productActionModal').classList.remove('hidden');
+}
+function closeActionModal(){ document.getElementById('productActionModal').classList.add('hidden'); }
+function deleteProduct(){
+  if(confirm('Delete?')){ products = products.filter(p=>p.id!=selectedProductId); localStorage.setItem('products', JSON.stringify(products)); closeActionModal(); renderProducts(); }
+}
+function openModifyModal(){
+  let prod = products.find(p=>p.id==selectedProductId);
+  document.getElementById('editProductName').value = prod.name;
+  document.getElementById('editProductPrice').value = prod.price;
+  document.getElementById('editProductImage').src = prod.img || '';
+  document.getElementById('productActionModal').classList.add('hidden');
+  document.getElementById('editProductModal').classList.remove('hidden');
+}
+function closeEditModal(){ document.getElementById('editProductModal').classList.add('hidden'); }
+function saveUpdatedProduct(){
+  let prod = products.find(p=>p.id==selectedProductId);
+  prod.name = document.getElementById('editProductName').value;
+  prod.price = parseFloat(document.getElementById('editProductPrice').value);
+  localStorage.setItem('products', JSON.stringify(products));
+  closeEditModal(); renderProducts(); alert('Updated!');
+}
+function deleteCategory(id){
+  if(confirm('Category delete?')){ categories = categories.filter(c=>c.id!=id); localStorage.setItem('categories', JSON.stringify(categories)); renderCategories(); }
+}
+
+// ============= TABS =============
 
 // ================= TABS =================
 function switchTab(tab){
