@@ -527,12 +527,11 @@ function handleRealPrint(){
   // Print area ko show karke print
   const originalDisplay = printArea.style.display;
   printArea.style.display = 'block';
-  
+ 
   setTimeout(()=>{
-    window.print();
     printArea.style.display = 'none';
-  }, 300);
-}
+}, 300);
+  
 function renderPreview(){
  
   const list = document.getElementById('previewList');
