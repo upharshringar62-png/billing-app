@@ -225,7 +225,7 @@
 </div>
 
 <!-- ===== LONG PRESS WALA MODAL ===== -->
-<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4">
+<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4"
   <div class="bg-white rounded-lg w-full max-w-[300px] p-5">
     <h3 class="font-bold text-[16px]">Modify Product</h3>
     <p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p>
@@ -503,7 +503,6 @@ function showActionModal(id){
   document.getElementById('productActionModal').classList.remove('hidden');
 }
 function closeActionModal(){ document.getElementById('productActionModal').classList.add('hidden'); }
-function deleteProduct(){
   if(confirm('Delete?')){ products = products.filter(p=>p.id!=selectedProductId); localStorage.setItem('products', JSON.stringify(products)); closeActionModal(); renderProducts(); }
 }
 function openModifyModal(){
@@ -515,7 +514,6 @@ function openModifyModal(){
   document.getElementById('editProductModal').classList.remove('hidden');
 }
 function closeEditModal(){ document.getElementById('editProductModal').classList.add('hidden'); }
-function saveUpdatedProduct(){
   let prod = products.find(p=>p.id==selectedProductId);
   prod.name = document.getElementById('editProductName').value;
   prod.price = parseFloat(document.getElementById('editProductPrice').value);
