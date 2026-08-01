@@ -491,8 +491,30 @@ function closePreview(){
 }
 
 function handleRealPrint(){
-  closePreview();
+  const content = document.getElementById('previewList').innerHTML;
+  const total = document.getElementById('previewTotal').innerText;
   
+  const printWin = window.open('', '', 'height=600,width=400');
+  printWin.document.write(`
+    <html>
+    <head><title>Bill</title>
+    <style>
+      body{font-family:monospace;font-size:14px;padding:10px}
+      .item{display:flex;justify-content:space-between;border-bottom:1px dashed #ccc;padding:5px 0}
+    </style>
+    </head>
+    <body>
+      <center><b>UPHAR SINGHAR & GIFTS</b><br><small>BHAGWATI CINEMA ROAD, NARKATIAGANJ<br>MOB: 7256050678</small><hr></center>
+      <div>${content.replace(/<button[^>]*>.*?<\/button>/g, '')}</div>
+      <hr><div style="display:flex;justify-content:space-between;font-weight:bold;font-size:16px"><span>TOTAL:</span><span>${total}</span></div>
+      <hr><center><p>Thank You Visit Again!</p></center>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(()=>{ printWin.print(); printWin.close(); }, 500);
+  closePreview();
 }
 function renderPreview(){
  
