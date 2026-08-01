@@ -381,7 +381,13 @@ function renderProducts(){
         </div>
       </div>
     `;
-    card.onclick = ()=> incQty(p.id);
+     card.onclick = () => incQty(p.id);
+
+  // YEH 4 LINE NAYA ADD KARO - LONG PRESS KE LIYE
+  card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+  card.onmouseup = () => clearTimeout(longPressTimer);
+  card.ontouchstart = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+  card.ontouch
         grid.appendChild(card);
   });
 
