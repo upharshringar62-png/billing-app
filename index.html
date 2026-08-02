@@ -518,6 +518,8 @@ async function handleRealPrint(){
         let h=Math.round((img.height/img.width)*w);
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
+       ctx.fillStyle='#FFFFFF';
+ctx.fillRect(0,0,w,h);
         ctx.drawImage(img,0,0,w,h);
         let data=ctx.getImageData(0,0,w,h).data;
         let bytes=[];
@@ -592,11 +594,41 @@ await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40, 0x1B
 await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61,0x00])); // Left align
         }
       }
+     // ===== UPI QR WITH AMOUNT =====
+      let upiId = localStorage.getItem('upiId');
+      if(!upiId){
+        upiId = prompt('Apna UPI ID daalo (jaise 7256050678@ybl):','7256050678@ybl');
+        if(upiId) localStorage.setItem('upiId',upiId);
+      }
+      if(!upiId) upiId='7256050678@ybl';
+      let upiString = `upi://pay?pa=${upiId}&pn=UPHAR SINGHAR&am=${subtotal.toFixed(2)}&cu=INR&tn=Bill No ${billNo}`;
+      
+      // ESC/POS QR PRINT COMMAND - Amount ke saath
+      async function printQR(data){
+        let storeLen = data.length + 3;
+        let pL = storeLen & 0xFF, pH = (storeLen >> 8) & 0xFF;
+        let cmds = [];
+        cmds.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00]); // Model 2
+        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x06]); // Size 6
+        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30]); // Error L
+        cmds.push(...[0x1D,0x28,0x6B, pL, pH, 0x31,0x50,0x30]); // Store
+        for(let i=0;i<data.length;i++) cmds.push(data.charCodeAt(i));
+        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]); // Print
+        return new Uint8Array(cmds);
+      }
+      
+      if(savedLogo){
+        // logo already printed above
+      }
       let enc=new TextEncoder();
+      // QR Print
+      let qrBytes = await printQR(upiString);
+      await btCharacteristic.writeValueWithoutResponse(qrBytes);
+      await new Promise(r=>setTimeout(r,300));
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
+      await btCharacteristic.writeValueWithoutResponse(enc.encode("SCAN TO PAY\n"));
+      
       let data=enc.encode(t);
-      for(let i=0;i<data.length;i+=100){
-        await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100));
-        await new Promise(r=>setTimeout(r,50));
       }
       closePreview(); alert('Logo ke saath Print ho gaya!');
     }catch(e){ alert('Error: '+e.message); }
