@@ -680,10 +680,16 @@ async function handleRealPrint(){
       closePreview();
     }catch(e){ alert('Error: '+e.message); }
     return;
+  
+    }catch(e){ alert('Error: '+e.message); }
+    return;
   }
+  // System print fallback
+  let pa=document.getElementById('printArea');
+  if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
+  pa.innerHTML=`<center>${savedLogo? `<img src="${savedLogo}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`:''}<br>UPHAR SINGHAR</center><pre style="font-family:monospace;font-size:12px;">${t}</pre>`;
   window.print();
-}           await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+100));
-
+}
 function renderPreview(){
  
   const list = document.getElementById('previewList');
