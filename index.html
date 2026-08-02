@@ -622,13 +622,19 @@ await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61
       let enc=new TextEncoder();
       // QR Print
       let qrBytes = await printQR(upiString);
-      await btCharacteristic.writeValueWithoutResponse(qrBytes);
+      for(let i=0;i<qrBytes.length;i+=100){
+  await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+100));
+  await new Promise(r=>setTimeout(r,30));
+}
       await new Promise(r=>setTimeout(r,300));
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
       await btCharacteristic.writeValueWithoutResponse(enc.encode("SCAN TO PAY\n"));
 
      let data=enc.encode(t);
-await btCharacteristic.writeValueWithoutResponse(data);
+for(let i=0;i<data.length;i+=100){
+  await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100));
+  await new Promise(r=>setTimeout(r,30));
+}
 closePreview();  alert('Logo ke saath Print ho gaya!');
     }catch(e){ alert('Error: '+e.message); }
     return;
