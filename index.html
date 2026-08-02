@@ -500,96 +500,12 @@ function handlePreview(){
 function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
-async function handleRealPrint(){
-  let billNo = document.getElementById('billNoInput')?.value || '655';
-  let now = new Date();
-  let dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  let totalItems=0,totalQty=0,subtotal=0;
-  Object.keys(cart).forEach(id=>{
-    let p=products.find(x=>x.id==id);
-    if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; }
-  });
-  let savedLogo = localStorage.getItem('shopLogo') || '';
-
-  async function getLogoBytes(base64){
-    return new Promise(res=>{
-      let img=new Image();
-      img.onload=()=>{
-        let canvas=document.createElement('canvas');
-        let w=380; // High quality width
-        let h=Math.round((img.height/img.width)*w);
-        canvas.width=w; canvas.height=h;
-        let ctx=canvas.getContext('2d');
-        ctx.fillStyle='#FFFFFF';
-        ctx.fillRect(0,0,w,h);
-        ctx.drawImage(img,0,0,w,h);
-        let data=ctx.getImageData(0,0,w,h).data;
-        let bytes=[];
-        let xBytes=Math.ceil(w/8);
-        let xL=xBytes & 0xFF, xH=(xBytes>>8)&0xFF;
-        let yL=h & 0xFF, yH=(h>>8)&0xFF;
-        bytes.push(...[0x1D,0x76,0x30,0, xL, xH, yL, yH]);
-        for(let y=0;y<h;y++){
-          for(let xb=0; xb<xBytes; xb++){
-            let byte=0;
-            for(let b=0;b<8;b++){
-              let x=xb*8+b;
-              if(x>=w) continue;
-              let idx=(y*w+x)*4;
-              let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<128) byte|=(0x80>>b); // Threshold 128 = Dark quality
-            }
-            bytes.push(byte);
-          }
-        }
-        res(new Uint8Array(bytes));
-      };
-      img.onerror=()=>res(null);
-      img.src=base64;
-    });
-  }
-
-  let t='';
-  t+='--------------------------------\n';
-  t+='UPHAR SINGHAR & GIFTS\nBHAGWATI CINEMA ROAD,\nNARKATIAGANJ, 845455\nMOB. +917256050678\n';
-  t+='--------------------------------\n';
-  t+=`Bill No:${billNo}\nDate:${dateStr}\nPayment:DUE\n`;
-  t+='--------------------------------\n';
-  t+='Sr. Item Rate Qty Amt\n';
-  t+='--------------------------------\n';
-  let sr=1;
-  Object.keys(cart).forEach(id=>{
-    let p=products.find(x=>x.id==id);
-    if(!p) return;
-    let amt=p.price*cart[id];
-    let name=p.name.length>14?p.name.substring(0,14):p.name;
-    let line=`${sr}.${name}`.padEnd(16,' ');
-    line+=String(p.price).padStart(3,' ')+' ';
-    line+=String(cart[id]).padStart(2,' ')+' ';
-    line+=String(amt.toFixed(1)).padStart(5,' ');
-    t+=line+'\n';
-    sr++;
-  });
-  t+='--------------------------------\n';
-  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
-  t+='--------------------------------\n';
-  t+='GRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n';
-  t+='--------------------------------\n';
-
-  if(btCharacteristic && btServer && btServer.connected){
-    try{
-      // 1. LOGO TOP PE
-      if(savedLogo){
-        let logoBytes=await getLogoBytes(savedLogo);
-        if(logoBytes){
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
-          for(let i=0;i<logoBytes.length;i+=100){
- async function handleRealPrint(){
+  async function handleRealPrint(){
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let custName = document.getElementById('custName')?.value || '';
   let custMobile = document.getElementById('custMobile')?.value || '';
   let now = new Date();
-  let dateStr = now.toISOString().slice(0,19).replace('T',' ');
+  let dateStr = now.toLocaleString('en-IN');
   let totalItems=0,totalQty=0,subtotal=0;
   Object.keys(cart).forEach(id=>{ let p=products.find(x=>x.id==id); if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; } });
   let savedLogo = localStorage.getItem('shopLogo') || '';
@@ -615,7 +531,7 @@ async function handleRealPrint(){
               let x=xb*8+b; if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<120) byte|=(0x80>>b); // 120 = Ekdum dark
+              if(gray<120) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
@@ -631,48 +547,33 @@ async function handleRealPrint(){
   t+='--------------------------------\n';
   t+=`Bill No:${billNo}\nDate:${dateStr}\n`;
   if(custName) t+=`Customer: ${custName}\n`;
-  if(custMobile) t+=`(${custMobile})\n`;
-  t+=`Payment:DUE\n`;
-  t+='--------------------------------\n';
-  t+='Sr. Item Rate Qty Amt\n';
-  t+='--------------------------------\n';
+  if(custMobile) t+=`Mob: ${custMobile}\n`;
+  t+='Payment:DUE\n--------------------------------\nSr. Item Rate Qty Amt\n--------------------------------\n';
   let sr=1;
-  Object.keys(cart).forEach(id=>{
-    let p=products.find(x=>x.id==id); if(!p) return;
-    let line=`${sr}.${p.name}`.padEnd(16,' ')+String(p.price).padStart(3,' ')+' '+String(cart[id]).padStart(2,' ')+' '+String((p.price*cart[id]).toFixed(1)).padStart(6,' ');
-    t+=line+'\n'; sr++;
-  });
+  Object.keys(cart).forEach(id=>{ let p=products.find(x=>x.id==id); if(!p) return; t+=`${sr}.${p.name}`.padEnd(16,' ')+String(p.price).padStart(3,' ')+' '+String(cart[id]).padStart(2,' ')+' '+String((p.price*cart[id]).toFixed(1)).padStart(5,' ')+'\n'; sr++; });
   t+='--------------------------------\n';
-  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
-  t+='--------------------------------\nGRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n--------------------------------\n';
+  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n--------------------------------\nGRAND TOTAL\nRs. ${subtotal.toFixed(2)}\n--------------------------------\n`;
 
   if(btCharacteristic && btServer && btServer.connected){
     try{
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40])); // Reset
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
           await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
           for(let i=0;i<logoBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,40)); }
-          await new Promise(r=>setTimeout(r,400));
         }
       }
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00, 0x1B,0x45,0x00]));
-      let enc=new TextEncoder();
-      let data=enc.encode(t);
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
+      let enc=new TextEncoder(); let data=enc.encode(t);
       for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,30)); }
-
-      // QR SABSE NICHE
       let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
       let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
-      async function printQR(d){
-        let len=d.length+3, pL=len&0xFF, pH=(len>>8)&0xFF, c=[];
-        c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30, 0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
-        for(let i=0;i<d.length;i++) c.push(d.charCodeAt(i));
-        c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
-        return new Uint8Array(c);
-      }
-      let qrBytes=await printQR(upiString);
+      let len=upiString.length+3, pL=len&0xFF, pH=(len>>8)&0xFF, c=[];
+      c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30, 0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
+      for(let i=0;i<upiString.length;i++) c.push(upiString.charCodeAt(i));
+      c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
+      let qrBytes=new Uint8Array(c);
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
       for(let i=0;i<qrBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,40)); }
       let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
@@ -680,15 +581,9 @@ async function handleRealPrint(){
       closePreview();
     }catch(e){ alert('Error: '+e.message); }
     return;
-  
-    }catch(e){ alert('Error: '+e.message); }
-    return;
   }
-  // System print fallback
-  let pa=document.getElementById('printArea');
-  if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
-  pa.innerHTML=`<center>${savedLogo? `<img src="${savedLogo}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`:''}<br>UPHAR SINGHAR</center><pre style="font-family:monospace;font-size:12px;">${t}</pre>`;
-  window.print();
+  let pa=document.getElementById('printArea'); if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
+  pa.innerHTML=`<pre>${t}</pre>`; window.print();
 }
 function renderPreview(){
  
