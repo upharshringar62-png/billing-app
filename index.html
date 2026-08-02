@@ -514,7 +514,7 @@ async function handleRealPrint(){
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=350; // logo width 350 dot
+        let w=300; // logo width 300 dot
         let h=Math.round((img.height/img.width)*w);
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
@@ -553,16 +553,21 @@ async function handleRealPrint(){
   t+='UPHAR SINGHAR & GIFTS\nBHAGWATI CINEMA ROAD,\nNARKATIAGANJ, 845455\nMOB. +917256050678\n';
   t+='--------------------------------\n';
   t+=`Bill No:${billNo}\nDate:${dateStr}\nPayment:DUE\n`;
-  t+='--------------------------------\n';
-  t+=pad('Sr.',3)+pad('Item',15)+pad('Rate',5,true)+pad('Qty',4,true)+pad('Amt',6,true)+'\n';
-  t+='--------------------------------\n';
+  t+='------------------------------\n';
+t+='No Item Rate Qty Amt\n';
+t+='------------------------------\n';
   let sr=1;
   Object.keys(cart).forEach(id=>{
     let p=products.find(x=>x.id===id);
     if(!p) return;
-    let amt=p.price*cart[id];
-    let name=p.name.length>13? p.name.substring(0,13): p.name;
-    t+=pad(sr+'.',3)+pad(name,15)+pad(p.price,5,true)+pad(cart[id],4,true)+pad(amt.toFixed(1),6,true)+'\n';
+  let amt=p.price*cart[id];
+let name=p.name;
+let line=`${sr}.${name}`;
+line=line.padEnd(14,' ');
+line+=String(p.price).padStart(4,' ')+' ';
+line+=String(cart[id]).padStart(2,' ')+' ';
+line+=String(amt.toFixed(1)).padStart(5,' ');
+t+=line+'\n';
     sr++;
   });
   t+='--------------------------------\n';
@@ -581,8 +586,10 @@ async function handleRealPrint(){
             await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+100));
             await new Promise(r=>setTimeout(r,50));
           }
-        await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A]));
-        await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01])); // center me rakho
+        // DARK PRINT ON + Gap fix
+await new Promise(r=>setTimeout(r,500)); // Logo thanda hone do
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40, 0x1B,0x45,0x01, 0x1B,0x21,0x08])); // Init + Bold + Dark
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61,0x00])); // Left align
         }
       }
       let enc=new TextEncoder();
