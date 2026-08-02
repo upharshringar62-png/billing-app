@@ -499,36 +499,32 @@ function closePreview(){
 async function handleRealPrint(){
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let now = new Date();
-  let dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  let dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   let totalItems=0,totalQty=0,subtotal=0;
   Object.keys(cart).forEach(id=>{
-    let p=products.find(x=>x.id===id);
+    let p=products.find(x=>x.id==id);
     if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; }
   });
-  function pad(s,l,left){ s=String(s); if(s.length>l) s=s.substring(0,l); return left? s.padStart(l): s.padEnd(l); }
   let savedLogo = localStorage.getItem('shopLogo') || '';
 
-  // LOGO KO PRINTER COMMAND ME BADLO
   async function getLogoBytes(base64){
     return new Promise(res=>{
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=300; // logo width 300 dot
+        let w=380; // High quality width
         let h=Math.round((img.height/img.width)*w);
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
-       ctx.fillStyle='#FFFFFF';
-ctx.fillRect(0,0,w,h);
+        ctx.fillStyle='#FFFFFF';
+        ctx.fillRect(0,0,w,h);
         ctx.drawImage(img,0,0,w,h);
         let data=ctx.getImageData(0,0,w,h).data;
         let bytes=[];
         let xBytes=Math.ceil(w/8);
-        // GS v 0 command header
         let xL=xBytes & 0xFF, xH=(xBytes>>8)&0xFF;
         let yL=h & 0xFF, yH=(h>>8)&0xFF;
-        let header=[0x1D,0x76,0x30,0, xL, xH, yL, yH];
-        bytes.push(...header);
+        bytes.push(...[0x1D,0x76,0x30,0, xL, xH, yL, yH]);
         for(let y=0;y<h;y++){
           for(let xb=0; xb<xBytes; xb++){
             let byte=0;
@@ -537,7 +533,7 @@ ctx.fillRect(0,0,w,h);
               if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<200) byte|=(0x80>>b);
+              if(gray<128) byte|=(0x80>>b); // Threshold 128 = Dark quality
             }
             bytes.push(byte);
           }
@@ -549,104 +545,93 @@ ctx.fillRect(0,0,w,h);
     });
   }
 
-  // Text Bill with proper gap
   let t='';
   t+='--------------------------------\n';
   t+='UPHAR SINGHAR & GIFTS\nBHAGWATI CINEMA ROAD,\nNARKATIAGANJ, 845455\nMOB. +917256050678\n';
   t+='--------------------------------\n';
   t+=`Bill No:${billNo}\nDate:${dateStr}\nPayment:DUE\n`;
-  t+='------------------------------\n';
-t+='No Item Rate Qty Amt\n';
-t+='------------------------------\n';
+  t+='--------------------------------\n';
+  t+='Sr. Item Rate Qty Amt\n';
+  t+='--------------------------------\n';
   let sr=1;
   Object.keys(cart).forEach(id=>{
     let p=products.find(x=>x.id==id);
     if(!p) return;
     let amt=p.price*cart[id];
-    let name=p.name;
-    let line=`${sr}.${name}`;
-    line=line.padEnd(14,' ');
-    line+=String(p.price).padStart(4,' ')+' ';
+    let name=p.name.length>14?p.name.substring(0,14):p.name;
+    let line=`${sr}.${name}`.padEnd(16,' ');
+    line+=String(p.price).padStart(3,' ')+' ';
     line+=String(cart[id]).padStart(2,' ')+' ';
     line+=String(amt.toFixed(1)).padStart(5,' ');
     t+=line+'\n';
     sr++;
   });
-t+='--------------------------------\n';
-  t+=`TOTAL ITEMS: ${totalItems} | TOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
-  t+='--------------------------------\nGRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n--------------------------------\n';
-  // BLUETOOTH PRINT WITH LOGO
+  t+='--------------------------------\n';
+  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
+  t+='--------------------------------\n';
+  t+='GRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n';
+  t+='--------------------------------\n';
+
   if(btCharacteristic && btServer && btServer.connected){
     try{
+      // 1. LOGO TOP PE
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
-          // center align logo
           await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
           for(let i=0;i<logoBytes.length;i+=100){
             await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+100));
-            await new Promise(r=>setTimeout(r,50));
+            await new Promise(r=>setTimeout(r,30));
           }
-        // DARK PRINT ON + Gap fix
-await new Promise(r=>setTimeout(r,500)); // Logo thanda hone do
-await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40, 0x1B,0x45,0x01, 0x1B,0x21,0x08])); // Init + Bold + Dark
-await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61,0x00])); // Left align
+          await new Promise(r=>setTimeout(r,300));
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40, 0x1B,0x45,0x01, 0x1B,0x61,0x00]));
         }
       }
-     // ===== UPI QR WITH AMOUNT =====
-      let upiId = localStorage.getItem('upiId');
-      if(!upiId){
-        upiId = prompt('Apna UPI ID daalo (jaise 7256050678@ybl):','7256050678@ybl');
-        if(upiId) localStorage.setItem('upiId',upiId);
-      }
-      if(!upiId) upiId='7256050678@ybl';
-      let upiString = `upi://pay?pa=${upiId}&pn=UPHAR SINGHAR&am=${subtotal.toFixed(2)}&cu=INR&tn=Bill No ${billNo}`;
-      
-      // ESC/POS QR PRINT COMMAND - Amount ke saath
-      async function printQR(data){
-        let storeLen = data.length + 3;
-        let pL = storeLen & 0xFF, pH = (storeLen >> 8) & 0xFF;
-        let cmds = [];
-        cmds.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00]); // Model 2
-        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x06]); // Size 6
-        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30]); // Error L
-        cmds.push(...[0x1D,0x28,0x6B, pL, pH, 0x31,0x50,0x30]); // Store
-        for(let i=0;i<data.length;i++) cmds.push(data.charCodeAt(i));
-        cmds.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]); // Print
-        return new Uint8Array(cmds);
-      }
-      
-      if(savedLogo){
-        // logo already printed above
-      }
+      // 2. BILL TEXT MIDDLE ME
       let enc=new TextEncoder();
-      // QR Print
-      let qrBytes = await printQR(upiString);
-      for(let i=0;i<qrBytes.length;i+=100){
-  await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+100));
-  await new Promise(r=>setTimeout(r,30));
-}
-      await new Promise(r=>setTimeout(r,300));
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
-      await btCharacteristic.writeValueWithoutResponse(enc.encode("SCAN TO PAY\n"));
+      let data=enc.encode(t);
+      for(let i=0;i<data.length;i+=100){
+        await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100));
+        await new Promise(r=>setTimeout(r,30));
+      }
+      await new Promise(r=>setTimeout(r,200));
 
-     let data=enc.encode(t);
-for(let i=0;i<data.length;i+=100){
-  await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100));
-  await new Promise(r=>setTimeout(r,30));
-}
-closePreview();  alert('Logo ke saath Print ho gaya!');
+      // 3. QR SABSE NICHE - RIGHT WALE BILL JAISA
+      let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
+      let upiString = `upi://pay?pa=${upiId}&pn=UPHAR SINGHAR&am=${subtotal.toFixed(2)}&cu=INR&tn=Bill ${billNo}`;
+      async function printQR(d){
+        let len=d.length+3; let pL=len&0xFF, pH=(len>>8)&0xFF;
+        let c=[];
+        c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00]);
+        c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08]);
+        c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30]);
+        c.push(...[0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
+        for(let i=0;i<d.length;i++) c.push(d.charCodeAt(i));
+        c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
+        return new Uint8Array(c);
+      }
+      let qrBytes=await printQR(upiString);
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01])); // Center QR
+      for(let i=0;i<qrBytes.length;i+=100){
+        await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+100));
+        await new Promise(r=>setTimeout(r,30));
+      }
+      await new Promise(r=>setTimeout(r,300));
+      let footer=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
+      for(let i=0;i<footer.length;i+=100){
+        await btCharacteristic.writeValueWithoutResponse(footer.slice(i,i+100));
+        await new Promise(r=>setTimeout(r,30));
+      }
+      closePreview(); alert('Right wale bill jaisa print ho gaya!');
     }catch(e){ alert('Error: '+e.message); }
     return;
   }
-
-  // System print fallback
+  // fallback
   let pa=document.getElementById('printArea');
   if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
-  pa.innerHTML=`<center>${savedLogo? `<img src="${savedLogo}" style="width:120px;height:120px;border-radius:50%;border:2px solid #000;object-fit:cover;">`:''}<br>UPHAR SINGHAR & GIFTS<br>BHAGWATI CINEMA ROAD<br>NARKATIAGANJ, 845455<br>MOB. +917256050678</center><pre style="font-family:monospace;font-size:12px;">${t}</pre>`;
+  pa.innerHTML=`<center><img src="${savedLogo}" style="width:140px;height:140px;border-radius:50%;object-fit:cover;"><br>UPHAR SINGHAR & GIFTS</center><pre>${t}</pre><center>QR Yaha</center>`;
   window.print();
 }
-
 function renderPreview(){
  
   const list = document.getElementById('previewList');
