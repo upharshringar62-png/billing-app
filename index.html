@@ -572,10 +572,9 @@ t+='------------------------------\n';
     t+=line+'\n';
     sr++;
   });
-  t+='--------------------------------\n';
-  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
-  t+='--------------------------------\nGRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n--------------------------------\nThank You Visit Again!\n\n\n';
-
+t+='--------------------------------\n';
+  t+=`TOTAL ITEMS: ${totalItems} | TOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
+  t+='--------------------------------\nGRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n--------------------------------\n';
   // BLUETOOTH PRINT WITH LOGO
   if(btCharacteristic && btServer && btServer.connected){
     try{
