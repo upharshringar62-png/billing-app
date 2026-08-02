@@ -496,110 +496,110 @@ function handlePreview(){
 function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
-
-function handleRealPrint(){
+async function handleRealPrint(){
   let billNo = document.getElementById('billNoInput')?.value || '655';
-  let custName = localStorage.getItem('lastCustomer') || '';
-  let custMob = localStorage.getItem('lastMobile') || '';
-  let payment = 'DUE';
   let now = new Date();
   let dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-
-  let totalItems = 0, totalQty = 0, subtotal = 0;
+  let totalItems=0,totalQty=0,subtotal=0;
   Object.keys(cart).forEach(id=>{
-    let p = products.find(x=>x.id===id);
+    let p=products.find(x=>x.id===id);
     if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; }
   });
-
-  function pad(str, len, left=false){
-    str = String(str);
-    if(str.length>len) str = str.substring(0,len);
-    return left? str.padStart(len) : str.padEnd(len);
-  }
-
+  function pad(s,l,left){ s=String(s); if(s.length>l) s=s.substring(0,l); return left? s.padStart(l): s.padEnd(l); }
   let savedLogo = localStorage.getItem('shopLogo') || '';
 
-  // Bluetooth Text Bill - Proper Gap ke saath
-  let t = '';
-  t += ' U P\n';
-  t += ' U P H A R\n';
-  t += ' SINGHAR & GIFTS\n';
-  t += '--------------------------------\n';
-  t += 'UPHAR SINGHAR & GIFTS\n';
-  t += 'BHAGWATI CINEMA ROAD,\n';
-  t += 'NARKATIAGANJ, 845455\n';
-  t += 'MOB. +917256050678\n';
-  t += '--------------------------------\n';
-  t += `Bill No:${billNo}\n`;
-  t += `Date:${dateStr}\n`;
-  if(custName) t += `Customer: ${custName}\n`;
-  if(custMob) t += ` (${custMob})\n`;
-  t += `Payment:${payment}\n`;
-  t += '--------------------------------\n';
-  t += pad('Sr.',3)+pad('Item',15)+pad('Rate',5,true)+pad('Qty',4,true)+pad('Amt',6,true)+'\n';
-  t += '--------------------------------\n';
+  // LOGO KO PRINTER COMMAND ME BADLO
+  async function getLogoBytes(base64){
+    return new Promise(res=>{
+      let img=new Image();
+      img.onload=()=>{
+        let canvas=document.createElement('canvas');
+        let w=200; // logo width 200 dot
+        let h=Math.round((img.height/img.width)*w);
+        canvas.width=w; canvas.height=h;
+        let ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        let data=ctx.getImageData(0,0,w,h).data;
+        let bytes=[];
+        let xBytes=Math.ceil(w/8);
+        // GS v 0 command header
+        let xL=xBytes & 0xFF, xH=(xBytes>>8)&0xFF;
+        let yL=h & 0xFF, yH=(h>>8)&0xFF;
+        let header=[0x1D,0x76,0x30,0, xL, xH, yL, yH];
+        bytes.push(...header);
+        for(let y=0;y<h;y++){
+          for(let xb=0; xb<xBytes; xb++){
+            let byte=0;
+            for(let b=0;b<8;b++){
+              let x=xb*8+b;
+              if(x>=w) continue;
+              let idx=(y*w+x)*4;
+              let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
+              if(gray<150) byte|=(0x80>>b);
+            }
+            bytes.push(byte);
+          }
+        }
+        res(new Uint8Array(bytes));
+      };
+      img.onerror=()=>res(null);
+      img.src=base64;
+    });
+  }
+
+  // Text Bill with proper gap
+  let t='';
+  t+='--------------------------------\n';
+  t+='UPHAR SINGHAR & GIFTS\nBHAGWATI CINEMA ROAD,\nNARKATIAGANJ, 845455\nMOB. +917256050678\n';
+  t+='--------------------------------\n';
+  t+=`Bill No:${billNo}\nDate:${dateStr}\nPayment:DUE\n`;
+  t+='--------------------------------\n';
+  t+=pad('Sr.',3)+pad('Item',15)+pad('Rate',5,true)+pad('Qty',4,true)+pad('Amt',6,true)+'\n';
+  t+='--------------------------------\n';
   let sr=1;
   Object.keys(cart).forEach(id=>{
-    let p = products.find(x=>x.id===id);
+    let p=products.find(x=>x.id===id);
     if(!p) return;
-    let amt = p.price*cart[id];
-    let name = p.name.length>13? p.name.substring(0,13) : p.name;
-    t += pad(sr+'.',3)+pad(name,15)+pad(p.price,5,true)+pad(cart[id],4,true)+pad(amt.toFixed(1),6,true)+'\n';
+    let amt=p.price*cart[id];
+    let name=p.name.length>13? p.name.substring(0,13): p.name;
+    t+=pad(sr+'.',3)+pad(name,15)+pad(p.price,5,true)+pad(cart[id],4,true)+pad(amt.toFixed(1),6,true)+'\n';
     sr++;
   });
-  t += '--------------------------------\n';
-  t += `TOTAL ITEMS: ${totalItems}\n`;
-  t += `TOTAL QTY: ${totalQty}\n`;
-  t += `Subtotal: Rs. ${subtotal.toFixed(2)}\n`;
-  t += '--------------------------------\n';
-  t += ' GRAND TOTAL\n';
-  t += ` Rs. ${subtotal.toFixed(2)}\n`;
-  t += '--------------------------------\n';
-  t += ' Thank You Visit Again!\n\n\n';
+  t+='--------------------------------\n';
+  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n`;
+  t+='--------------------------------\nGRAND TOTAL\nRs. '+subtotal.toFixed(2)+'\n--------------------------------\nThank You Visit Again!\n\n\n';
 
+  // BLUETOOTH PRINT WITH LOGO
   if(btCharacteristic && btServer && btServer.connected){
-    (async()=>{
-      const enc = new TextEncoder();
-      let data = enc.encode(t);
+    try{
+      if(savedLogo){
+        let logoBytes=await getLogoBytes(savedLogo);
+        if(logoBytes){
+          // center align logo
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+          for(let i=0;i<logoBytes.length;i+=100){
+            await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+100));
+            await new Promise(r=>setTimeout(r,50));
+          }
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // left align
+        }
+      }
+      let enc=new TextEncoder();
+      let data=enc.encode(t);
       for(let i=0;i<data.length;i+=100){
         await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100));
-        await new Promise(r=>setTimeout(r,80));
+        await new Promise(r=>setTimeout(r,50));
       }
-      closePreview(); alert('Print ho gaya!');
-    })();
+      closePreview(); alert('Logo ke saath Print ho gaya!');
+    }catch(e){ alert('Error: '+e.message); }
     return;
   }
 
-  // System Print - Logo ke saath
-  let printArea = document.getElementById('printArea');
-  if(!printArea){ printArea=document.createElement('div'); printArea.id='printArea'; document.body.appendChild(printArea); }
-  printArea.innerHTML = `
-    <div style="width:300px; font-family:monospace; font-size:13px; color:#000;">
-      <center>
-        ${savedLogo? `<img src="${savedLogo}" style="width:120px; height:120px; border-radius:50%; border:2px solid #000; object-fit:cover;"><br><br>` :
-        `<div style="width:120px; height:120px; border:2px solid #000; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column;"><b style="font-size:32px;">UP</b><b>UPHAR</b><span style="font-size:8px;">SINGHAR & GIFTS</span></div><br>`}
-        UPHAR SINGHAR & GIFTS<br>BHAGWATI CINEMA ROAD,<br>NARKATIAGANJ, 845455<br>MOB. +917256050678
-      </center>
-      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
-      <div>Bill No:${billNo}<br>Date:${dateStr}<br>Payment:${payment}</div>
-      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
-      <table style="width:100%; font-size:12px; border-collapse:collapse;">
-        <tr style="font-weight:bold;"><td>Sr.</td><td>Item</td><td style="text-align:right;">Rate</td><td style="text-align:right;">Qty</td><td style="text-align:right;">Amt</td></tr>
-        <tr><td colspan="5" style="border-top:1px dashed #000;"></td></tr>
-        ${Object.keys(cart).map((id,i)=>{
-          let p=products.find(x=>x.id===id);
-          if(!p) return '';
-          return `<tr><td>${i+1}.</td><td>${p.name.substring(0,12)}</td><td style="text-align:right;">${p.price}</td><td style="text-align:right;">${cart[id]}</td><td style="text-align:right;">${(p.price*cart[id]).toFixed(1)}</td></tr>`;
-        }).join('')}
-      </table>
-      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
-      <div>TOTAL ITEMS: ${totalItems}<br>TOTAL QTY: ${totalQty}<br><span style="float:right;">Subtotal: ₹ ${subtotal.toFixed(2)}</span><div style="clear:both;"></div></div>
-      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
-      <center><b style="font-size:16px;">GRAND TOTAL<br>₹${subtotal.toFixed(2)}</b></center>
-      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
-      <center>Thank You Visit Again!</center>
-    </div>
-  `;
+  // System print fallback
+  let pa=document.getElementById('printArea');
+  if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
+  pa.innerHTML=`<center>${savedLogo? `<img src="${savedLogo}" style="width:120px;height:120px;border-radius:50%;border:2px solid #000;object-fit:cover;">`:''}<br>UPHAR SINGHAR & GIFTS<br>BHAGWATI CINEMA ROAD<br>NARKATIAGANJ, 845455<br>MOB. +917256050678</center><pre style="font-family:monospace;font-size:12px;">${t}</pre>`;
   window.print();
 }
 
