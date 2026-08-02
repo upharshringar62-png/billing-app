@@ -514,7 +514,7 @@ async function handleRealPrint(){
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=200; // logo width 200 dot
+        let w=350; // logo width 350 dot
         let h=Math.round((img.height/img.width)*w);
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
@@ -535,7 +535,7 @@ async function handleRealPrint(){
               if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<150) byte|=(0x80>>b);
+              if(gray<200) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
@@ -581,8 +581,8 @@ async function handleRealPrint(){
             await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+100));
             await new Promise(r=>setTimeout(r,50));
           }
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // left align
+        await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A]));
+        await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01])); // center me rakho
         }
       }
       let enc=new TextEncoder();
