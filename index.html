@@ -497,24 +497,51 @@ function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
 
-
 function handleRealPrint(){
+  let billNo = document.getElementById('billNoInput')?.value || '659';
+  let custName = prompt('Customer Name:', 'Mantu jee') || '';
+  let custMob = prompt('Customer Mobile:', '9801104843') || '';
+  let payment = prompt('Payment Method (CASH/UPI/DUE):', 'DUE') || 'DUE';
+  let now = new Date();
+  let dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+now.toLocaleTimeString();
+
+  let totalItems = 0, totalQty = 0, subtotal = 0;
+  Object.keys(cart).forEach(id=>{
+    let prod = products.find(p=>p.id===id);
+    if(prod){ totalItems++; totalQty+=cart[id]; subtotal+=prod.price*cart[id]; }
+  });
+
+  // Text for Bluetooth Printer - Right side jaisa
   let textBill = '';
   textBill += ' UPHAR SINGHAR & GIFTS\n';
-  textBill += 'BHAGWATI CINEMA ROAD, NARKATIAGANJ\n';
-  textBill += ' MOB: 7256050678\n';
+  textBill += ' BHAGWATI CINEMA ROAD,\n';
+  textBill += ' NARKATIAGANJ, 845455\n';
+  textBill += ' MOB. +917256050678\n';
   textBill += '--------------------------------\n';
-  let total = 0;
+  textBill += `Bill No:${billNo}\n`;
+  textBill += `Date:${dateStr}\n`;
+  if(custName) textBill += `Customer: ${custName}\n`;
+  if(custMob) textBill += ` (${custMob})\n`;
+  textBill += `Payment:${payment}\n`;
+  textBill += '--------------------------------\n';
+  textBill += 'Sr. Item Rate Qty Amt\n';
+  textBill += '--------------------------------\n';
+  let sr=1;
   Object.keys(cart).forEach(id=>{
     let prod = products.find(p=>p.id===id);
     if(!prod) return;
     let amt = prod.price * cart[id];
-    total += amt;
-    textBill += `${prod.name}\n`;
-    textBill += `Rs.${prod.price} x ${cart[id]} = Rs.${amt}\n`;
-    textBill += '--------------------------------\n';
+    let name = prod.name.length>14? prod.name.substring(0,14) : prod.name;
+    textBill += `${sr}. ${name} ${prod.price} ${cart[id]} ${amt.toFixed(1)}\n`;
+    sr++;
   });
-  textBill += `TOTAL: Rs.${total.toFixed(1)}\n`;
+  textBill += '--------------------------------\n';
+  textBill += `TOTAL ITEMS: ${totalItems}\n`;
+  textBill += `TOTAL QTY: ${totalQty}\n`;
+  textBill += `Subtotal: Rs. ${subtotal.toFixed(2)}\n`;
+  textBill += '--------------------------------\n';
+  textBill += ' GRAND TOTAL\n';
+  textBill += ` Rs.${subtotal.toFixed(2)}\n`;
   textBill += '--------------------------------\n';
   textBill += ' Thank You Visit Again!\n\n\n';
 
@@ -526,16 +553,58 @@ function handleRealPrint(){
         for(let i=0; i<data.length; i+=100){
           let chunk = data.slice(i, i+100);
           await btCharacteristic.writeValueWithoutResponse(chunk);
-          await new Promise(r=>setTimeout(r, 80));
+          await new Promise(r=>setTimeout(r,80));
         }
         closePreview();
-        alert('Bill Printed Direct!');
+        alert('Bill Printed!');
       }catch(e){ alert('Bluetooth fail: '+e.message); }
     })();
     return;
   }
-  alert('Pehle SETTINGS me Bluetooth Printer CONNECT karo! Fir direct print hoga bina PDF ke');
-  document.getElementById('settingsPage').classList.remove('hidden');
+  // Preview print
+  let printArea = document.getElementById('printArea');
+  if(!printArea){
+    printArea = document.createElement('div');
+    printArea.id='printArea';
+    document.body.appendChild(printArea);
+  }
+  printArea.innerHTML = `
+    <div style="font-family:monospace; font-size:12px; text-align:center; width:280px; margin:auto;">
+      <div style="width:120px; height:120px; border:2px solid #000; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+        <div style="font-size:40px; font-weight:bold;">UP</div>
+        <div style="font-size:14px; font-weight:bold;">UPHAR</div>
+        <div style="font-size:8px;">SINGHAR & GIFTS</div>
+      </div>
+      <div>UPHAR SINGHAR & GIFTS<br>BHAGWATI CINEMA ROAD,<br>NARKATIAGANJ, 845455<br>MOB. +917256050678</div>
+      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
+      <div style="text-align:left;">
+        Bill No:${billNo}<br>
+        Date:${dateStr}<br>
+        Customer: ${custName} ${custMob? '('+custMob+')':''}<br>
+        Payment:${payment}
+      </div>
+      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Sr. Item</span><span>Rate Qty Amt</span></div>
+      <div style="border-top:1px dashed #000; margin:5px 0;"></div>
+      <div id="printItems" style="text-align:left;"></div>
+      <div style="border-top:1px dashed #000; margin:10px 0;"></div>
+      <div style="text-align:left;">TOTAL ITEMS: ${totalItems}<br>TOTAL QTY: ${totalQty}<br><span style="float:right;">Subtotal: ₹ ${subtotal.toFixed(2)}</span></div>
+      <div style="clear:both; border-top:1px dashed #000; margin:10px 0;"></div>
+      <div style="font-size:16px; font-weight:bold;">GRAND TOTAL<br>₹${subtotal.toFixed(2)}</div>
+      <div style="margin:15px 0;"><div style="width:120px; height:120px; background:#eee; margin:auto; display:flex; align-items:center; justify-content:center;">QR CODE</div><div style="font-size:10px;">SCAN TO PAY</div></div>
+      <div>Thank You Visit Again!</div>
+    </div>
+  `;
+  let itemsHtml='';
+  let s=1;
+  Object.keys(cart).forEach(id=>{
+    let p=products.find(x=>x.id===id);
+    if(!p) return;
+    itemsHtml+=`<div style="display:flex; justify-content:space-between;"><span>${s}. ${p.name}</span><span>${p.price} ${cart[id]} ${(p.price*cart[id]).toFixed(1)}</span></div>`;
+    s++;
+  });
+  document.getElementById('printItems').innerHTML=itemsHtml;
+  window.print();
 }
 
 function renderPreview(){
