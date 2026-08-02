@@ -626,10 +626,10 @@ await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61
       await new Promise(r=>setTimeout(r,300));
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x0A]));
       await btCharacteristic.writeValueWithoutResponse(enc.encode("SCAN TO PAY\n"));
-      
-      let data=enc.encode(t);
-      }
-      closePreview(); alert('Logo ke saath Print ho gaya!');
+
+     let data=enc.encode(t);
+await btCharacteristic.writeValueWithoutResponse(data);
+closePreview();  alert('Logo ke saath Print ho gaya!');
     }catch(e){ alert('Error: '+e.message); }
     return;
   }
