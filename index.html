@@ -733,42 +733,93 @@ if(fab){
 }
 
 function addProductWithCategory(){
-  let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
-  let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, `1`);
-  let catIdx = parseInt(catChoice)-1;
-  let targetCatId = categories[catIdx]?.id || categories[0]?.id || '1';
-  
+
+  let categoriesList = categories
+    .map((c,i)=>`${i+1}. ${c.name}`)
+    .join('\n');
+
+  let catChoice = prompt(
+    'Kis Category me add karna hai?\n\n' +
+    categoriesList
+  );
+
+  if(!catChoice) return;
+
+  let catIdx = parseInt(catChoice) - 1;
+
+  if(catIdx < 0 || catIdx >= categories.length) return;
+
+  let targetCatId = categories[catIdx].id;
+
   let name = prompt('Product name:');
+
   if(!name) return;
-  let price = prompt('Price:', '20');
+
+  let price = prompt('Price:');
+
+  if(!price) return;
+
   products.push({
     id: Date.now().toString(),
     name: name,
-    price: parseFloat(price)||20,
+    price: parseFloat(price) || 0,
     cat: targetCatId,
     qty: 0,
     img: ''
   });
-  localStorage.setItem('products', JSON.stringify(products));
+
+  localStorage.setItem(
+    'products',
+    JSON.stringify(products)
+  );
+
   renderProducts();
   renderCategories();
+
 }
 
 function addItemDirect(){
-  let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`);
+
+  let categoryName =
+    categories.find(c => c.id === selectedCat)?.name || "All";
+
+  let name = prompt(
+    "Product Name\nCategory: " + categoryName
+  );
+
   if(!name) return;
-  let price = prompt('Price:', '20');
+
+  let price = prompt("Price:");
+
+  if(!price) return;
+
   products.push({
+
     id: Date.now().toString(),
+
     name: name,
-    price: parseFloat(price)||20,
-    cat: selectedCat==='all'?'1':selectedCat,
+
+    price: parseFloat(price) || 0,
+
+    cat: selectedCat === "all"
+      ? "1"
+      : selectedCat,
+
     qty: 0,
-    img: ''
+
+    img: ""
+
   });
-  localStorage.setItem('products', JSON.stringify(products));
+
+  localStorage.setItem(
+    "products",
+    JSON.stringify(products)
+  );
+
   renderProducts();
+
   renderCategories();
+
 }
 
 if(fab){
@@ -781,13 +832,25 @@ if(fab){
 function addNewItemInCat(){
   addItemDirect(); // Direct add, category nahi khulega
 }
- document.getElementById('newCatBtn').onclick = ()=>{
+document.getElementById('newCatBtn').onclick = ()=>{
+
   let name = prompt('New Category name likho:');
-  if(name){
-    categories.push({id: Date.now().toString(), name: name});
-    renderCategories();
-  }
-};
+
+  if(!name) return;
+
+  categories.push({
+    id: Date.now().toString(),
+    name: name
+  });
+
+  localStorage.setItem(
+    'categories',
+    JSON.stringify(categories)
+  );
+
+  renderCategories();
+
+}; 
 document.getElementById('drawerOverlay').onclick = closeDrawer;
 
 // ================= SEARCH =================
