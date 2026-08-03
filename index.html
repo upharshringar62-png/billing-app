@@ -872,9 +872,10 @@ renderCategories();
 renderProducts();
 updateTotal();
  </script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
@@ -890,28 +891,43 @@ window.db = db;
 const prodCol = collection(db, "products");
 window.prodCol = prodCol;
 
-import { onSnapshot as live } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-live(prodCol, (snap)=>{
-  window.products = [];
+console.log("Firebase Connected!");
+
+// Firebase se maal lao
+onSnapshot(prodCol, (snap)=>{
+  let list = [];
   snap.forEach(d=>{
     let data = d.data();
     data.firebaseId = d.id;
     if(!data.id) data.id = d.id;
-    window.products.push(data);
+    list.push(data);
   });
-  if(window.renderProducts) window.renderProducts();
-  if(window.renderCategories) window.renderCategories();
+  // Agar Firebase me maal hai to hi overwrite karo
+  if(list.length > 0){
+    window.products = list;
+    console.log("Loaded from Firebase:", list.length);
+    if(window.renderProducts) window.renderProducts();
+    if(window.renderCategories) window.renderCategories();
+  }
 });
 
+// Permanent Delete
 window.deleteProduct = async (id) => {
   let p = window.products.find(x=>x.id==id || x.firebaseId==id);
-  if(p && confirm("Pakka delete karna hai? Wapas nahi aayega!")){
-    const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    await deleteDoc(doc(window.db, "products", p.firebaseId));
-    alert("Delete ho gaya permanent!");
+  if(p){
+    if(confirm("Pakka delete karna hai? Wapas nahi aayega!")){
+      // Agar firebaseId hai to Firebase se delete
+      if(p.firebaseId){
+        await deleteDoc(doc(db, "products", p.firebaseId));
+        alert("Firebase se permanent delete!");
+      } else {
+        // Purana wala local delete
+        window.products = window.products.filter(x=>x.id!=id);
+        if(window.renderProducts) window.renderProducts();
+      }
+    }
   }
-} 
-console.log("Firebase Connected!");
+};
 </script>
 </body>
 </html>
