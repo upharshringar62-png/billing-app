@@ -315,9 +315,7 @@ let categories = [
   {id:'10', name:'Juda Pins'}
 ];
 
-window.products = [
-  
-];
+window.products = [];
 
 let cart = {};
 let selectedCat = 'all';
@@ -905,8 +903,10 @@ window.deleteProduct = async (id) => {
   let p = window.products.find(x=>x.id==id || x.firebaseId==id);
   if(p){
     if(confirm("Pakka delete karna hai? Wapas nahi aayega!")){
-      // Agar firebaseId hai to Firebase se delete
-      if(p.firebaseId){
+        // Firebase se jo aayega wahi final hai
+  window.products = list;
+  if(true){
+      
         await deleteDoc(doc(db, "products", p.firebaseId));
         alert("Firebase se permanent delete!");
       } else {
