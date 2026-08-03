@@ -430,14 +430,30 @@ filtered.forEach(p=>{
       </div>
     `;
     card.onclick = () => incQty(p.id);
-    card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-    card.onmouseup = () => clearTimeout(longPressTimer);
-    card.ontouchstart = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-    card.ontouchend = () => { clearTimeout(longPressTimer); };
+     card.onmousedown = () => {
+      longPressTimer = setTimeout(() => showActionModal(p.id), 600);
+    };
+
+    card.onmouseup = () => {
+      clearTimeout(longPressTimer);
+    };
+
+    card.onmouseleave = () => {
+      clearTimeout(longPressTimer);
+    };
+
+    card.ontouchstart = () => {
+      longPressTimer = setTimeout(() => showActionModal(p.id), 600);
+    };
+
+    card.ontouchend = () => {
+      clearTimeout(longPressTimer);
+    };
+
     grid.appendChild(card);
   });
-
-  // ===== NEW ITEM CARD =====
+}
+ // ===== NEW ITEM CARD =====
   const newCard = document.createElement('div');
   newCard.className = 'bg-white rounded-xl border-2 border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[185px] cursor-pointer';
   newCard.innerHTML = `
