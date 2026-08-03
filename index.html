@@ -321,6 +321,7 @@ let products = JSON.parse(localStorage.getItem('products')) || [];
 let cart = {};
 let selectedCat = 'all';
 let searchText = '';
+let longPressTimer = null;
 
 localStorage.setItem('categories', JSON.stringify(categories));
 localStorage.setItem('products', JSON.stringify(products));
@@ -450,43 +451,31 @@ filtered.forEach(p=>{
       clearTimeout(longPressTimer);
     };
 
-    grid.appendChild(card);
+grid.appendChild(card);
   });
-}
- // ===== NEW ITEM CARD =====
-  const newCard = document.createElement('div');
-  newCard.className = 'bg-white rounded-xl border-2 border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[185px] cursor-pointer';
-  newCard.innerHTML = `
-    <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">+</div>
-    <div class="text-[14px] font-bold mt-3 text-blue-600">NEW ITEM</div>
-  `;
-  newCard.onclick = ()=> {
-    // Photo upload option on NEW ITEM click
-    if(confirm('Photo ke saath add karna hai?')){
-      const input = document.getElementById('imgInput');
-      input.onchange = (e)=>{
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          let name = prompt('Product Name:');
-          if(!name) return;
-          let price = prompt('Price:','20');
-         let newProd = {id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result.substring(0, 900000)}; // 900kb limit
-          if(window.firebaseAddProductDirect){
-            window.firebaseAddProductDirect(newProd);
-          } else {
-            window.products.push(newProd);
-            renderProducts();
-          } 
-        reader.readAsDataURL(file);
-      };
-      input.click();
-    } else {
-      addNewItemInCat();
-    }
-  };  
 
+  // ===== NEW ITEM CARD =====
+  const newCard = document.createElement('div');
+
+  newCard.className =
+    'bg-white rounded-xl border-2 border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[185px] cursor-pointer';
+
+  newCard.innerHTML = `
+    <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">
+      +
+    </div>
+
+    <div class="text-[14px] font-bold mt-3 text-blue-600">
+      NEW ITEM
+    </div>
+  `;
+
+  newCard.onclick = () => {
+    addNewItemInCat();
+  };
+
+  grid.appendChild(newCard);
+}
 function incQty(id){
   cart[id] = (cart[id]||0) + 1;
   let prod = (window.products || products).find(p=>p.id==id);
