@@ -406,51 +406,67 @@ function renderProducts(){
     if(searchText && !p.name.toLowerCase().includes(searchText.toLowerCase())) return false;
     return true;
   });
-  filtered.forEach(p=>{
+filtered.forEach(p=>{
     const qty = cart[p.id] || p.qty || 0;
+    const isSelected = qty > 0;
     const card = document.createElement('div');
-    card.className = 'bg-white rounded-xl border p-2 flex flex-col items-center relative';
-   card.innerHTML = `
-     <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
-  ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
-</div> 
-      <div class="mt-2 text-[13px] font-bold text-center leading-tight min-h-[32px]">
-        ${p.name}
+    card.className = (isSelected? 'bg-[#c6f6c5] border-green-400 ' : 'bg-white border-gray-200 ') + 'rounded-xl border-2 p-2 flex flex-col relative min-h-[185px]';
+    card.innerHTML = `
+      <div class="flex justify-between">
+        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">₹ ${p.price}.0</div>
+        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">${qty}</div>
       </div>
-      <div class="mt-2 w-full flex items-center gap-1">
-        <div class="flex-1 border border-dashed rounded px-2 py-1 text-[11px] font-bold text-center">
-          ₹ ${p.price}.0
-        </div>
-        <div class="w-[50px] border border-dashed rounded flex items-center justify-center gap-1 px-1 py-1 bg-[#f6f7ff]">
-          <button onclick="event.stopPropagation(); decQty('${p.id}')" class="w-5 h-5 bg-white rounded-full shadow text-[12px] font-bold">-</button>
-          <span class="text-[11px] font-bold w-4 text-center">${qty}</span>
-          <button onclick="event.stopPropagation(); incQty('${p.id}')" class="w-5 h-5 bg-[#2e3ae8] text-white rounded-full text-[12px] font-bold">+</button>
-        </div>
+      <div class="flex-1 flex items-center justify-center my-2 min-h-[70px]">
+        ${p.img? `<img src="${p.img}" class="w-[80px] h-[80px] object-contain rounded-lg">` : `<div class="w-[80px] h-[80px] bg-gray-100 rounded-lg flex items-center justify-center">🖼️</div>`}
       </div>
-    `; 
-     card.onclick = () => incQty(p.id);
-
-  // YEH 4 LINE NAYA ADD KARO - LONG PRESS KE LIYE
-  card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-  card.onmouseup = () => clearTimeout(longPressTimer);
-  card.ontouchstart = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-  card.ontouchend = () => {
-  clearTimeout(longPressTimer);
-};
-
-grid.appendChild(card);
+      <div class="text-[14px] font-bold text-center min-h-[36px]">${p.name}</div>
+      <div class="flex justify-between items-center mt-2">
+        <button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="w-6 h-6">⋮</button>
+        <div class="flex gap-1">
+          <button onclick="event.stopPropagation(); decQty('${p.id}')" class="w-6 h-6 bg-white border rounded-full">-</button>
+          <button onclick="event.stopPropagation(); incQty('${p.id}')" class="w-6 h-6 bg-[#2e3ae8] text-white rounded-full">+</button>
+        </div>
+        <button onclick="event.stopPropagation(); if(confirm('Delete?')){products=products.filter(x=>x.id!='${p.id}'); renderProducts();}" class="w-6 h-6 border border-black rounded text-[12px]">X</button>
+      </div>
+    `;
+    card.onclick = () => incQty(p.id);
+    card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+    card.onmouseup = () => clearTimeout(longPressTimer);
+    card.ontouchstart = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+    card.ontouchend = () => { clearTimeout(longPressTimer); };
+    grid.appendChild(card);
   });
 
-  // ===== NEW ITEM CARD - HAR CATEGORY ME DIKHEGA =====
+  // ===== NEW ITEM CARD =====
   const newCard = document.createElement('div');
-  newCard.className = 'bg-white rounded-xl border border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[140px] cursor-pointer';
+  newCard.className = 'bg-white rounded-xl border-2 border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[185px] cursor-pointer';
   newCard.innerHTML = `
     <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">+</div>
     <div class="text-[14px] font-bold mt-3 text-blue-600">NEW ITEM</div>
   `;
-  newCard.onclick = ()=> addNewItemInCat();
-  grid.appendChild(newCard);
-}
+  newCard.onclick = ()=> {
+    // Photo upload option on NEW ITEM click
+    if(confirm('Photo ke saath add karna hai?')){
+      const input = document.getElementById('imgInput');
+      input.onchange = (e)=>{
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          let name = prompt('Product Name:');
+          if(!name) return;
+          let price = prompt('Price:','20');
+          products.push({id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result});
+          localStorage.setItem('products', JSON.stringify(products));
+          renderProducts();
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    } else {
+      addNewItemInCat();
+    }
+  };  
 
 // ================= QTY FUNCTIONS =================
 function incQty(id){
