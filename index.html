@@ -863,10 +863,9 @@ renderCategories();
 renderProducts();
 updateTotal();
  </script>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
@@ -878,43 +877,48 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-window.db = db;
+
 const prodCol = collection(db, "products");
-window.prodCol = prodCol;
+const catCol = collection(db, "categories");
 
-console.log("Firebase Connected!");
-
+// Products Live
 onSnapshot(prodCol, (snap)=>{
   let list = [];
-  snap.forEach(d=>{
-    let data = d.data();
-    data.firebaseId = d.id;
-    if(!data.id) data.id = d.id;
-    list.push(data);
-  });
+  snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
   window.products = list;
-  console.log("Loaded from Firebase:", list.length);
   if(window.renderProducts) window.renderProducts();
   if(window.renderCategories) window.renderCategories();
 });
 
-// Permanent Delete
+// Categories Live
+onSnapshot(catCol, (snap)=>{
+  let list = [];
+  snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
+  if(list.length>0){
+    window.categories = list;
+    if(window.renderCategories) window.renderCategories();
+  }
+});
+
+// ONLY ONE DELETE
 window.deleteProduct = async (id) => {
-  let p = window.products.find(x=>x.id==id || x.firebaseId==id);
-  if(p){
-    if(confirm("Pakka delete karna hai? Wapas nahi aayega!")){
-        // Firebase se jo aayega wahi final hai
-  window.products = list;
-  if(true){
-      
-        await deleteDoc(doc(db, "products", p.firebaseId));
-        alert("Firebase se permanent delete!");
-      } else {
-        // Purana wala local delete
-        window.products = window.products.filter(x=>x.id!=id);
-        if(window.renderProducts) window.renderProducts();
-      }
-    }
+  let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
+  if(!p) return;
+  if(!confirm(`"${p.name}" delete karna hai?`)) return;
+  if(p.firebaseId){
+    await deleteDoc(doc(db, "products", p.firebaseId));
+  }
+};
+
+window.deleteCategory = async (id) => {
+  let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
+  if(!c) return;
+  if(!confirm(`Category "${c.name}" delete karna hai?`)) return;
+  if(c.firebaseId){
+    await deleteDoc(doc(db, "categories", c.firebaseId));
+  } else {
+    window.categories = window.categories.filter(x=> String(x.id)!==String(id));
+    if(window.renderCategories) window.renderCategories();
   }
 };
 </script>
