@@ -316,14 +316,7 @@ let categories = [
 ];
 
 window.products = [
-  {id:'1', name:'Baby finger ring', price:18, cat:'1', qty:4},
-  {id:'2', name:'Dulhan bindi', price:20, cat:'9', qty:5},
-  {id:'3', name:'Premium Bindi 5pc', price:25, cat:'9', qty:1},
-  {id:'4', name:'Suruchi Bindi plain', price:15, cat:'9', qty:2},
-  {id:'5', name:'fancy stone bindi', price:10, cat:'9', qty:0},
-  {id:'6', name:'juda', price:20, cat:'10', qty:0},
-  {id:'7', name:'Bangle Set', price:80, cat:'5', qty:0},
-  {id:'8', name:'Face Wash', price:120, cat:'2', qty:0}
+  
 ];
 
 let cart = {};
@@ -893,7 +886,6 @@ window.prodCol = prodCol;
 
 console.log("Firebase Connected!");
 
-// Firebase se maal lao
 onSnapshot(prodCol, (snap)=>{
   let list = [];
   snap.forEach(d=>{
@@ -902,13 +894,10 @@ onSnapshot(prodCol, (snap)=>{
     if(!data.id) data.id = d.id;
     list.push(data);
   });
-  // Agar Firebase me maal hai to hi overwrite karo
-  if(list.length > 0){
-    window.products = list;
-    console.log("Loaded from Firebase:", list.length);
-    if(window.renderProducts) window.renderProducts();
-    if(window.renderCategories) window.renderCategories();
-  }
+  window.products = list;
+  console.log("Loaded from Firebase:", list.length);
+  if(window.renderProducts) window.renderProducts();
+  if(window.renderCategories) window.renderCategories();
 });
 
 // Permanent Delete
