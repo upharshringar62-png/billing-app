@@ -456,15 +456,13 @@ filtered.forEach(p=>{
           let name = prompt('Product Name:');
           if(!name) return;
           let price = prompt('Price:','20');
-         let newProd = {id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result};
+         let newProd = {id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result.substring(0, 900000)}; // 900kb limit
           if(window.firebaseAddProductDirect){
             window.firebaseAddProductDirect(newProd);
           } else {
             window.products.push(newProd);
             renderProducts();
           } 
-          renderProducts();
-        };
         reader.readAsDataURL(file);
       };
       input.click();
@@ -473,11 +471,9 @@ filtered.forEach(p=>{
     }
   };  
 
-// ================= QTY FUNCTIONS =================
 function incQty(id){
   cart[id] = (cart[id]||0) + 1;
-  // update product qty too
-  let prod = products.find(p=>p.id===id);
+  let prod = (window.products || products).find(p=>p.id==id);
   if(prod) prod.qty = cart[id];
   updateTotal();
   renderProducts();
@@ -488,7 +484,7 @@ function decQty(id){
   if(!cart[id]) return;
   cart[id] = cart[id] - 1;
   if(cart[id]<=0) delete cart[id];
-  let prod = products.find(p=>p.id===id);
+  let prod = (window.products || products).find(p=>p.id==id);
   if(prod) prod.qty = cart[id]||0;
   updateTotal();
   renderProducts();
