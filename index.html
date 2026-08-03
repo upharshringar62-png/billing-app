@@ -316,15 +316,21 @@ let categories = JSON.parse(localStorage.getItem('categories')) || [
   {id:'10', name:'Juda Pins'}
 ];
 
-let products = JSON.parse(localStorage.getItem('products')) || [];
+let products = JSON.parse(localStorage.getItem('products')) || [
+  {id:'101', name:'Lakme Face Wash', price:120, mrp:150, cat:'2', qty:0, img:''},
+  {id:'102', name:'Hair Oil', price:80, mrp:100, cat:'4', qty:0, img:''},
+  {id:'103', name:'Bangles Set', price:50, mrp:60, cat:'5', qty:0, img:''},
+  {id:'104', name:'Bindi Pack', price:20, mrp:25, cat:'9', qty:0, img:''},
+  {id:'105', name:'Flower Pot', price:250, mrp:300, cat:'7', qty:0, img:''}
+];
+window.products = products;
 
 let cart = {};
 let selectedCat = 'all';
 let searchText = '';
 let longPressTimer = null;
 
-localStorage.setItem('categories', JSON.stringify(categories));
-localStorage.setItem('products', JSON.stringify(products));
+
  function addNewItemInCat(){
   let catName = categories.find(c=>c.id===selectedCat)?.name || 'All';
 
