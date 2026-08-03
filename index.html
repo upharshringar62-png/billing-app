@@ -407,9 +407,13 @@ function renderProducts(){
     return true;
   });
   filtered.forEach(p=>{
-    const qty = cart[p.id] || p.qty || 0;
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-xl border p-2 flex flex-col items-center relative';
+    const qty = cart[p.id] || 0;
+const isSelected = qty > 0;
+    card.className =
+  (isSelected
+   ? 'bg-[#c6f6c5] border-green-500 '
+    : 'bg-white border-gray-200 ') +
+  'rounded-xl border-2 p-2 flex flex-col relative min-h-[185px] cursor-pointer';
    card.innerHTML = `
      <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
   ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
