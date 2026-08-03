@@ -300,8 +300,9 @@
     
 </div>
 <script>
-// ================= DATA =================
-let categories = [
+// ============== DATA ==============
+
+let categories = JSON.parse(localStorage.getItem('categories')) || [
   {id:'all', name:'All Items'},
   {id:'1', name:'Shringar box'},
   {id:'2', name:'Face Wash'},
@@ -315,11 +316,14 @@ let categories = [
   {id:'10', name:'Juda Pins'}
 ];
 
-window.products = [];
+let products = JSON.parse(localStorage.getItem('products')) || [];
 
 let cart = {};
 let selectedCat = 'all';
 let searchText = '';
+
+localStorage.setItem('categories', JSON.stringify(categories));
+localStorage.setItem('products', JSON.stringify(products));
  function addNewItemInCat(){
   let catName = categories.find(c=>c.id===selectedCat)?.name || 'All';
 
