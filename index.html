@@ -376,63 +376,129 @@ function deleteCategory(id){
     renderProducts();
   }
 }
-// ================= RENDER CATEGORIES =================
-function renderCategories(){
-  const el = document.getElementById('catList');
-  el.innerHTML = '';
-  categories.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50 cursor-pointer';
-    div.innerHTML = `
-  <div>
-    <div class="text-[13px] font-medium">${c.name}</div>
-    <div class="text-[11px] text-gray-400">(0.0)</div>
-  </div>
-  <button onclick="event.stopPropagation(); if(confirm('Delete ${c.name}?')){deleteCategory('${c.id}')} " class="w-6 h-6 text-gray-400 text-[16px]">...</button>
-`;
-    div.onclick = ()=>{
-      selectedCat = c.id;
-      renderProducts();
-    };
-    el.appendChild(div);
-  });
-}
-
 // ================= RENDER PRODUCTS =================
 function renderProducts(){
+
   const grid = document.getElementById('productGrid');
+
+  if(!grid){
+    console.error('productGrid nahi mila');
+    return;
+  }
+
   grid.innerHTML = '';
-  let filtered = (window.products || products).filter(p=>{
-  if(selectedCat !== 'all' && p.cat !== selectedCat) return false;
-  if(searchText && !p.name.toLowerCase().includes(searchText.toLowerCase())) return false;
-  return true;
-});
-filtered.forEach(p=>{
+
+  // Products ko safely lo
+  const productData = Array.isArray(window.products)
+    ? window.products
+    : (Array.isArray(products) ? products : []);
+
+  let filtered = productData.filter(p => {
+
+    if(selectedCat !== 'all' && String(p.cat) !== String(selectedCat)){
+      return false;
+    }
+
+    if(
+      searchText &&
+      !String(p.name || '').toLowerCase().includes(searchText.toLowerCase())
+    ){
+      return false;
+    }
+
+    return true;
+  });
+
+  // ================= PRODUCTS =================
+  filtered.forEach(p => {
+
     const qty = cart[p.id] || p.qty || 0;
     const isSelected = qty > 0;
+
     const card = document.createElement('div');
-    card.className = (isSelected? 'bg-[#c6f6c5] border-green-400 ' : 'bg-white border-gray-200 ') + 'rounded-xl border-2 p-2 flex flex-col relative min-h-[185px]';
+
+    card.className =
+      (isSelected
+        ? 'bg-[#c6f6c5] border-green-400 '
+        : 'bg-white border-gray-200 ') +
+      'rounded-xl border-2 p-2 flex flex-col relative min-h-[185px]';
+
     card.innerHTML = `
+
       <div class="flex justify-between">
-        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">₹ ${p.price}.0</div>
-        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">${qty}</div>
-      </div>
-      <div class="flex-1 flex items-center justify-center my-2 min-h-[70px]">
-        ${p.img? `<img src="${p.img}" class="w-[80px] h-[80px] object-contain rounded-lg">` : `<div class="w-[80px] h-[80px] bg-gray-100 rounded-lg flex items-center justify-center">🖼️</div>`}
-      </div>
-      <div class="text-[14px] font-bold text-center min-h-[36px]">${p.name}</div>
-      <div class="flex justify-between items-center mt-2">
-        <button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="w-6 h-6">⋮</button>
-        <div class="flex gap-1">
-          <button onclick="event.stopPropagation(); decQty('${p.id}')" class="w-6 h-6 bg-white border rounded-full">-</button>
-          <button onclick="event.stopPropagation(); incQty('${p.id}')" class="w-6 h-6 bg-[#2e3ae8] text-white rounded-full">+</button>
+
+        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">
+          ₹ ${Number(p.price || 0).toFixed(1)}
         </div>
-        <button onclick="event.stopPropagation(); if(confirm('Delete?')){products=products.filter(x=>x.id!='${p.id}'); renderProducts();}" class="w-6 h-6 border border-black rounded text-[12px]">X</button>
+
+        <div class="border border-dashed rounded-lg px-2 py-1 text-[13px] font-bold bg-white">
+          ${qty}
+        </div>
+
+      </div>
+
+      <div class="flex-1 flex items-center justify-center my-2 min-h-[70px]">
+
+        ${
+          p.img
+          ?
+          `<img src="${p.img}"
+                class="w-[80px] h-[80px] object-contain rounded-lg">`
+          :
+          `<div class="w-[80px] h-[80px] bg-gray-100 rounded-lg flex items-center justify-center">
+             🖼️
+           </div>`
+        }
+
+      </div>
+
+      <div class="text-[14px] font-bold text-center min-h-[36px]">
+        ${p.name || 'Product'}
+      </div>
+
+      <div class="flex justify-between items-center mt-2">
+
+        <button
+          onclick="event.stopPropagation(); showActionModal('${p.id}')"
+          class="w-6 h-6">
+          ⋮
+        </button>
+
+        <div class="flex gap-1">
+
+          <button
+            onclick="event.stopPropagation(); decQty('${p.id}')"
+            class="w-6 h-6 bg-white border rounded-full">
+            -
+          </button>
+
+          <button
+            onclick="event.stopPropagation(); incQty('${p.id}')"
+            class="w-6 h-6 bg-[#2e3ae8] text-white rounded-full">
+            +
+          </button>
+
+        </div>
+
+        <button
+          onclick="event.stopPropagation(); deleteProductById('${p.id}')"
+          class="w-6 h-6 border border-black rounded text-[12px]">
+          X
+        </button>
+
       </div>
     `;
-    card.onclick = () => incQty(p.id);
-     card.onmousedown = () => {
-      longPressTimer = setTimeout(() => showActionModal(p.id), 600);
+
+    // Normal click
+    card.onclick = () => {
+      incQty(p.id);
+    };
+
+    // Long press
+    card.onmousedown = () => {
+      longPressTimer = setTimeout(() => {
+        showActionModal(p.id);
+      }, 600);
     };
 
     card.onmouseup = () => {
@@ -444,23 +510,28 @@ filtered.forEach(p=>{
     };
 
     card.ontouchstart = () => {
-      longPressTimer = setTimeout(() => showActionModal(p.id), 600);
+      longPressTimer = setTimeout(() => {
+        showActionModal(p.id);
+      }, 600);
     };
 
     card.ontouchend = () => {
       clearTimeout(longPressTimer);
     };
 
-grid.appendChild(card);
+    grid.appendChild(card);
+
   });
 
-  // ===== NEW ITEM CARD =====
+  // ================= NEW ITEM CARD =================
+
   const newCard = document.createElement('div');
 
   newCard.className =
     'bg-white rounded-xl border-2 border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[185px] cursor-pointer';
 
   newCard.innerHTML = `
+
     <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">
       +
     </div>
@@ -468,6 +539,7 @@ grid.appendChild(card);
     <div class="text-[14px] font-bold mt-3 text-blue-600">
       NEW ITEM
     </div>
+
   `;
 
   newCard.onclick = () => {
@@ -475,6 +547,21 @@ grid.appendChild(card);
   };
 
   grid.appendChild(newCard);
+}
+
+
+// ================= DELETE PRODUCT =================
+function deleteProductById(id){
+
+  if(!confirm('Delete product?')) return;
+
+  products = products.filter(p => String(p.id) !== String(id));
+
+  window.products = products;
+
+  localStorage.setItem('products', JSON.stringify(products));
+
+  renderProducts();
 }
 function incQty(id){
   cart[id] = (cart[id]||0) + 1;
