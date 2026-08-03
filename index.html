@@ -456,8 +456,13 @@ filtered.forEach(p=>{
           let name = prompt('Product Name:');
           if(!name) return;
           let price = prompt('Price:','20');
-          products.push({id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result});
-          localStorage.setItem('products', JSON.stringify(products));
+         let newProd = {id:Date.now().toString(), name, price:parseFloat(price)||20, cat:selectedCat, qty:0, img:reader.result};
+          if(window.firebaseAddProductDirect){
+            window.firebaseAddProductDirect(newProd);
+          } else {
+            window.products.push(newProd);
+            renderProducts();
+          } 
           renderProducts();
         };
         reader.readAsDataURL(file);
