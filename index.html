@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UPHAR Billing - Clean Code</title>
+ <script type="importmap">
+{ "imports": { "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js", "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" } }
+</script>
 <script src="https://cdn.tailwindcss.com">
 </script>
 <style>
@@ -868,7 +871,23 @@ if(logoInput){
 renderCategories();
 renderProducts();
 updateTotal();
+ </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
+  authDomain: "upharshringar-billing-5f4c9.firebaseapp.com",
+  projectId: "upharshringar-billing-5f4c9",
+  storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app",
+  messagingSenderId: "1070290998158",
+  appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window.db = db;
+console.log("Firebase Connected!");
 </script>
 </body>
 </html>
