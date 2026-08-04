@@ -315,54 +315,13 @@ let categories = [
   {id:'10', name:'Juda Pins'}
 ];
 
-window.products = [];
+window.products = JSON.parse(localStorage.getItem('products')||'[]');
+let products = window.products;
 
 let cart = {};
 let selectedCat = 'all';
 let searchText = '';
- function addNewItemInCat(){
-  let catName = categories.find(c=>c.id===selectedCat)?.name || 'All';
-
-  // category select ka popup
-  let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
-  let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, `${categories.findIndex(c=>c.id===selectedCat)+1}`);
-  let catIdx = parseInt(catChoice)-1;
-  let targetCatId = categories[catIdx]?.id || selectedCat || '1';
-
-  let name = prompt(`Product Name (${categories.find(c=>c.id===targetCatId)?.name}):`);
-  if(!name) return;
-  let price = prompt('Price:', '20');
-  let mrp = prompt('MRP (optional):', price);
-
-  // image pick
-  const input = document.getElementById('imgInput');
-  if(input){
-    input.onchange = (e)=>{
-      const file = e.target.files[0];
-      if(file){
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          products.push({id:Date.now().toString(), name:name, price:parseFloat(price)||20, mrp:parseFloat(mrp)||parseFloat(price)||20, cat:targetCatId, qty:0, img:reader.result});
-          renderProducts(); renderCategories();
-        };
-        reader.readAsDataURL(file);
-      } else {
-        products.push({id:Date.now().toString(), name:name, price:parseFloat(price)||20, mrp:parseFloat(mrp)||parseFloat(price)||20, cat:targetCatId, qty:0});
-        renderProducts(); renderCategories();
-      }
-    };
-    // pehle confirm karo image chahiye?
-    if(confirm('Photo add karna hai?')){ input.click(); return; }
-  }
-  products.push({id:Date.now().toString(), name:name, price:parseFloat(price)||20, mrp:parseFloat(mrp)||parseFloat(price)||20, cat:targetCatId, qty:0});
-  renderProducts(); renderCategories();
-}
-// DELETE CATEGORY FUNCTION
-function deleteCategory(id){
-  if(id==='all'){
-    alert('All Items delete nahi hoga!');
-    return;
-  }
+ 
   let confirmDel = confirm('Ye category delete karna hai?');
   if(confirmDel){
     categories = categories.filter(c=>c.id!==id);
@@ -491,7 +450,15 @@ function handlePreview(){
   renderPreview();
   document.getElementById('previewModal').classList.remove('hidden');
 }
-function closePreview(){
+function closePreview()
+function switchTab(tab){
+  if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); }
+  else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); }
+  else { alert(tab+' - Coming Soon'); }
+}
+function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-translate-x-full'); document.getElementById('drawerOverlay').classList.remove('hidden'); }
+function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
+document.getElementById('menuBtn').onclick=openDrawer;
   document.getElementById('previewModal').classList.add('hidden');
 }
   async function handleRealPrint(){
@@ -881,11 +848,13 @@ const db = getFirestore(app);
 const prodCol = collection(db, "products");
 const catCol = collection(db, "categories");
 
-// Products Live
 onSnapshot(prodCol, (snap)=>{
   let list = [];
   snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
-  window.products = list;
+  if(list.length>0){  // <-- Ye if add karo
+    window.products = list;
+    localStorage.setItem('products', JSON.stringify(list));
+  }
   if(window.renderProducts) window.renderProducts();
   if(window.renderCategories) window.renderCategories();
 });
