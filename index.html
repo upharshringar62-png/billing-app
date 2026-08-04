@@ -1,0 +1,2345 @@
+<!-- ================= PART 1 : HTML + CSS + BASIC UI ================= -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>UPHAR Billing</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+*{
+  font-family:Poppins,Arial,sans-serif;
+}
+
+.scrollbar-hide::-webkit-scrollbar{
+  display:none;
+}
+
+@keyframes slideIn{
+  from{transform:translateX(-100%)}
+  to{transform:translateX(0)}
+}
+
+.animate-slide{
+  animation:slideIn .25s ease;
+}
+
+@media print{
+  body *{
+    visibility:hidden!important;
+  }
+
+  #printArea,
+  #printArea *{
+    visibility:visible!important;
+  }
+
+  #printArea{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:100%!important;
+    background:white!important;
+    padding:10px;
+  }
+
+  header,
+  nav,
+  aside,
+  #previewModal,
+  #productActionModal,
+  #editProductModal{
+    display:none!important;
+  }
+}
+</style>
+</head>
+
+<body class="bg-[#f2f3f7]">
+
+<!-- ================= HEADER ================= -->
+
+<header class="bg-[#2e3ae8] h-[56px] flex items-center justify-between px-3 text-white sticky top-0 z-20">
+
+  <div class="flex items-center gap-3">
+
+    <button id="menuBtn"
+      class="w-8 h-8 flex flex-col justify-center gap-1">
+
+      <span class="w-5 h-0.5 bg-white"></span>
+      <span class="w-5 h-0.5 bg-white"></span>
+      <span class="w-5 h-0.5 bg-white"></span>
+
+    </button>
+
+  </div>
+
+  <div class="flex items-center gap-2">
+
+    <button id="printBtn"
+      class="bg-[#00c853] px-4 py-2 rounded-full text-[13px] font-bold">
+
+      🖨️ PRINT
+
+    </button>
+
+    <span id="totalAmt" class="hidden">₹0.0</span>
+
+  </div>
+
+</header>
+
+
+<div class="flex min-h-[calc(100vh-56px)]">
+
+<!-- ================= CATEGORY SIDEBAR ================= -->
+
+<aside class="w-[130px] bg-white border-r shrink-0 flex flex-col">
+
+  <div class="p-2">
+
+    <button id="newCatBtn"
+      class="bg-[#2e3ae8] text-white rounded-full h-7 px-3 text-[10px] font-bold">
+
+      + NEW CATEGORY
+
+    </button>
+
+  </div>
+
+  <div id="catList"
+    class="flex-1 overflow-y-auto scrollbar-hide">
+  </div>
+
+</aside>
+
+
+<!-- ================= MAIN AREA ================= -->
+
+<main class="flex-1 flex flex-col min-w-0">
+
+  <!-- SEARCH -->
+
+  <div class="bg-white p-2 border-b flex gap-2">
+
+    <div class="flex-1 relative">
+
+      <input
+        id="searchInput"
+        placeholder="Search item..."
+        class="w-full h-10 bg-[#f6f7ff] rounded-full pl-10 pr-10 text-[13px] outline-none border border-transparent">
+
+      <span class="absolute left-3 top-2.5 text-gray-400">
+        🔍
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <!-- PRODUCT GRID -->
+
+  <div class="p-2 flex-1 overflow-y-auto">
+
+    <div id="productGrid"
+      class="grid grid-cols-2 gap-2">
+    </div>
+
+  </div>
+
+
+  <!-- BOTTOM ACTION -->
+
+  <div class="bg-white border-t px-2 py-2 flex items-center gap-2 sticky bottom-[60px]">
+
+    <button
+      onclick="handleKOT()"
+      class="px-4 py-2 border rounded-lg text-[11px] font-bold">
+
+      KOT
+
+    </button>
+
+    <button
+      onclick="handlePreview()"
+      class="px-4 py-2 border rounded-lg text-[11px] font-bold">
+
+      PREVIEW
+
+    </button>
+
+  </div>
+
+</main>
+
+</div>
+
+
+<!-- ================= BOTTOM NAV ================= -->
+
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t h-[60px] flex items-center z-20">
+
+  <button
+    onclick="switchTab('BILL')"
+    class="flex-1 flex flex-col items-center text-[#2e3ae8]">
+
+    <span class="text-[18px]">📄</span>
+    <span class="text-[10px] font-bold">NEW BILL</span>
+
+  </button>
+
+
+  <button
+    onclick="switchTab('REPORT')"
+    class="flex-1 flex flex-col items-center text-gray-400">
+
+    <span class="text-[18px]">📊</span>
+    <span class="text-[10px]">REPORT</span>
+
+  </button>
+
+
+  <div class="flex-1 flex justify-center">
+
+    <button
+      id="addProductFab"
+      class="w-14 h-14 bg-[#2e3ae8] text-white rounded-full flex flex-col items-center justify-center shadow-lg -mt-6">
+
+      <span class="text-[20px]">+</span>
+      <span class="text-[8px]">Product Add +</span>
+
+    </button>
+
+  </div>
+
+
+  <button
+    onclick="switchTab('PARTY')"
+    class="flex-1 flex flex-col items-center text-gray-400">
+
+    <span class="text-[18px]">👥</span>
+    <span class="text-[10px]">PARTY</span>
+
+  </button>
+
+
+  <button
+    onclick="switchTab('SETTINGS')"
+    class="flex-1 flex flex-col items-center text-gray-400">
+
+    <span class="text-[18px]">⚙️</span>
+    <span class="text-[10px]">SETTINGS</span>
+
+  </button>
+
+</nav>
+
+
+<!-- ================= DRAWER ================= -->
+
+<div
+  id="drawerOverlay"
+  class="fixed inset-0 bg-black/30 z-30 hidden">
+</div>
+
+
+<div
+  id="leftDrawer"
+  class="fixed left-0 top-0 bottom-0 w-[78%] max-w-[320px] bg-white z-40 -translate-x-full transition-transform duration-200 flex flex-col">
+
+  <div class="bg-[#2c3ac8] text-white p-4">
+
+    <div class="text-[11px] font-bold">
+      NARKATIAGANJ 845455
+    </div>
+
+    <div class="text-[11px] mt-1">
+      MOB +917256050678
+    </div>
+
+    <div class="mt-2">
+
+      <span class="bg-[#2ecc71] text-[10px] px-3 py-1 rounded-full font-bold">
+
+        LOGGED IN : ADMIN
+
+      </span>
+
+    </div>
+
+    <div class="text-[10px] opacity-80 mt-2">
+      7256050678 V.1.0.195
+    </div>
+
+  </div>
+
+
+  <div class="flex-1 overflow-y-auto p-2">
+
+    <div class="text-[10px] font-bold text-gray-400 px-2 py-2">
+      SALES
+    </div>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📊 Sales Report
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📦 Item-wise Report
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📂 Category-wise Report
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📜 Sales History By Item
+    </button>
+
+
+    <div class="text-[10px] font-bold text-gray-400 px-2 py-2 mt-4">
+      PURCHASE
+    </div>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      🛒 Purchase Report
+    </button>
+
+
+    <div class="text-[10px] font-bold text-gray-400 px-2 py-2 mt-4">
+      MANAGE
+    </div>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📦 Stock Manage
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      💸 Expense Manage
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📈 Profit & Loss
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      👥 Customers Manage
+    </button>
+
+    <button class="w-full text-left px-3 py-2.5 text-[13px]">
+      📋 Due List
+    </button>
+
+  </div>
+
+
+  <div class="p-3 text-[10px] text-center text-gray-400 border-t">
+
+    UPHAR SINGHAR & GIFTS v1.0.195
+
+  </div>
+
+</div>
+
+
+<!-- ================= PRODUCT ACTION MODAL ================= -->
+
+<div
+  id="productActionModal"
+  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[100] p-4">
+
+  <div class="bg-white rounded-lg w-full max-w-[300px] p-5">
+
+    <h3 class="font-bold text-[16px]">
+      Modify Product
+    </h3>
+
+    <p
+      id="actionProductName"
+      class="text-[13px] text-gray-600 my-3">
+    </p>
+
+
+    <div class="flex justify-between mt-4">
+
+      <button
+        onclick="deleteSelectedProduct()"
+        class="text-red-500 font-bold">
+
+        DELETE
+
+      </button>
+
+
+      <button
+        onclick="closeActionModal()"
+        class="text-gray-500 font-bold">
+
+        CANCEL
+
+      </button>
+
+
+      <button
+        onclick="openModifyModal()"
+        class="text-green-600 font-bold">
+
+        MODIFY
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= EDIT PRODUCT MODAL ================= -->
+
+<div
+  id="editProductModal"
+  class="fixed inset-0 bg-[#f5f5f5] hidden z-[101] overflow-y-auto">
+
+  <div class="bg-[#3f51b5] text-white p-3 flex gap-3">
+
+    <button onclick="closeEditModal()">
+      ←
+    </button>
+
+    <h2 class="font-bold">
+      Update Product
+    </h2>
+
+  </div>
+
+
+  <div class="p-4">
+
+    <div class="flex flex-col items-center">
+
+      <img
+        id="editProductImage"
+        class="h-20 w-20 object-contain mx-auto bg-white border rounded-lg"
+        alt="Product">
+
+      <input
+        type="file"
+        id="editProductImageInput"
+        accept="image/*"
+        hidden>
+
+      <button
+        type="button"
+        onclick="document.getElementById('editProductImageInput').click()"
+        class="mt-3 bg-[#eef0ff] text-[#3f51b5] px-5 py-2 rounded-full text-[12px] font-bold">
+
+        📷 CHANGE IMAGE
+
+      </button>
+
+    </div>
+
+
+    <input
+      id="editProductName"
+      class="w-full mt-4 border p-3 rounded-lg font-bold"
+      placeholder="Product Name">
+
+
+    <input
+      id="editProductPrice"
+      type="number"
+      class="w-full mt-3 border p-3 rounded-lg"
+      placeholder="Sale Price">
+
+
+    <button
+      onclick="saveUpdatedProduct()"
+      class="w-full bg-[#3f51b5] text-white py-3 rounded-lg font-bold mt-4">
+
+      UPDATE PRODUCT
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= PREVIEW MODAL ================= -->
+
+<div
+  id="previewModal"
+  class="fixed inset-0 bg-black/40 z-50 hidden items-end sm:items-center justify-center">
+
+  <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+    <div class="bg-[#2e3ae8] text-white p-3 flex justify-between">
+
+      <span class="text-[13px] font-bold">
+        Bill Preview
+      </span>
+
+      <button
+        onclick="closePreview()"
+        class="w-7 h-7 bg-white/20 rounded-full">
+
+        ✕
+
+      </button>
+
+    </div>
+
+
+    <div class="p-3 border-b space-y-2">
+
+      <input
+        id="custName"
+        placeholder="Customer Name"
+        class="w-full h-9 rounded-full px-4 text-[12px] border">
+
+      <input
+        id="custMobile"
+        placeholder="Mobile No"
+        type="number"
+        class="w-full h-9 rounded-full px-4 text-[12px] border">
+
+    </div>
+
+
+    <div
+      id="previewList"
+      class="flex-1 overflow-y-auto p-3 space-y-2">
+    </div>
+
+
+    <div class="p-3 border-t">
+
+      <div class="flex justify-between font-bold text-[14px]">
+
+        <span>Total</span>
+
+        <span id="previewTotal">
+          ₹0
+        </span>
+
+      </div>
+
+
+      <div class="flex gap-2 mt-3">
+
+        <button
+          onclick="closePreview()"
+          class="flex-1 bg-gray-200 h-11 rounded-full font-bold">
+
+          CLOSE
+
+        </button>
+
+        <button
+          onclick="handleRealPrint()"
+          class="flex-1 bg-[#00c853] text-white h-11 rounded-full font-bold">
+
+          🖨️ PRINT
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= SETTINGS ================= -->
+
+<div
+  id="settingsPage"
+  class="fixed inset-0 bg-[#f2f3f7] z-25 hidden overflow-y-auto pb-[80px]">
+
+  <div class="bg-white p-4 border-b">
+
+    <h2 class="font-bold text-[16px]">
+      Profile Setting
+    </h2>
+
+    <div class="text-[11px] text-gray-500 mt-1">
+      1.0.195 | 7256050678 |
+      <span id="billNoDisplay">655</span>
+    </div>
+
+  </div>
+
+
+  <div class="p-3">
+
+    <div class="bg-white rounded-lg p-4 border">
+
+      <label class="text-[11px] font-bold">
+        Running Bill No ✏️
+      </label>
+
+      <input
+        id="billNoInput"
+        value="655"
+        class="w-full border rounded-lg p-2 text-[13px] mt-1">
+
+    </div>
+
+
+    <button
+      onclick="switchTab('BILL')"
+      class="w-full bg-[#2e3ae8] text-white h-12 rounded-full font-bold mt-4">
+
+      Back to Billing
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+/* =====================================================
+   PART 1 JAVASCRIPT
+   Firebase database PART 2 me connect hoga.
+   ===================================================== */
+
+
+/* ================= BASIC DATA ================= */
+
+window.products = [];
+
+window.categories = [
+  {
+    id:'all',
+    name:'All Items'
+  }
+];
+
+let cart = {};
+
+let selectedCat = 'all';
+
+let searchText = '';
+
+let selectedProductId = null;
+
+let longPressTimer = null;
+
+
+/* ================= RENDER CATEGORIES ================= */
+
+window.renderCategories = function(){
+
+  const el =
+    document.getElementById('catList');
+
+  if(!el) return;
+
+  el.innerHTML = '';
+
+  window.categories.forEach(c=>{
+
+    const div =
+      document.createElement('div');
+
+    div.className =
+      'flex items-center justify-between px-3 py-3 border-b cursor-pointer';
+
+
+    div.innerHTML = `
+
+      <div class="flex-1">
+
+        <div class="text-[13px] font-medium">
+          ${c.name}
+        </div>
+
+      </div>
+
+      ${
+        c.id !== 'all'
+        ?
+        `<button
+          class="delete-cat-btn w-6 h-6 text-gray-400 text-[16px]">
+          ⋮
+        </button>`
+        :
+        ''
+      }
+
+    `;
+
+
+    div.onclick = ()=>{
+
+      selectedCat = c.id;
+
+      renderProducts();
+
+    };
+
+
+    const deleteBtn =
+      div.querySelector('.delete-cat-btn');
+
+
+    if(deleteBtn){
+
+      deleteBtn.onclick = (e)=>{
+
+        e.stopPropagation();
+
+        if(confirm(`Delete ${c.name}?`)){
+
+          window.deleteCategoryFromFirebase(c.id);
+
+        }
+
+      };
+
+    }
+
+
+    el.appendChild(div);
+
+  });
+
+};
+
+
+/* ================= RENDER PRODUCTS ================= */
+
+window.renderProducts = function(){
+
+  const grid =
+    document.getElementById('productGrid');
+
+  if(!grid) return;
+
+  grid.innerHTML = '';
+
+
+  let filtered =
+    window.products.filter(p=>{
+
+      if(
+        selectedCat !== 'all' &&
+        String(p.cat) !== String(selectedCat)
+      ){
+        return false;
+      }
+
+
+      if(
+        searchText &&
+        !String(p.name || '')
+        .toLowerCase()
+        .includes(searchText.toLowerCase())
+      ){
+        return false;
+      }
+
+
+      return true;
+
+    });
+
+
+  filtered.forEach(p=>{
+
+    const qty =
+      cart[p.id] || 0;
+
+
+    const card =
+      document.createElement('div');
+
+
+    card.className =
+      'bg-white rounded-xl border p-2 flex flex-col items-center relative';
+
+
+    card.innerHTML = `
+
+      <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
+
+        ${
+          p.img
+          ?
+          `<img
+            src="${p.img}"
+            class="w-full h-full object-cover">`
+          :
+          `<span class="text-3xl">🖼️</span>`
+        }
+
+      </div>
+
+
+      <div class="mt-2 text-[13px] font-bold text-center leading-tight min-h-[32px]">
+
+        ${p.name || 'Unnamed Product'}
+
+      </div>
+
+
+      <div class="mt-2 w-full flex items-center gap-1">
+
+        <div class="flex-1 border border-dashed rounded px-2 py-1 text-[11px] font-bold text-center">
+
+          ₹ ${Number(p.price || 0).toFixed(1)}
+
+        </div>
+
+
+        <div class="w-[70px] border border-dashed rounded flex items-center justify-center gap-1 px-1 py-1 bg-[#f6f7ff]">
+
+          <button
+            class="dec-btn w-5 h-5 bg-white rounded-full shadow text-[12px] font-bold">
+
+            -
+
+          </button>
+
+
+          <span class="qty-text text-[11px] font-bold w-4 text-center">
+
+            ${qty}
+
+          </span>
+
+
+          <button
+            class="inc-btn w-5 h-5 bg-[#2e3ae8] text-white rounded-full text-[12px] font-bold">
+
+            +
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    /* ================= QTY BUTTONS ================= */
+
+    card.querySelector('.inc-btn').onclick =
+      (e)=>{
+
+        e.stopPropagation();
+
+        incQty(p.id);
+
+      };
+
+
+    card.querySelector('.dec-btn').onclick =
+      (e)=>{
+
+        e.stopPropagation();
+
+        decQty(p.id);
+
+      };
+
+
+    /* ================= NORMAL CLICK ================= */
+
+    card.onclick = ()=>{
+
+      incQty(p.id);
+
+    };
+
+
+    /* ================= LONG PRESS ================= */
+
+    card.addEventListener(
+      'mousedown',
+      startLongPress
+    );
+
+    card.addEventListener(
+      'touchstart',
+      startLongPress,
+      {passive:true}
+    );
+
+
+    card.addEventListener(
+      'mouseup',
+      cancelLongPress
+    );
+
+    card.addEventListener(
+      'mouseleave',
+      cancelLongPress
+    );
+
+    card.addEventListener(
+      'touchend',
+      cancelLongPress
+    );
+
+
+    function startLongPress(){
+
+      longPressTimer =
+        setTimeout(()=>{
+
+          showActionModal(p.id);
+
+        },600);
+
+    }
+
+
+    function cancelLongPress(){
+
+      clearTimeout(longPressTimer);
+
+    }
+
+
+    grid.appendChild(card);
+
+  });
+
+
+  /* ================= NEW ITEM ================= */
+
+  const newCard =
+    document.createElement('div');
+
+  newCard.className =
+    'bg-white rounded-xl border border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[140px] cursor-pointer';
+
+
+  newCard.innerHTML = `
+
+    <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">
+
+      +
+
+    </div>
+
+    <div class="text-[14px] font-bold mt-3 text-blue-600">
+
+      NEW ITEM
+
+    </div>
+
+  `;
+
+
+  newCard.onclick =
+    ()=>addProductToFirebase();
+
+
+  grid.appendChild(newCard);
+
+};
+
+
+/* ================= QTY ================= */
+
+function incQty(id){
+
+  cart[id] =
+    (cart[id] || 0) + 1;
+
+  updateTotal();
+
+  renderProducts();
+
+  renderPreview();
+
+}
+
+
+function decQty(id){
+
+  if(!cart[id]) return;
+
+  cart[id]--;
+
+  if(cart[id] <= 0){
+
+    delete cart[id];
+
+  }
+
+  updateTotal();
+
+  renderProducts();
+
+  renderPreview();
+
+}
+
+
+function updateTotal(){
+
+  let total = 0;
+
+  Object.keys(cart).forEach(id=>{
+
+    const p =
+      window.products.find(
+        x=>String(x.id) === String(id)
+      );
+
+    if(p){
+
+      total +=
+        Number(p.price || 0) *
+        cart[id];
+
+    }
+
+  });
+
+
+  document.getElementById('totalAmt')
+    .innerText =
+    '₹' + total.toFixed(1);
+
+}
+
+
+/* ================= PRODUCT ACTION ================= */
+
+function showActionModal(id){
+
+  selectedProductId = id;
+
+  const p =
+    window.products.find(
+      x=>String(x.id) === String(id)
+    );
+
+  if(!p) return;
+
+
+  document.getElementById(
+    'actionProductName'
+  ).innerText =
+    `Do you want to modify '${p.name}'?`;
+
+
+  document.getElementById(
+    'productActionModal'
+  ).classList.remove('hidden');
+
+
+  document.getElementById(
+    'productActionModal'
+  ).classList.add('flex');
+
+}
+
+
+function closeActionModal(){
+
+  const modal =
+    document.getElementById(
+      'productActionModal'
+    );
+
+  modal.classList.add('hidden');
+
+  modal.classList.remove('flex');
+
+}
+
+
+/* ================= EDIT MODAL ================= */
+
+function openModifyModal(){
+
+  const p =
+    window.products.find(
+      x=>String(x.id) === String(selectedProductId)
+    );
+
+  if(!p) return;
+
+
+  document.getElementById(
+    'editProductName'
+  ).value =
+    p.name || '';
+
+
+  document.getElementById(
+    'editProductPrice'
+  ).value =
+    p.price || '';
+
+
+  document.getElementById(
+    'editProductImage'
+  ).src =
+    p.img || '';
+
+
+  document.getElementById(
+    'editProductImageInput'
+  ).value = '';
+
+
+  closeActionModal();
+
+
+  document.getElementById(
+    'editProductModal'
+  ).classList.remove('hidden');
+
+}
+
+
+function closeEditModal(){
+
+  document.getElementById(
+    'editProductModal'
+  ).classList.add('hidden');
+
+}
+
+
+/* ================= SEARCH ================= */
+
+document.getElementById(
+  'searchInput'
+).addEventListener(
+  'input',
+  e=>{
+
+    searchText =
+      e.target.value;
+
+    renderProducts();
+
+  }
+);
+
+
+/* ================= CATEGORY UI ================= */
+
+document.getElementById(
+  'newCatBtn'
+).onclick = ()=>{
+
+  const name =
+    prompt('New Category name likho:');
+
+  if(!name || !name.trim())
+    return;
+
+  window.addCategoryToFirebase(
+    name.trim()
+  );
+
+};
+
+
+/* ================= FAB ================= */
+
+document.getElementById(
+  'addProductFab'
+).onclick =
+  ()=>addProductToFirebase();
+
+
+/* ================= DRAWER ================= */
+
+function openDrawer(){
+
+  document.getElementById(
+    'leftDrawer'
+  ).classList.remove(
+    '-translate-x-full'
+  );
+
+  document.getElementById(
+    'drawerOverlay'
+  ).classList.remove('hidden');
+
+}
+
+
+function closeDrawer(){
+
+  document.getElementById(
+    'leftDrawer'
+  ).classList.add(
+    '-translate-x-full'
+  );
+
+  document.getElementById(
+    'drawerOverlay'
+  ).classList.add('hidden');
+
+}
+
+
+document.getElementById(
+  'menuBtn'
+).onclick =
+  openDrawer;
+
+
+document.getElementById(
+  'drawerOverlay'
+).onclick =
+  closeDrawer;
+
+
+/* ================= TABS ================= */
+
+function switchTab(tab){
+
+  const settings =
+    document.getElementById(
+      'settingsPage'
+    );
+
+  if(tab === 'SETTINGS'){
+
+    settings.classList.remove('hidden');
+
+  }else{
+
+    settings.classList.add('hidden');
+
+  }
+
+}
+
+
+/* ================= PREVIEW ================= */
+
+function handlePreview(){
+
+  renderPreview();
+
+  document.getElementById(
+    'previewModal'
+  ).classList.remove('hidden');
+
+  document.getElementById(
+    'previewModal'
+  ).classList.add('flex');
+
+}
+
+
+function closePreview(){
+
+  const modal =
+    document.getElementById(
+      'previewModal'
+    );
+
+  modal.classList.add('hidden');
+
+  modal.classList.remove('flex');
+
+}
+
+
+function renderPreview(){
+
+  const list =
+    document.getElementById(
+      'previewList'
+    );
+
+  list.innerHTML = '';
+
+  let total = 0;
+
+
+  Object.keys(cart).forEach(id=>{
+
+    const p =
+      window.products.find(
+        x=>String(x.id) === String(id)
+      );
+
+    if(!p) return;
+
+
+    const amount =
+      Number(p.price || 0) *
+      cart[id];
+
+
+    total += amount;
+
+
+    const row =
+      document.createElement('div');
+
+
+    row.className =
+      'flex items-center justify-between border-b py-2';
+
+
+    row.innerHTML = `
+
+      <div class="flex-1">
+
+        <div class="text-[13px] font-medium">
+          ${p.name}
+        </div>
+
+        <div class="text-[11px] text-gray-500">
+
+          ₹${p.price} × ${cart[id]}
+          = ₹${amount}
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    list.appendChild(row);
+
+  });
+
+
+  document.getElementById(
+    'previewTotal'
+  ).innerText =
+    '₹' + total.toFixed(1);
+
+
+  if(
+    Object.keys(cart).length === 0
+  ){
+
+    list.innerHTML =
+      '<div class="text-center text-gray-400 text-[13px] mt-10">No items</div>';
+
+  }
+
+}
+
+
+/* ================= BASIC BUTTONS ================= */
+
+function handleKOT(){
+
+  alert('KOT Printed');
+
+}
+
+
+function handleRealPrint(){
+
+  window.print();
+
+}
+
+
+/* ================= START ================= */
+
+renderCategories();
+
+renderProducts();
+
+updateTotal();
+
+</script>
+
+<!-- =====================================================
+     PART 2 : FIREBASE PRODUCT + CATEGORY SYSTEM
+===================================================== -->
+
+<script type="module">
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+  updateDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
+/* =====================================================
+   FIREBASE CONFIG
+===================================================== */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
+  authDomain: "upharshringar-billing-5f4c9.firebaseapp.com",
+  projectId: "upharshringar-billing-5f4c9",
+  storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app",
+  messagingSenderId: "1070290998158",
+  appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf"
+};
+
+
+/* =====================================================
+   FIREBASE START
+===================================================== */
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const productsRef =
+  collection(db, "products");
+
+const categoriesRef =
+  collection(db, "categories");
+
+
+/* =====================================================
+   PRODUCT REALTIME LOAD
+===================================================== */
+
+onSnapshot(
+  productsRef,
+  (snapshot)=>{
+
+    const list = [];
+
+    snapshot.forEach((item)=>{
+
+      const data = item.data();
+
+      list.push({
+
+        ...data,
+
+        firebaseId: item.id,
+
+        id: data.id || item.id
+
+      });
+
+    });
+
+
+    window.products = list;
+
+    window.renderProducts();
+
+    window.renderCategories();
+
+    window.updateTotal();
+
+  },
+  (error)=>{
+
+    console.error(
+      "Products Firebase Error:",
+      error
+    );
+
+    alert(
+      "Product load nahi ho raha.\nFirebase error check karo."
+    );
+
+  }
+);
+
+
+/* =====================================================
+   CATEGORY REALTIME LOAD
+===================================================== */
+
+onSnapshot(
+  categoriesRef,
+  (snapshot)=>{
+
+    const firebaseCategories = [];
+
+    snapshot.forEach((item)=>{
+
+      const data = item.data();
+
+      firebaseCategories.push({
+
+        ...data,
+
+        firebaseId: item.id,
+
+        id: data.id || item.id
+
+      });
+
+    });
+
+
+    /*
+      Agar Firebase me category nahi hai,
+      All Items hamesha rahega.
+    */
+
+    if(firebaseCategories.length > 0){
+
+      const allCategory = {
+        id:'all',
+        name:'All Items'
+      };
+
+      const hasAll =
+        firebaseCategories.some(
+          x=>String(x.id)==='all'
+        );
+
+      if(!hasAll){
+
+        firebaseCategories.unshift(
+          allCategory
+        );
+
+      }
+
+      window.categories =
+        firebaseCategories;
+
+    }else{
+
+      window.categories = [
+
+        {
+          id:'all',
+          name:'All Items'
+        }
+
+      ];
+
+    }
+
+
+    window.renderCategories();
+
+    window.renderProducts();
+
+  },
+  (error)=>{
+
+    console.error(
+      "Categories Firebase Error:",
+      error
+    );
+
+  }
+);
+
+
+/* =====================================================
+   ADD PRODUCT
+===================================================== */
+
+window.addProductToFirebase =
+async function(){
+
+  try{
+
+    /* ================= CATEGORY ================= */
+
+    let usableCategories =
+      window.categories.filter(
+        c=>String(c.id)!=='all'
+      );
+
+
+    if(
+      usableCategories.length === 0
+    ){
+
+      alert(
+        "Pehle ek Category banao."
+      );
+
+      return;
+
+    }
+
+
+    let catList =
+      usableCategories
+      .map(
+        (c,i)=>
+        `${i+1}. ${c.name}`
+      )
+      .join('\n');
+
+
+    let choice =
+      prompt(
+        `Kis Category me product add karna hai?\n\n${catList}\n\nNumber likho:`,
+        "1"
+      );
+
+
+    if(choice === null)
+      return;
+
+
+    let index =
+      parseInt(choice)-1;
+
+
+    let category =
+      usableCategories[index];
+
+
+    if(!category){
+
+      alert(
+        "Galat category number."
+      );
+
+      return;
+
+    }
+
+
+    /* ================= NAME ================= */
+
+    let name =
+      prompt("Product Name:");
+
+
+    if(!name || !name.trim())
+      return;
+
+
+    /* ================= PRICE ================= */
+
+    let price =
+      prompt(
+        "Sale Price:",
+        "20"
+      );
+
+
+    if(price === null)
+      return;
+
+
+    price =
+      parseFloat(price);
+
+
+    if(
+      isNaN(price) ||
+      price < 0
+    ){
+
+      alert(
+        "Price sahi likho."
+      );
+
+      return;
+
+    }
+
+
+    /* ================= IMAGE ================= */
+
+    let imageData = "";
+
+
+    const wantImage =
+      confirm(
+        "Product ka photo add karna hai?"
+      );
+
+
+    if(wantImage){
+
+      imageData =
+        await selectProductImage();
+
+    }
+
+
+    /* ================= PRODUCT DATA ================= */
+
+    const productData = {
+
+      id:
+        Date.now().toString(),
+
+      name:
+        name.trim(),
+
+      price:
+        price,
+
+      cat:
+        String(category.id),
+
+      qty:
+        0,
+
+      img:
+        imageData || "",
+
+      createdAt:
+        Date.now()
+
+    };
+
+
+    /* ================= FIREBASE ADD ================= */
+
+    await addDoc(
+      productsRef,
+      productData
+    );
+
+
+    alert(
+      "✅ Product successfully add ho gaya!"
+    );
+
+  }catch(error){
+
+    console.error(
+      "ADD PRODUCT ERROR:",
+      error
+    );
+
+    alert(
+      "Product add nahi hua.\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   IMAGE SELECT
+===================================================== */
+
+function selectProductImage(){
+
+  return new Promise((resolve)=>{
+
+    const input =
+      document.createElement('input');
+
+    input.type =
+      'file';
+
+    input.accept =
+      'image/*';
+
+
+    input.onchange =
+      (event)=>{
+
+        const file =
+          event.target.files[0];
+
+
+        if(!file){
+
+          resolve("");
+
+          return;
+
+        }
+
+
+        const reader =
+          new FileReader();
+
+
+        reader.onload =
+          ()=>{
+            resolve(
+              reader.result
+            );
+          };
+
+
+        reader.onerror =
+          ()=>{
+            resolve("");
+          };
+
+
+        reader.readAsDataURL(
+          file
+        );
+
+      };
+
+
+    input.click();
+
+  });
+
+}
+
+
+/* =====================================================
+   DELETE SELECTED PRODUCT
+===================================================== */
+
+window.deleteSelectedProduct =
+async function(){
+
+  if(!selectedProductId)
+    return;
+
+
+  const product =
+    window.products.find(
+      p =>
+      String(p.id) ===
+      String(selectedProductId)
+    );
+
+
+  if(!product){
+
+    alert(
+      "Product nahi mila."
+    );
+
+    closeActionModal();
+
+    return;
+
+  }
+
+
+  const ok =
+    confirm(
+      `"${product.name}" delete karna hai?`
+    );
+
+
+  if(!ok)
+    return;
+
+
+  try{
+
+    /* ================= FIREBASE ID ================= */
+
+    let firebaseId =
+      product.firebaseId;
+
+
+    /*
+      Agar firebaseId missing ho
+      to id ko bhi check karenge.
+    */
+
+    if(!firebaseId){
+
+      firebaseId =
+        product.id;
+
+    }
+
+
+    if(!firebaseId){
+
+      alert(
+        "Firebase product ID nahi mili."
+      );
+
+      return;
+
+    }
+
+
+    /* ================= DELETE ================= */
+
+    await deleteDoc(
+      doc(
+        db,
+        "products",
+        firebaseId
+      )
+    );
+
+
+    /* ================= CART CLEAN ================= */
+
+    delete cart[
+      selectedProductId
+    ];
+
+
+    selectedProductId =
+      null;
+
+
+    closeActionModal();
+
+    updateTotal();
+
+    renderProducts();
+
+    renderPreview();
+
+
+    alert(
+      "✅ Product delete ho gaya!"
+    );
+
+  }catch(error){
+
+    console.error(
+      "DELETE PRODUCT ERROR:",
+      error
+    );
+
+    alert(
+      "Product delete nahi hua.\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   UPDATE PRODUCT
+===================================================== */
+
+window.saveUpdatedProduct =
+async function(){
+
+  if(!selectedProductId)
+    return;
+
+
+  const product =
+    window.products.find(
+      p =>
+      String(p.id) ===
+      String(selectedProductId)
+    );
+
+
+  if(!product){
+
+    alert(
+      "Product nahi mila."
+    );
+
+    return;
+
+  }
+
+
+  const newName =
+    document
+      .getElementById(
+        'editProductName'
+      )
+      .value
+      .trim();
+
+
+  const newPrice =
+    parseFloat(
+      document
+        .getElementById(
+          'editProductPrice'
+        )
+        .value
+    );
+
+
+  if(!newName){
+
+    alert(
+      "Product name likho."
+    );
+
+    return;
+
+  }
+
+
+  if(
+    isNaN(newPrice) ||
+    newPrice < 0
+  ){
+
+    alert(
+      "Price sahi likho."
+    );
+
+    return;
+
+  }
+
+
+  try{
+
+    let newImage =
+      product.img || "";
+
+
+    const imageInput =
+      document.getElementById(
+        'editProductImageInput'
+      );
+
+
+    /* ================= NEW IMAGE ================= */
+
+    if(
+      imageInput &&
+      imageInput.files &&
+      imageInput.files[0]
+    ){
+
+      newImage =
+        await fileToBase64(
+          imageInput.files[0]
+        );
+
+    }
+
+
+    /* ================= FIREBASE ID ================= */
+
+    let firebaseId =
+      product.firebaseId ||
+      product.id;
+
+
+    /* ================= UPDATE ================= */
+
+    await updateDoc(
+      doc(
+        db,
+        "products",
+        firebaseId
+      ),
+      {
+
+        name:
+          newName,
+
+        price:
+          newPrice,
+
+        img:
+          newImage,
+
+        updatedAt:
+          Date.now()
+
+      }
+    );
+
+
+    closeEditModal();
+
+
+    selectedProductId =
+      null;
+
+
+    alert(
+      "✅ Product update ho gaya!"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "UPDATE PRODUCT ERROR:",
+      error
+    );
+
+    alert(
+      "Product update nahi hua.\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   FILE TO BASE64
+===================================================== */
+
+function fileToBase64(file){
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const reader =
+        new FileReader();
+
+
+      reader.onload =
+        ()=>{
+          resolve(
+            reader.result
+          );
+        };
+
+
+      reader.onerror =
+        ()=>{
+          reject(
+            reader.error
+          );
+        };
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   ADD CATEGORY
+===================================================== */
+
+window.addCategoryToFirebase =
+async function(name){
+
+  try{
+
+    name =
+      name.trim();
+
+
+    if(!name)
+      return;
+
+
+    /* duplicate check */
+
+    const exists =
+      window.categories.some(
+        c =>
+        String(c.name)
+        .toLowerCase() ===
+        String(name)
+        .toLowerCase()
+      );
+
+
+    if(exists){
+
+      alert(
+        "Ye category already hai."
+      );
+
+      return;
+
+    }
+
+
+    await addDoc(
+      categoriesRef,
+      {
+
+        id:
+          Date.now().toString(),
+
+        name:
+          name,
+
+        createdAt:
+          Date.now()
+
+      }
+    );
+
+
+    alert(
+      "✅ Category add ho gayi!"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "CATEGORY ADD ERROR:",
+      error
+    );
+
+    alert(
+      "Category add nahi hui.\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   DELETE CATEGORY
+===================================================== */
+
+window.deleteCategoryFromFirebase =
+async function(id){
+
+  if(
+    String(id)==='all'
+  ){
+
+    alert(
+      "All Items delete nahi hoga."
+    );
+
+    return;
+
+  }
+
+
+  const category =
+    window.categories.find(
+      c =>
+      String(c.id) ===
+      String(id)
+    );
+
+
+  if(!category){
+
+    alert(
+      "Category nahi mili."
+    );
+
+    return;
+
+  }
+
+
+  const ok =
+    confirm(
+      `"${category.name}" category delete karna hai?`
+    );
+
+
+  if(!ok)
+    return;
+
+
+  try{
+
+    const firebaseId =
+      category.firebaseId ||
+      category.id;
+
+
+    await deleteDoc(
+      doc(
+        db,
+        "categories",
+        firebaseId
+      )
+    );
+
+
+    /* =================================================
+       CATEGORY KE PRODUCTS DELETE NAHI KAR RAHE
+       Sirf category delete hogi.
+    ================================================= */
+
+
+    if(
+      String(selectedCat) ===
+      String(id)
+    ){
+
+      selectedCat =
+        'all';
+
+    }
+
+
+    alert(
+      "✅ Category delete ho gayi!"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "CATEGORY DELETE ERROR:",
+      error
+    );
+
+    alert(
+      "Category delete nahi hui.\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   MAKE IMPORTANT FUNCTIONS GLOBAL
+===================================================== */
+
+window.renderProducts =
+  window.renderProducts;
+
+window.renderCategories =
+  window.renderCategories;
+
+window.updateTotal =
+  window.updateTotal;
+
+
+/* =====================================================
+   FIREBASE READY
+===================================================== */
+
+console.log(
+  "🔥 Firebase Product System Ready"
+);
+
+</script>
+</body>
+</html>
