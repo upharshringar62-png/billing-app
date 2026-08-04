@@ -360,7 +360,7 @@ let searchText = '';
   renderProducts(); renderCategories();
 }
 // DELETE CATEGORY FUNCTION
-function deleteCategory(id){
+deleteCategory('${c.firebaseId || c.id}')
   if(id==='all'){
     alert('All Items delete nahi hoga!');
     return;
@@ -699,9 +699,6 @@ function saveUpdatedProduct(){
     updateTotal();
   }
  }
-function deleteCategory(id){
-  if(confirm('Category delete?')){ categories = categories.filter(c=>c.id!=id); localStorage.setItem('categories', JSON.stringify(categories)); renderCategories(); }
-}
 
 // ================= TABS =================
 function switchTab(tab){
@@ -914,7 +911,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 window.firebaseDB = getFirestore(app); 
 const db = getFirestore(app);
-
+ window.firebaseDB = db;
 const prodCol = collection(db, "products");
 const catCol = collection(db, "categories");
 
