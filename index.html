@@ -450,7 +450,9 @@ function handlePreview(){
   renderPreview();
   document.getElementById('previewModal').classList.remove('hidden');
 }
-function closePreview()
+function closePreview(){
+  document.getElementById('previewModal').classList.add('hidden');
+}
 function switchTab(tab){
   if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); }
   else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); }
@@ -459,8 +461,7 @@ function switchTab(tab){
 function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-translate-x-full'); document.getElementById('drawerOverlay').classList.remove('hidden'); }
 function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
 document.getElementById('menuBtn').onclick=openDrawer;
-  document.getElementById('previewModal').classList.add('hidden');
-}
+document.getElementById('drawerOverlay').onclick=closeDrawer;
   async function handleRealPrint(){
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let custName = document.getElementById('custName')?.value || '';
@@ -725,15 +726,8 @@ function addItemDirect(){
   let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`);
   if(!name) return;
   let price = prompt('Price:', '20');
-  products.push({
-    id: Date.now().toString(),
-    name: name,
-    price: parseFloat(price)||20,
-    cat: selectedCat==='all'?'1':selectedCat,
-    qty: 0,
-    img: ''
-  });
-  localStorage.setItem('products', JSON.stringify(products));
+   window.products.push
+JSON.stringify(window.products)
   renderProducts();
   renderCategories();
 }
