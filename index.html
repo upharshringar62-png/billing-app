@@ -708,7 +708,7 @@ function addProductWithCategory(){
   let name = prompt('Product name:');
   if(!name) return;
   let price = prompt('Price:', '20');
-  products.push({
+  window.products.push({
     id: Date.now().toString(),
     name: name,
     price: parseFloat(price)||20,
@@ -716,7 +716,7 @@ function addProductWithCategory(){
     qty: 0,
     img: ''
   });
-  localStorage.setItem('products', JSON.stringify(products));
+  localStorage.setItem('products', JSON.stringify(window.products));
   renderProducts();
   renderCategories();
 }
