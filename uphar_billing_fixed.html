@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPHAR Billing</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:#f2f3f7}
+.hide{display:none!important}
+button{cursor:pointer}
+@media print{
+ body *{visibility:hidden!important}
+ #printArea,#printArea *{visibility:visible!important}
+ #printArea{position:absolute;left:0;top:0;width:100%;background:#fff;padding:12px}
+}
+</style>
+</head>
+<body>
+
+<header class="h-14 bg-[#303fe8] text-white flex items-center justify-between px-3 sticky top-0 z-30">
+<button id="menuBtn" class="text-2xl w-10 h-10">☰</button>
+<button id="printBtn" class="bg-green-500 px-4 py-2 rounded-full font-bold">🖨️ PRINT</button>
+</header>
+
+<div class="flex min-h-[calc(100vh-114px)]">
+<aside class="w-36 bg-white border-r shrink-0">
+<div class="p-2">
+<button id="newCatBtn" class="w-full bg-[#303fe8] text-white rounded-full py-2 text-[10px] font-bold">+ NEW CATEGORY</button>
+</div>
+<div id="catList"></div>
+</aside>
+
+<main class="flex-1 min-w-0">
+<div class="bg-white p-2 border-b">
+<input id="searchInput" placeholder="🔍 Search item..." class="w-full h-10 bg-gray-100 rounded-full px-4 outline-none">
+</div>
+<div id="productGrid" class="p-2 grid grid-cols-2 gap-2"></div>
+<div class="fixed bottom-[60px] left-36 right-0 bg-white border-t p-2 flex gap-2 z-10">
+<button id="kotBtn" class="border rounded-lg px-5 py-2 font-bold text-xs">KOT</button>
+<button id="previewBtn" class="border rounded-lg px-5 py-2 font-bold text-xs">PREVIEW</button>
+</div>
+</main>
+</div>
+
+<nav class="fixed bottom-0 left-0 right-0 h-[60px] bg-white border-t flex z-30">
+<button data-tab="BILL" class="flex-1 text-blue-600 text-xs">📄<br>NEW BILL</button>
+<button data-tab="REPORT" class="flex-1 text-gray-500 text-xs">📊<br>REPORT</button>
+<button id="addProductFab" class="w-20 bg-[#303fe8] text-white rounded-full m-2 text-xs">＋<br>PRODUCT</button>
+<button data-tab="PARTY" class="flex-1 text-gray-500 text-xs">👥<br>PARTY</button>
+<button data-tab="SETTINGS" class="flex-1 text-gray-500 text-xs">⚙️<br>SETTINGS</button>
+</nav>
+
+<div id="drawerOverlay" class="fixed inset-0 bg-black/40 z-40 hide"></div>
+<div id="drawer" class="fixed left-0 top-0 bottom-0 w-80 max-w-[85%] bg-white z-50 -translate-x-full transition-transform">
+<div class="bg-[#303fe8] text-white p-4">
+<b>UPHAR SINGHAR & GIFTS</b><br><small>NARKATIAGANJ 845455</small>
+</div>
+<div class="p-3 space-y-2">
+<button class="drawerAction w-full text-left p-3 border rounded">📊 Sales Report</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📦 Item-wise Report</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📂 Category-wise Report</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📜 Sales History</button>
+<button class="drawerAction w-full text-left p-3 border rounded">🛒 Purchase Report</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📦 Stock Manage</button>
+<button class="drawerAction w-full text-left p-3 border rounded">💸 Expense Manage</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📈 Profit & Loss</button>
+<button class="drawerAction w-full text-left p-3 border rounded">👥 Customers Manage</button>
+<button class="drawerAction w-full text-left p-3 border rounded">📋 Due List</button>
+</div>
+</div>
+
+<div id="settingsPage" class="fixed inset-0 bg-gray-100 z-35 hide overflow-y-auto pb-20">
+<div class="bg-white p-4 sticky top-0"><b>⚙️ Profile Setting</b></div>
+<div class="p-3 space-y-3">
+<div class="bg-white p-4 rounded border">
+<label class="font-bold text-xs">Business / Shop Title</label>
+<textarea id="businessTitle" class="w-full border rounded p-2 mt-2">UPHAR SINGHAR & GIFTS BHAGWATI CINEMA ROAD, NARKATIAGANJ, 845455 MOB. +917256050678</textarea>
+</div>
+<div class="bg-white p-4 rounded border">
+<label class="font-bold text-xs">Running Bill No</label>
+<input id="billNoInput" type="number" value="655" class="w-full border rounded p-2 mt-2">
+</div>
+<button id="backBillBtn" class="w-full bg-[#303fe8] text-white p-3 rounded-full font-bold">Back to Billing</button>
+</div>
+</div>
+
+<div id="previewModal" class="fixed inset-0 bg-black/50 z-50 hide items-end sm:items-center justify-center">
+<div class="bg-white w-full max-w-md rounded-t-2xl p-4">
+<h3 class="font-bold text-lg mb-3">Bill Preview</h3>
+<input id="custName" placeholder="Customer Name" class="w-full border rounded p-2 mb-2">
+<input id="custMobile" placeholder="Mobile No" class="w-full border rounded p-2 mb-2">
+<div id="previewList" class="max-h-64 overflow-auto"></div>
+<div class="flex justify-between font-bold p-3"><span>Total</span><span id="previewTotal">₹0</span></div>
+<div class="flex gap-2">
+<button id="closePreviewBtn" class="flex-1 bg-gray-200 p-3 rounded-full">CLOSE</button>
+<button id="realPrintBtn" class="flex-1 bg-green-500 text-white p-3 rounded-full">🖨️ PRINT</button>
+</div>
+</div>
+</div>
+
+<div id="productModal" class="fixed inset-0 bg-black/50 z-50 hide items-center justify-center p-4">
+<div class="bg-white rounded-xl p-5 w-full max-w-sm">
+<h3 class="font-bold text-lg">Add Product</h3>
+<input id="productName" placeholder="Product Name" class="w-full border rounded p-3 mt-3">
+<input id="productPrice" type="number" placeholder="Sale Price" class="w-full border rounded p-3 mt-2">
+<input id="productMrp" type="number" placeholder="MRP (optional)" class="w-full border rounded p-3 mt-2">
+<input id="productImage" type="file" accept="image/*" class="w-full mt-3 text-xs">
+<div class="flex gap-2 mt-4">
+<button id="cancelProductBtn" class="flex-1 bg-gray-200 p-3 rounded">CANCEL</button>
+<button id="saveProductBtn" class="flex-1 bg-[#303fe8] text-white p-3 rounded font-bold">SAVE</button>
+</div>
+</div>
+</div>
+
+<div id="editModal" class="fixed inset-0 bg-black/50 z-50 hide items-center justify-center p-4">
+<div class="bg-white rounded-xl p-5 w-full max-w-sm">
+<h3 class="font-bold">Modify Product</h3>
+<input id="editName" class="w-full border rounded p-3 mt-3">
+<input id="editPrice" type="number" class="w-full border rounded p-3 mt-2">
+<input id="editImage" type="file" accept="image/*" class="w-full mt-3 text-xs">
+<div class="flex gap-2 mt-4">
+<button id="deleteEditBtn" class="flex-1 bg-red-500 text-white p-3 rounded">DELETE</button>
+<button id="saveEditBtn" class="flex-1 bg-green-500 text-white p-3 rounded">UPDATE</button>
+</div>
+<button id="cancelEditBtn" class="w-full bg-gray-200 p-3 rounded mt-2">CANCEL</button>
+</div>
+</div>
+
+<div id="printArea" class="hide"></div>
+
+<script>
+/* ================= SAFE LOCAL STORAGE =================
+   Products/categories are saved locally and NEVER reset on reload.
+*/
+const CAT_KEY='uphar_categories_v2';
+const PROD_KEY='uphar_products_v2';
+const BILL_KEY='uphar_bills_v2';
+
+let defaultCats=[
+{id:'all',name:'All Items'},
+{id:'1',name:'Shringar box'},
+{id:'2',name:'Face Wash'},
+{id:'3',name:'Derma Products'},
+{id:'4',name:'Hair Fall Control'},
+{id:'5',name:'Bangles'},
+{id:'6',name:'Serum'},
+{id:'7',name:'Flower Pot 3pcs'},
+{id:'8',name:'Sefty Pin'},
+{id:'9',name:'Bindi'},
+{id:'10',name:'Juda Pins'}
+];
+
+function loadJSON(key,fallback){
+ try{
+  const x=localStorage.getItem(key);
+  return x?JSON.parse(x):fallback;
+ }catch(e){return fallback}
+}
+let categories=loadJSON(CAT_KEY,defaultCats);
+let products=loadJSON(PROD_KEY,[]);
+let bills=loadJSON(BILL_KEY,[]);
+let cart={};
+let selectedCat='all';
+let searchText='';
+let selectedProductId=null;
+
+function saveAll(){
+ localStorage.setItem(CAT_KEY,JSON.stringify(categories));
+ localStorage.setItem(PROD_KEY,JSON.stringify(products));
+ localStorage.setItem(BILL_KEY,JSON.stringify(bills));
+}
+
+function uid(){return Date.now().toString()+Math.random().toString(36).slice(2,7)}
+
+function renderCategories(){
+ const el=document.getElementById('catList'); el.innerHTML='';
+ categories.forEach(c=>{
+  const d=document.createElement('div');
+  d.className='flex items-center justify-between px-2 py-3 border-b cursor-pointer '+(selectedCat===c.id?'bg-blue-50':'');
+  d.innerHTML='<div class="text-xs font-bold flex-1">'+escapeHTML(c.name)+'</div>'+
+    (c.id==='all'?'':'<button class="catDelete text-gray-400 px-2 text-lg" title="Delete">⋮</button>');
+  d.onclick=()=>{selectedCat=c.id;renderCategories();renderProducts()};
+  const del=d.querySelector('.catDelete');
+  if(del)del.onclick=(e)=>{e.stopPropagation();deleteCategory(c.id)};
+  el.appendChild(d);
+ });
+}
+
+function renderProducts(){
+ const grid=document.getElementById('productGrid'); grid.innerHTML='';
+ let list=products.filter(p=>{
+  if(selectedCat!=='all' && String(p.cat)!==String(selectedCat))return false;
+  return !searchText || String(p.name).toLowerCase().includes(searchText.toLowerCase());
+ });
+ if(!list.length){
+  grid.innerHTML='<div class="col-span-2 bg-white p-8 rounded text-center text-gray-400">Koi product nahi hai.<br><small>＋ PRODUCT se add karein</small></div>';
+  return;
+ }
+ list.forEach(p=>{
+  const q=cart[p.id]||0;
+  const card=document.createElement('div');
+  card.className='bg-white rounded-xl border p-2';
+  card.innerHTML=
+   '<div class="h-24 bg-gray-100 rounded flex items-center justify-center overflow-hidden">'+
+   (p.img?'<img src="'+p.img+'" class="w-full h-full object-cover">':'🖼️')+'</div>'+
+   '<div class="font-bold text-xs text-center mt-2">'+escapeHTML(p.name)+'</div>'+
+   '<div class="font-bold text-center mt-1">₹'+Number(p.price).toFixed(0)+'</div>'+
+   '<div class="flex gap-1 mt-2">'+
+   '<button class="minus flex-1 bg-gray-100 rounded p-2">−</button>'+
+   '<span class="qty w-8 text-center p-2 font-bold">'+q+'</span>'+
+   '<button class="plus flex-1 bg-blue-600 text-white rounded p-2">+</button></div>'+
+   '<div class="flex gap-1 mt-2">'+
+   '<button class="modify flex-1 border rounded p-2 text-[10px]">MODIFY</button>'+
+   '<button class="delete flex-1 border border-red-300 text-red-500 rounded p-2 text-[10px]">DELETE</button></div>';
+  card.querySelector('.minus').onclick=()=>decQty(p.id);
+  card.querySelector('.plus').onclick=()=>incQty(p.id);
+  card.querySelector('.modify').onclick=()=>openEdit(p.id);
+  card.querySelector('.delete').onclick=()=>deleteProduct(p.id);
+  grid.appendChild(card);
+ });
+}
+
+function incQty(id){cart[id]=(cart[id]||0)+1;renderProducts()}
+function decQty(id){cart[id]=Math.max((cart[id]||0)-1,0);renderProducts()}
+
+function deleteProduct(id){
+ const p=products.find(x=>String(x.id)===String(id));
+ if(!p)return alert('Product nahi mila!');
+ if(!confirm('"'+p.name+'" delete karna hai?'))return;
+ products=products.filter(x=>String(x.id)!==String(id));
+ delete cart[id];
+ saveAll();renderProducts();renderCategories();
+ alert('Product Deleted ✅');
+}
+
+function deleteCategory(id){
+ if(id==='all')return alert('All Items delete nahi hoga!');
+ const c=categories.find(x=>String(x.id)===String(id));
+ if(!c)return alert('Category nahi mili!');
+ if(!confirm('Category "'+c.name+'" delete karna hai?'))return;
+ categories=categories.filter(x=>String(x.id)!==String(id));
+ /* Category delete hone par uske products ko bhi delete nahi karte.
+    Unhe All Items me visible rakhne ke liye cat ko all kar dete hain. */
+ products=products.map(p=>String(p.cat)===String(id)?{...p,cat:'all'}:p);
+ if(selectedCat===id)selectedCat='all';
+ saveAll();renderCategories();renderProducts();
+ alert('Category Deleted ✅');
+}
+
+function openModal(id){document.getElementById(id).classList.remove('hide');document.getElementById(id).classList.add('flex')}
+function closeModal(id){document.getElementById(id).classList.add('hide');document.getElementById(id).classList.remove('flex')}
+
+function readImage(input){
+ return new Promise(resolve=>{
+  const f=input.files&&input.files[0];
+  if(!f)return resolve('');
+  const r=new FileReader();r.onload=()=>resolve(r.result);r.readAsDataURL(f);
+ });
+}
+
+async function saveProduct(){
+ const name=document.getElementById('productName').value.trim();
+ const price=Number(document.getElementById('productPrice').value);
+ const mrp=Number(document.getElementById('productMrp').value)||price;
+ if(!name)return alert('Product Name likho');
+ if(!price||price<0)return alert('Price sahi likho');
+ const img=await readImage(document.getElementById('productImage'));
+ products.push({id:uid(),name,price,mrp,cat:selectedCat==='all'?'1':selectedCat,qty:0,img});
+ saveAll();closeModal('productModal');document.getElementById('productName').value='';document.getElementById('productPrice').value='';document.getElementById('productMrp').value='';document.getElementById('productImage').value='';
+ renderProducts();renderCategories();alert('Product Added ✅');
+}
+
+function openEdit(id){
+ const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+ selectedProductId=id;
+ document.getElementById('editName').value=p.name;
+ document.getElementById('editPrice').value=p.price;
+ openModal('editModal');
+}
+
+async function saveEdit(){
+ const p=products.find(x=>String(x.id)===String(selectedProductId));if(!p)return;
+ const n=document.getElementById('editName').value.trim();
+ const pr=Number(document.getElementById('editPrice').value);
+ if(!n||!pr)return alert('Name aur price sahi likho');
+ p.name=n;p.price=pr;
+ const img=await readImage(document.getElementById('editImage'));
+ if(img)p.img=img;
+ saveAll();closeModal('editModal');renderProducts();alert('Product Updated ✅');
+}
+
+function showPreview(){
+ const list=document.getElementById('previewList');list.innerHTML='';
+ let total=0;
+ Object.keys(cart).forEach(id=>{
+  if(cart[id]>0){
+   const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+   const line=p.price*cart[id];total+=line;
+   list.innerHTML+='<div class="flex justify-between border-b p-2"><span>'+escapeHTML(p.name)+' × '+cart[id]+'</span><b>₹'+line+'</b></div>';
+  }
+ });
+ document.getElementById('previewTotal').textContent='₹'+total;
+ openModal('previewModal');
+}
+
+function doPrint(){
+ let total=0,rows='';
+ Object.keys(cart).forEach(id=>{
+  if(cart[id]>0){
+   const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+   const line=p.price*cart[id];total+=line;
+   rows+='<tr><td>'+escapeHTML(p.name)+'</td><td>'+cart[id]+'</td><td>₹'+line+'</td></tr>';
+  }
+ });
+ if(!rows)return alert('Pehle product cart mein add karo.');
+ document.getElementById('printArea').innerHTML='<h2>UPHAR SINGHAR & GIFTS</h2><p>'+escapeHTML(document.getElementById('businessTitle').value)+'</p><hr><table width="100%"><tr><th>Item</th><th>Qty</th><th>Amount</th></tr>'+rows+'</table><hr><h3>Total: ₹'+total+'</h3><p>Thank you, Visit Again ❤️</p>';
+ document.getElementById('printArea').classList.remove('hide');
+ window.print();
+ setTimeout(()=>document.getElementById('printArea').classList.add('hide'),500);
+}
+
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+function switchTab(tab){
+ if(tab==='SETTINGS')document.getElementById('settingsPage').classList.remove('hide');
+ else if(tab==='BILL'){document.getElementById('settingsPage').classList.add('hide');}
+ else alert(tab+' section ready hai. Is button ka action baad me add kiya ja sakta hai.');
+}
+
+document.getElementById('menuBtn').onclick=()=>{document.getElementById('drawer').style.transform='translateX(0)';document.getElementById('drawerOverlay').classList.remove('hide')};
+function closeDrawer(){document.getElementById('drawer').style.transform='translateX(-100%)';document.getElementById('drawerOverlay').classList.add('hide')}
+document.getElementById('drawerOverlay').onclick=closeDrawer;
+
+document.getElementById('newCatBtn').onclick=()=>{
+ const name=prompt('New Category name likho:');
+ if(!name||!name.trim())return;
+ categories.push({id:uid(),name:name.trim()});saveAll();renderCategories();alert('Category Added ✅');
+};
+
+document.getElementById('addProductFab').onclick=()=>openModal('productModal');
+document.getElementById('cancelProductBtn').onclick=()=>closeModal('productModal');
+document.getElementById('saveProductBtn').onclick=saveProduct;
+document.getElementById('cancelEditBtn').onclick=()=>closeModal('editModal');
+document.getElementById('saveEditBtn').onclick=saveEdit;
+document.getElementById('deleteEditBtn').onclick=()=>{if(selectedProductId)deleteProduct(selectedProductId);closeModal('editModal')};
+document.getElementById('previewBtn').onclick=showPreview;
+document.getElementById('closePreviewBtn').onclick=()=>closeModal('previewModal');
+document.getElementById('realPrintBtn').onclick=doPrint;
+document.getElementById('printBtn').onclick=doPrint;
+document.getElementById('kotBtn').onclick=()=>alert('KOT ready. Cart me product add karke KOT use karein.');
+document.getElementById('searchInput').oninput=e=>{searchText=e.target.value;renderProducts()};
+document.getElementById('backBillBtn').onclick=()=>switchTab('BILL');
+
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+document.querySelectorAll('.drawerAction').forEach(b=>b.onclick=()=>{alert(b.textContent.trim()+' abhi ready hai.');closeDrawer()});
+
+window.addEventListener('beforeunload',saveAll);
+
+/* IMPORTANT: Purana Firebase code is file me nahi hai.
+   Isliye website refresh/reference karne par products/categories reset nahi honge. */
+renderCategories();
+renderProducts();
+</script>
+</body>
+</html>
