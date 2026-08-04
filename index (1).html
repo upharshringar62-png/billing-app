@@ -243,7 +243,9 @@
     <h3 class="font-bold text-[16px]">Modify Product</h3>
     <p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p>
     <div class="flex justify-between mt-4">
-      <button onclick="deleteProduct()" class="text-red-500 font-bold">DELETE</button>
+      <button onclick="deleteProduct(selectedProductId)" class="text-red-500 font-bold">
+  DELETE
+</button>
       <button onclick="closeActionModal()" class="text-gray-500 font-bold">CANCEL</button>
       <button onclick="openModifyModal()" class="text-green-600 font-bold">MODIFY</button>
     </div>
@@ -623,7 +625,7 @@ function closeActionModal(){
   document.getElementById('productActionModal').classList.add('hidden');
 }
 
-function deleteProduct(){
+window.deleteProduct = async (id) => {
   if(!selectedProductId) return;
 
   if(confirm('Delete this product?')){
@@ -762,7 +764,7 @@ async function addProductWithCategory(){
 
   try{
 
-    await addDoc(collection(db, "products"), {
+    await addDoc(collection(window.firebaseDB, "products"), {
       name: name,
       price: price,
       cat: targetCatId,
