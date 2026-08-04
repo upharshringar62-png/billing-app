@@ -732,26 +732,52 @@ if(fab){
   fab.style.position = 'relative';
 }
 
-function addProductWithCategory(){
+async function addProductWithCategory(){
+
   let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
-  let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, `1`);
-  let catIdx = parseInt(catChoice)-1;
-  let targetCatId = categories[catIdx]?.id || categories[0]?.id || '1';
-  
+
+  let catChoice = prompt(
+    `Kis Category me add karna hai?\n${catList}\n\nNumber likho:`,
+    `1`
+  );
+
+  let catIdx = parseInt(catChoice) - 1;
+  let targetCatId = categories[catIdx]?.id;
+
+  if(!targetCatId){
+    alert('Category select nahi hui');
+    return;
+  }
+
   let name = prompt('Product name:');
   if(!name) return;
+
   let price = prompt('Price:', '20');
-  products.push({
-    id: Date.now().toString(),
-    name: name,
-    price: parseFloat(price)||20,
-    cat: targetCatId,
-    qty: 0,
-    img: ''
-  });
-  localStorage.setItem('products', JSON.stringify(products));
-  renderProducts();
-  renderCategories();
+  price = parseFloat(price);
+
+  if(isNaN(price)){
+    alert('Price sahi likho');
+    return;
+  }
+
+  try{
+
+    await addDoc(collection(db, "products"), {
+      name: name,
+      price: price,
+      cat: targetCatId,
+      qty: 0,
+      img: ''
+    });
+
+    alert('✅ Product Add Ho Gaya');
+
+  }catch(error){
+
+    console.error(error);
+    alert('Product add nahi hua: ' + error.message);
+
+  }
 }
 
 function addItemDirect(){
@@ -865,7 +891,15 @@ updateTotal();
  </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  addDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
@@ -876,6 +910,7 @@ const firebaseConfig = {
   appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf"
 };
 const app = initializeApp(firebaseConfig);
+window.firebaseDB = getFirestore(app); 
 const db = getFirestore(app);
 
 const prodCol = collection(db, "products");
