@@ -416,26 +416,110 @@ window.deleteCategory = async function(id){
     renderProducts();
   }
 };
-// ================= RENDER CATEGORIES =================
 function renderCategories(){
-  const el = document.getElementById('catList');
-  el.innerHTML = '';
-  categories.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50 cursor-pointer';
-    div.innerHTML = `
-  <div>
-    <div class="text-[13px] font-medium">${c.name}</div>
-    <div class="text-[11px] text-gray-400">(0.0)</div>
-  </div>
-  <button onclick="event.stopPropagation(); if(confirm('Delete ${c.name}?')){deleteCategory('${c.id}')} " class="w-6 h-6 text-gray-400 text-[16px]">...</button>
-`;
-    div.onclick = ()=>{
-      selectedCat = c.id;
-      renderProducts();
-    };
-    el.appendChild(div);
-  });
+
+  const el = document.getElementById("catList");
+
+  el.innerHTML = "";
+
+
+  /* ALL ITEMS */
+
+  const allDiv = document.createElement("div");
+
+  allDiv.className =
+    "flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50 cursor-pointer";
+
+
+  allDiv.innerHTML = `
+    <div>
+      <div class="text-[13px] font-bold">
+        All Items
+      </div>
+      <div class="text-[11px] text-gray-400">
+        (${products.length})
+      </div>
+    </div>
+  `;
+
+
+  allDiv.onclick = () => {
+
+    selectedCat = "all";
+
+    renderProducts();
+
+  };
+
+
+  el.appendChild(allDiv);
+
+
+  /* CATEGORIES */
+
+  categories
+    .filter(c => c.id !== "all")
+    .forEach(c => {
+
+      const div = document.createElement("div");
+
+
+      div.className =
+        "flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50";
+
+
+      const count = products.filter(p =>
+
+        String(p.cat) === String(c.id)
+
+      ).length;
+
+
+      div.innerHTML = `
+
+        <div class="flex-1 cursor-pointer">
+
+          <div class="text-[13px] font-medium">
+            ${c.name}
+          </div>
+
+          <div class="text-[11px] text-gray-400">
+            (${count})
+          </div>
+
+        </div>
+
+        <button
+          class="deleteCatBtn w-7 h-7 text-red-500 font-bold"
+          type="button">
+          🗑️
+        </button>
+
+      `;
+
+
+      div.querySelector(".flex-1").onclick = () => {
+
+        selectedCat = c.id;
+
+        renderProducts();
+
+      };
+
+
+      div.querySelector(".deleteCatBtn").onclick = (e) => {
+
+        e.stopPropagation();
+
+        deleteCategory(c.firebaseId || c.id);
+
+      };
+
+
+      el.appendChild(div);
+
+    });
+
 }
 
 // ================= RENDER PRODUCTS =================
@@ -822,22 +906,250 @@ async function addProductWithCategory(){
   }
 }
 
-function addItemDirect(){
-  let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`);
-  if(!name) return;
-  let price = prompt('Price:', '20');
-  products.push({
+<script>
+
+async function addProductWithCategory(){
+
+  let catList = categories
+    .filter(c => c.id !== "all")
+    .map((c,i) => `${i+1}. ${c.name}`)
+    .join('\n');
+
+
+  let realCategories = categories.filter(c => c.id !== "all");
+
+
+  if(realCategories.length === 0){
+
+    alert("Pehle category add karo!");
+
+    return;
+
+  }
+
+
+  let catChoice = prompt(
+
+    `Kis Category me add karna hai?\n\n${catList}\n\nNumber likho:`,
+
+    "1"
+
+  );
+
+
+  let catIdx = parseInt(catChoice) - 1;
+
+
+  if(catIdx < 0 || !realCategories[catIdx]){
+
+    alert("Wrong category!");
+
+    return;
+
+  }
+
+
+  let targetCatId = realCategories[catIdx].id;
+
+
+  let name = prompt("Product Name:");
+
+  if(!name || !name.trim()) return;
+
+
+  let price = prompt("Price:", "20");
+
+  let mrp = prompt("MRP:", price);
+
+
+  let product = {
+
     id: Date.now().toString(),
-    name: name,
-    price: parseFloat(price)||20,
-    cat: selectedCat==='all'?'1':selectedCat,
+
+    name: name.trim(),
+
+    price: Number(price) || 20,
+
+    mrp: Number(mrp) || Number(price) || 20,
+
+    cat: String(targetCatId),
+
     qty: 0,
-    img: ''
-  });
-  localStorage.setItem('products', JSON.stringify(products));
-  renderProducts();
-  renderCategories();
+
+    img: ""
+
+  };
+
+
+  /*
+    Photo optional
+  */
+
+  if(confirm("Photo add karna hai?")){
+
+    const input = document.getElementById("imgInput");
+
+
+    input.onchange = function(e){
+
+      const file = e.target.files[0];
+
+      if(!file){
+
+        addProductToFirebase(product);
+
+        return;
+
+      }
+
+
+      const reader = new FileReader();
+
+
+      reader.onload = async function(){
+
+        product.img = reader.result;
+
+        await addProductToFirebase(product);
+
+        input.value = "";
+
+      };
+
+
+      reader.readAsDataURL(file);
+
+    };
+
+
+    input.click();
+
+    return;
+
+  }
+
+
+  await addProductToFirebase(product);
+
 }
+
+
+/* NEW ITEM */
+
+async function addNewItemInCat(){
+
+  let catId = selectedCat;
+
+
+  if(catId === "all"){
+
+    alert("Pehle category select karo!");
+
+    return;
+
+  }
+
+
+  let cat = categories.find(c =>
+
+    String(c.id) === String(catId)
+
+  );
+
+
+  let name = prompt(
+
+    `Product Name (${cat?.name || ""}):`
+
+  );
+
+
+  if(!name) return;
+
+
+  let price = prompt("Price:", "20");
+
+  let mrp = prompt("MRP:", price);
+
+
+  let product = {
+
+    id: Date.now().toString(),
+
+    name: name.trim(),
+
+    price: Number(price) || 20,
+
+    mrp: Number(mrp) || Number(price) || 20,
+
+    cat: String(catId),
+
+    qty: 0,
+
+    img: ""
+
+  };
+
+
+  if(confirm("Photo add karna hai?")){
+
+    const input = document.getElementById("imgInput");
+
+
+    input.onchange = function(e){
+
+      const file = e.target.files[0];
+
+
+      if(!file){
+
+        addProductToFirebase(product);
+
+        return;
+
+      }
+
+
+      const reader = new FileReader();
+
+
+      reader.onload = async function(){
+
+        product.img = reader.result;
+
+        await addProductToFirebase(product);
+
+        input.value = "";
+
+      };
+
+
+      reader.readAsDataURL(file);
+
+    };
+
+
+    input.click();
+
+    return;
+
+  }
+
+
+  await addProductToFirebase(product);
+
+}
+
+
+/* FAB */
+
+document.getElementById("addProductFab").onclick = () => {
+
+  addProductWithCategory();
+
+};
+
+</script>
 
 if(fab){
   fab.onclick = ()=>{
@@ -931,17 +1243,25 @@ renderCategories();
 renderProducts();
 updateTotal();
  </script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+ <script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
 import {
   getFirestore,
   collection,
   onSnapshot,
-  deleteDoc,
-  doc,
   addDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  updateDoc,
+  deleteDoc,
+  doc
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
+/* ================= FIREBASE ================= */
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
@@ -951,74 +1271,387 @@ const firebaseConfig = {
   messagingSenderId: "1070290998158",
   appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf"
 };
+
 const app = initializeApp(firebaseConfig);
-window.firebaseDB = getFirestore(app); 
+
 const db = getFirestore(app);
- window.firebaseDB = db;
-const prodCol = collection(db, "products");
-const catCol = collection(db, "categories");
 
-// Products Live
-onSnapshot(prodCol, (snap)=>{
-  let list = [];
-  snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
-  window.products = list;
-  if(window.renderProducts) window.renderProducts();
-  if(window.renderCategories) window.renderCategories();
-});
+window.firebaseDB = db;
 
-// Categories Live
-onSnapshot(catCol, (snap)=>{
 
-  let list = [
-    {id:'all', name:'All Items'}
-  ];
+/* ================= COLLECTIONS ================= */
 
-  snap.forEach(d=>{
-    let data = d.data();
+const productsRef = collection(db, "products");
+const categoriesRef = collection(db, "categories");
 
-    data.firebaseId = d.id;
 
-    if(!data.id){
-      data.id = d.id;
-    }
+/* =================================================
+   PRODUCTS LIVE
+================================================= */
 
-    list.push(data);
+onSnapshot(productsRef, (snapshot) => {
+
+  const list = [];
+
+  snapshot.forEach((d) => {
+
+    const data = d.data();
+
+    list.push({
+      ...data,
+      firebaseId: d.id,
+      id: data.id || d.id
+    });
+
   });
 
-  window.categories = list;
+  window.products = list;
 
-  if(window.renderCategories){
-    window.renderCategories();
-  }
-
-  if(window.renderProducts){
-    window.renderProducts();
-  }
+  renderProducts();
+  renderCategories();
+  updateTotal();
 
 });
 
-// ONLY ONE DELETE
-window.deleteProduct = async (id) => {
-  let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
-  if(!p) return;
-  if(!confirm(`"${p.name}" delete karna hai?`)) return;
-  if(p.firebaseId){
-    await deleteDoc(doc(db, "products", p.firebaseId));
+
+/* =================================================
+   CATEGORIES LIVE
+================================================= */
+
+onSnapshot(categoriesRef, (snapshot) => {
+
+  const list = [];
+
+  snapshot.forEach((d) => {
+
+    const data = d.data();
+
+    list.push({
+      ...data,
+      firebaseId: d.id,
+      id: data.id || d.id
+    });
+
+  });
+
+
+  /*
+    Agar Firebase me categories hain
+    to wahi use honge.
+  */
+
+  if(list.length > 0){
+
+    window.categories = list;
+
+  }else{
+
+    /*
+      Agar Firebase bilkul empty hai
+      to default categories ek baar Firebase
+      me automatically save karenge.
+    */
+
+    const defaultCategories = [
+      {id:"1", name:"Shringar box"},
+      {id:"2", name:"Face Wash"},
+      {id:"3", name:"Derma Products"},
+      {id:"4", name:"Hair Fall Control"},
+      {id:"5", name:"Bangles"},
+      {id:"6", name:"Serum"},
+      {id:"7", name:"Flower Pot 3pcs"},
+      {id:"8", name:"Sefty Pin"},
+      {id:"9", name:"Bindi"},
+      {id:"10", name:"Juda Pins"}
+    ];
+
+    for(const c of defaultCategories){
+
+      await addDoc(categoriesRef, {
+        id: c.id,
+        name: c.name
+      });
+
+    }
+
+    return;
+
   }
+
+  renderCategories();
+  renderProducts();
+
+});
+
+
+/* =================================================
+   ADD NEW CATEGORY
+================================================= */
+
+document.getElementById("newCatBtn").onclick = async function(){
+
+  const name = prompt("New Category name likho:");
+
+  if(!name || !name.trim()) return;
+
+  try{
+
+    await addDoc(categoriesRef, {
+
+      id: Date.now().toString(),
+
+      name: name.trim(),
+
+      createdAt: Date.now()
+
+    });
+
+    alert("Category Added ✅");
+
+  }catch(error){
+
+    console.error(error);
+
+    alert("Category add nahi hui ❌\n" + error.message);
+
+  }
+
 };
 
-window.deleteCategory = async (id) => {
-  let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
-  if(!c) return;
-  if(!confirm(`Category "${c.name}" delete karna hai?`)) return;
-  if(c.firebaseId){
-    await deleteDoc(doc(db, "categories", c.firebaseId));
-  } else {
-    window.categories = window.categories.filter(x=> String(x.id)!==String(id));
-    if(window.renderCategories) window.renderCategories();
+
+/* =================================================
+   DELETE CATEGORY
+================================================= */
+
+window.deleteCategory = async function(id){
+
+  if(String(id) === "all"){
+
+    alert("All Items delete nahi hoga!");
+
+    return;
+
   }
+
+
+  const category = window.categories.find(c =>
+
+    String(c.firebaseId) === String(id) ||
+
+    String(c.id) === String(id)
+
+  );
+
+
+  if(!category){
+
+    alert("Category nahi mili!");
+
+    return;
+
+  }
+
+
+  if(!confirm(`Category "${category.name}" delete karna hai?`)){
+
+    return;
+
+  }
+
+
+  try{
+
+    if(category.firebaseId){
+
+      await deleteDoc(
+
+        doc(db, "categories", category.firebaseId)
+
+      );
+
+    }
+
+
+    /*
+      Is category ke products ko bhi remove
+      karna hai ya nahi?
+
+      Abhi category delete karenge aur products
+      ko delete NAHI karenge.
+    */
+
+    if(String(selectedCat) === String(id)){
+
+      selectedCat = "all";
+
+    }
+
+
+    alert("Category Deleted ✅");
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert("Category delete nahi hui ❌\n" + error.message);
+
+  }
+
 };
+
+
+/* =================================================
+   ADD PRODUCT
+================================================= */
+
+window.addProductToFirebase = async function(product){
+
+  try{
+
+    await addDoc(productsRef, {
+
+      id: product.id,
+
+      name: product.name,
+
+      price: Number(product.price) || 0,
+
+      mrp: Number(product.mrp) || Number(product.price) || 0,
+
+      cat: String(product.cat),
+
+      qty: 0,
+
+      img: product.img || "",
+
+      createdAt: Date.now()
+
+    });
+
+    alert("Product Added ✅");
+
+  }catch(error){
+
+    console.error(error);
+
+    alert("Product save nahi hua ❌\n" + error.message);
+
+  }
+
+};
+
+
+/* =================================================
+   DELETE PRODUCT
+================================================= */
+
+window.deleteProduct = async function(id){
+
+  const product = window.products.find(p =>
+
+    String(p.firebaseId) === String(id) ||
+
+    String(p.id) === String(id)
+
+  );
+
+
+  if(!product){
+
+    alert("Product nahi mila!");
+
+    return;
+
+  }
+
+
+  if(!confirm(`"${product.name}" delete karna hai?`)){
+
+    return;
+
+  }
+
+
+  try{
+
+    if(product.firebaseId){
+
+      await deleteDoc(
+
+        doc(db, "products", product.firebaseId)
+
+      );
+
+    }
+
+
+    delete cart[product.id];
+
+    closeActionModal();
+
+    alert("Product Deleted ✅");
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert("Product delete nahi hua ❌\n" + error.message);
+
+  }
+
+};
+
+
+/* =================================================
+   UPDATE PRODUCT
+================================================= */
+
+window.updateProductFirebase = async function(product){
+
+  if(!product.firebaseId){
+
+    alert("Firebase product ID nahi mila!");
+
+    return;
+
+  }
+
+
+  try{
+
+    await updateDoc(
+
+      doc(db, "products", product.firebaseId),
+
+      {
+
+        name: product.name,
+
+        price: Number(product.price) || 0,
+
+        img: product.img || "",
+
+        updatedAt: Date.now()
+
+      }
+
+    );
+
+
+    alert("Product Updated ✅");
+
+  }catch(error){
+
+    console.error(error);
+
+    alert("Product update nahi hua ❌\n" + error.message);
+
+  }
+
+};
+
 </script>
 </body>
 </html>
