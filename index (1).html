@@ -732,7 +732,7 @@ if(fab){
   fab.style.position = 'relative';
 }
 
-function addProductWithCategory(){
+  async function addProductWithCategory() {
   let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
   let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, `1`);
   let catIdx = parseInt(catChoice)-1;
@@ -741,14 +741,14 @@ function addProductWithCategory(){
   let name = prompt('Product name:');
   if(!name) return;
   let price = prompt('Price:', '20');
-  products.push({
-    id: Date.now().toString(),
-    name: name,
-    price: parseFloat(price)||20,
-    cat: targetCatId,
-    qty: 0,
-    img: ''
-  });
+  await addDoc(collection(db, "products"), {
+  id: Date.now().toString(),
+  name: name,
+  price: parseFloat(price) || 20,
+  cat: targetCatId,
+  qty: 0,
+  img: ""
+});
   localStorage.setItem('products', JSON.stringify(products));
   renderProducts();
   renderCategories();
@@ -865,7 +865,14 @@ updateTotal();
  </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  addDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
