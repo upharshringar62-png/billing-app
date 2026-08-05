@@ -398,11 +398,18 @@ function renderProducts(){
 
   document.querySelectorAll('.product-card').forEach(function(c) {
     c.classList.remove('product-selected');
+    c.style.removeProperty('background');
+    c.style.removeProperty('height');
+    c.style.removeProperty('min-height');
   });
 
   card.classList.add('product-selected');
 
-});  
+  card.style.setProperty('background', '#b9ffbf', 'important');
+  card.style.setProperty('height', '350px', 'important');
+  card.style.setProperty('min-height', '350px', 'important');
+
+});
   card.innerHTML = `
      <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
   ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
