@@ -490,11 +490,12 @@ function updateTotal(){
 function handleKOT(){
   alert('KOT Printed');
 }
-
 function handlePreview(){
   renderPreview();
   document.getElementById('previewModal').classList.remove('hidden');
+  document.getElementById('previewModal').classList.add('flex');
 }
+
 function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
