@@ -659,7 +659,7 @@ function saveUpdatedProduct(){
   if(confirm('Product delete karna hai?')){
     products = products.filter(p=>p.id!==id);
     delete cart[id];
-    localStorage.setItem('products', JSON.stringify(products));
+   localStorage.setItem('products', JSON.stringify(window.products)); 
     renderProducts();
     renderCategories();
     updateTotal();
@@ -683,11 +683,7 @@ function switchTab(tab){
 
 // ================= DRAWER =================
 function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-translate-x-full'); document.getElementById('drawerOverlay').classList.remove('hidden'); }
-function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); } 
-function closeDrawer(){
-  document.getElementById('leftDrawer').classList.add('-translate-x-full');
-  document.getElementById('drawerOverlay').classList.add('hidden');
-}
+function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
 
 document.getElementById('menuBtn').onclick = openDrawer;
 // FAB hamesha TOP pe rahega
