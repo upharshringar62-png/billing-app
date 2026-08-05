@@ -315,33 +315,21 @@ let categories = [
   {id:'10', name:'Juda Pins'}
 ];
 
+window.categories = JSON.parse(localStorage.getItem('categories')||'[]');
 window.products = JSON.parse(localStorage.getItem('products')||'[]');
+let categories = window.categories;
 let products = window.products;
 
-let cart = {};
-let selectedCat = 'all';
-let searchText = '';
- 
-  let confirmDel = confirm('Ye category delete karna hai?');
-  if(confirmDel){
-    categories = categories.filter(c=>c.id!==id);
-    if(selectedCat===id) selectedCat='all';
-    renderCategories();
-    renderProducts();
-  }
-} 
-// ================= RENDER CATEGORIES =================
- if(!window.categories || window.categories.length===0){
-  window.categories = [{id:'1', name:'General'}, {id:'2', name:'Cosmetics'}];
-  localStorage.setItem('categories', JSON.stringify(window.categories));
+if(categories.length===0){
+  categories = [{id:'1', name:'General'}, {id:'2', name:'Cosmetics'}];
+  window.categories = categories;
+  localStorage.setItem('categories', JSON.stringify(categories));
 }
-if(!window.products || window.products.length===0){
-  window.products = [{id:'1', name:'Sample Item', price:20, cat:'1', qty:0, img:''}];
-  localStorage.setItem('products', JSON.stringify(window.products));
+if(products.length===0){
+  products = [{id:'1', name:'Sample Item', price:20, cat:'1', qty:0, img:''}];
+  window.products = products;
+  localStorage.setItem('products', JSON.stringify(products));
 }
- }
-categories = window.categories;
-products = window.products;
 function renderCategories(){
   const el = document.getElementById('catList');
   el.innerHTML = '';
