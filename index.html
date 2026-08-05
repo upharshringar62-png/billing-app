@@ -682,9 +682,11 @@ await btCharacteristic.writeValueWithoutResponse(
     }catch(e){ alert('Error: '+e.message); }
     return;
   }
-  let pa=document.getElementById('printArea'); if(!pa){ pa=document.createElement('div'); pa.id='printArea'; document.body.appendChild(pa); }
-  pa.innerHTML=`<pre>${t}</pre>`; window.print();
+ } else {
+  alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
+  return;
 }
+} 
 function renderPreview(){
  
   const list = document.getElementById('previewList');
