@@ -982,13 +982,16 @@ onSnapshot(catCol, (snap)=>{
   }
 });
 
-
 window.deleteProduct = async (id) => {
-  let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
+  let p = window.products.find(x=> (x.firebaseId && String(x.firebaseId)===String(id)) || String(x.id)===String(id) );
   if(!p) return;
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
   
-  window.products = window.products.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
+  window.products = window.products.filter(x=> {
+    if(x.firebaseId && String(x.firebaseId)===String(id)) return false;
+    if(String(x.id)===String(id)) return false;
+    return true;
+  });
   products = window.products;
   localStorage.setItem('products', JSON.stringify(window.products));
   if(window.renderProducts) window.renderProducts();
@@ -997,6 +1000,7 @@ window.deleteProduct = async (id) => {
     try{ await deleteDoc(doc(db, "products", p.firebaseId)); }catch(e){}
   }
 };
+
 window.deleteCategory = async (id) => {
   let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
   if(!c) return;
