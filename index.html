@@ -243,7 +243,10 @@
     <h3 class="font-bold text-[16px]">Modify Product</h3>
     <p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p>
     <div class="flex justify-between mt-4">
-      <button onclick="deleteProduct()" class="text-red-500 font-bold">DELETE</button>
+      <button onclick="deleteProduct(selectedProductId)"
+        class="text-red-500 font-bold">
+  DELETE
+</button>
       <button onclick="closeActionModal()" class="text-gray-500 font-bold">CANCEL</button>
       <button onclick="openModifyModal()" class="text-green-600 font-bold">MODIFY</button>
     </div>
@@ -672,13 +675,27 @@ function renderPreview(){
 }
 
 // ====== NEW LONG PRESS + DELETE CODE ======
-
 function showActionModal(id){
+
   selectedProductId = id;
-  let prod = products.find(p=>p.id==id);
-  document.getElementById('actionProductName').innerText = `Do you want to modify '${prod.name}'?`;
-  document.getElementById('productActionModal').classList.remove('hidden');
+
+  let prod = products.find(
+    p => String(p.id) === String(id)
+  );
+
+  if(!prod){
+    alert('Product nahi mila ❌');
+    return;
+  }
+
+  document.getElementById('actionProductName').innerText =
+    `Do you want to modify '${prod.name}'?`;
+
+  document
+    .getElementById('productActionModal')
+    .classList.remove('hidden');
 }
+
 function closeActionModal(){
   document.getElementById('productActionModal').classList.add('hidden');
 }
@@ -984,13 +1001,15 @@ onSnapshot(catCol, (snap)=>{
 
 window.deleteProduct = async (id) => {
 
+  console.log("DELETE ID =", id);
+
   const p = window.products.find(x =>
-    (x.firebaseId && String(x.firebaseId) === String(id)) ||
+    String(x.firebaseId) === String(id) ||
     String(x.id) === String(id)
   );
 
   if(!p){
-    alert('Product nahi mila');
+    alert('Product nahi mila ❌');
     return;
   }
 
@@ -998,21 +1017,17 @@ window.deleteProduct = async (id) => {
 
   try {
 
-    // Firebase product delete
+    // Firebase se delete
     if(p.firebaseId){
-
       await deleteDoc(
         doc(db, "products", p.firebaseId)
       );
-
     }
 
-    // Local data se bhi delete
+    // Local list se delete
     window.products = window.products.filter(x =>
-      !(
-        (x.firebaseId && String(x.firebaseId) === String(id)) ||
-        String(x.id) === String(id)
-      )
+      String(x.firebaseId) !== String(id) &&
+      String(x.id) !== String(id)
     );
 
     products = window.products;
@@ -1022,26 +1037,26 @@ window.deleteProduct = async (id) => {
       JSON.stringify(products)
     );
 
-    // Cart se bhi hatao
+    // Cart se remove
     if(typeof cart !== 'undefined'){
       delete cart[p.id];
     }
 
-    // Screen refresh
+    selectedProductId = null;
+
+    closeActionModal();
     renderProducts();
     renderCategories();
     updateTotal();
-
-    closeActionModal();
 
     alert('Product Deleted ✅');
 
   } catch(e) {
 
-    console.error('DELETE PRODUCT ERROR:', e);
+    console.error(e);
 
     alert(
-      'Product delete nahi hua ❌\n\n' +
+      'Delete error ❌\n' +
       e.message
     );
   }
