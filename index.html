@@ -391,29 +391,18 @@ function renderProducts(){
   filtered.forEach(p=>{
     const qty = cart[p.id] || p.qty || 0;
     const card = document.createElement('div');
-   card.addEventListener('click', function(e){
+    card.className = 'bg-white rounded-xl border p-2 flex flex-col items-center relative';
+   card.addEventListener('click', function(e) {
 
-  if(
-    e.target.closest('.qty-btn') ||
-    e.target.closest('.product-delete-btn')
-  ) return;
+  if (e.target.closest('button')) return;
 
-  // Sab cards normal
-  document.querySelectorAll('.product-card').forEach(c => {
+  document.querySelectorAll('.product-card').forEach(function(c) {
     c.classList.remove('product-selected');
-
-    const x = c.querySelector('.product-delete-btn');
-    if(x) x.style.display = 'none';
   });
 
-  // Tap kiya hua card green
   card.classList.add('product-selected');
 
-  const x = card.querySelector('.product-delete-btn');
-  if(x) x.style.display = 'flex';
 });
-    card.className = 'bg-white rounded-xl border p-2 flex flex-col items-center relative';
-   card.addEventListener('click', function(e){
 
   if(
     e.target.closest('button') ||
