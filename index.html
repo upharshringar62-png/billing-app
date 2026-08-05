@@ -964,11 +964,18 @@ onSnapshot(prodCol, (snap)=>{
 onSnapshot(catCol, (snap)=>{
   let list = [];
   snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
-  if(list.length > 0){
+  if(list.length >= 0){
     const firebaseCats = list;
     const hasAll = firebaseCats.some(c => String(c.id) === 'all' || c.name === 'All Items');
     if(!hasAll) firebaseCats.unshift({id:'all', name:'All Items'});
-    categories = firebaseCats;
+    // Local wali bhi merge kar lo taaki ek hi na rahe
+    let merged = [...firebaseCats];
+    categories.forEach(lc=>{
+      if(!merged.some(fc=> String(fc.id)===String(lc.id) || fc.name===lc.name )){
+        if(lc.id!=='all') merged.push(lc);
+      }
+    });
+    categories = merged;
     window.categories = categories;
     localStorage.setItem('categories', JSON.stringify(categories));
     if(window.renderCategories) window.renderCategories();
@@ -979,16 +986,17 @@ window.deleteProduct = async (id) => {
   let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
   if(!p) return;
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
-  if(p.firebaseId){
-    await deleteDoc(doc(db, "products", p.firebaseId));
-  } else {
-    window.products = window.products.filter(x=> String(x.id)!==String(id));
+  try{
+    if(p.firebaseId){
+      await deleteDoc(doc(db, "products", p.firebaseId));
+    }
+    window.products = window.products.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
     products = window.products;
     localStorage.setItem('products', JSON.stringify(window.products));
     if(window.renderProducts) window.renderProducts();
     if(window.renderCategories) window.renderCategories();
-    updateTotal();
-  }
+    if(typeof updateTotal !== 'undefined') updateTotal();
+  } catch(e){ alert('Delete failed: '+e.message); }
 };
 
 window.deleteCategory = async (id) => {
