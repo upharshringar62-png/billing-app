@@ -982,35 +982,36 @@ onSnapshot(catCol, (snap)=>{
   }
 });
 
+
 window.deleteProduct = async (id) => {
   let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
   if(!p) return;
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
-  try{
-    if(p.firebaseId){
-      await deleteDoc(doc(db, "products", p.firebaseId));
-    }
-    window.products = window.products.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
-    products = window.products;
-    localStorage.setItem('products', JSON.stringify(window.products));
-    if(window.renderProducts) window.renderProducts();
-    if(window.renderCategories) window.renderCategories();
-    if(typeof updateTotal !== 'undefined') updateTotal();
-  } catch(e){ alert('Delete failed: '+e.message); }
+  
+  window.products = window.products.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
+  products = window.products;
+  localStorage.setItem('products', JSON.stringify(window.products));
+  if(window.renderProducts) window.renderProducts();
+  
+  if(p.firebaseId){
+    try{ await deleteDoc(doc(db, "products", p.firebaseId)); }catch(e){}
+  }
 };
-
 window.deleteCategory = async (id) => {
   let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
   if(!c) return;
   if(!confirm(`Category "${c.name}" delete karna hai?`)) return;
+  
+  // Pehle local se hatao
+  window.categories = window.categories.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
+  categories = window.categories;
+  localStorage.setItem('categories', JSON.stringify(window.categories));
+  if(window.renderCategories) window.renderCategories();
+  if(window.renderProducts) window.renderProducts();
+  
+  // Fir Firebase se bhi hatao
   if(c.firebaseId){
-    await deleteDoc(doc(db, "categories", c.firebaseId));
-  } else {
-    window.categories = window.categories.filter(x=> String(x.id)!==String(id));
-    categories = window.categories;
-    localStorage.setItem('categories', JSON.stringify(window.categories));
-    if(window.renderCategories) window.renderCategories();
-    if(window.renderProducts) window.renderProducts();
+    try{ await deleteDoc(doc(db, "categories", c.firebaseId)); }catch(e){ console.log(e); }
   }
 };
 </script>
