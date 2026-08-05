@@ -413,6 +413,25 @@ function renderProducts(){
   if(x) x.style.display = 'flex';
 });
     card.className = 'bg-white rounded-xl border p-2 flex flex-col items-center relative';
+   card.addEventListener('click', function(e){
+
+  if(
+    e.target.closest('button') ||
+    e.target.closest('.product-delete-btn')
+  ) return;
+
+  document.querySelectorAll('.product-card').forEach(c => {
+    c.classList.remove('product-selected');
+
+    const x = c.querySelector('.product-delete-btn');
+    if(x) x.style.display = 'none';
+  });
+
+  card.classList.add('product-selected');
+
+  const x = card.querySelector('.product-delete-btn');
+  if(x) x.style.display = 'flex';
+});
    card.innerHTML = `
      <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
   ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
