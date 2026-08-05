@@ -332,6 +332,17 @@
 let selectedCat = 'all';
 let searchText = '';
 let cart = {};
+ let paymentMode = localStorage.getItem('payMode') || 'Cash';
+function setPay(m){
+  paymentMode = m;
+  localStorage.setItem('payMode', m);
+  document.getElementById('btnCash').style.background = m=='Cash' ? '#2c3ae8' : 'white';
+  document.getElementById('btnCash').style.color = m=='Cash' ? 'white' : 'black';
+  document.getElementById('btnOnline').style.background = m=='Online' ? '#2c3ae8' : 'white';
+  document.getElementById('btnOnline').style.color = m=='Online' ? 'white' : 'black';
+  document.getElementById('btnDue').style.background = m=='Due' ? '#e11d48' : 'white';
+  document.getElementById('btnDue').style.color = m=='Due' ? 'white' : 'black';
+}
 let longPressTimer = null;
 let selectedProductId = null;
 
@@ -593,7 +604,7 @@ t += `Date    : ${dateStr}\n`;
 if(custName) t += `Customer: ${custName}\n`;
 if(custMobile) t += `Mob     : ${custMobile}\n`;
 
-t += 'Payment : DUE\n';
+t += `Payment  : ${paymentMode}\n`;
 t += line('-');
 
 /* PRODUCT HEADER */
@@ -608,6 +619,7 @@ t +=
 t += line('-');
 
 /* PRODUCTS */
+ let paymentMode = localStorage.getItem('payMode') || 'DUE';  
 let sr = 1;
 
 Object.keys(cart).forEach(id => {
@@ -705,6 +717,13 @@ function renderPreview(){
     list.appendChild(row);
   });
   document.getElementById('previewTotal').innerText = '₹'+total.toFixed(1);
+ </div> ke baad - Total wale div ke baad
+
+<div id="payMethods" style="display:flex;gap:8px;margin:12px 0;">
+  <button onclick="setPay('Cash')" id="btnCash" style="flex:1;padding:10px;border-radius:20px;border:1px solid #2c3ae8;background:#2c3ae8;color:white;font-weight:bold;">Cash</button>
+  <button onclick="setPay('Online')" id="btnOnline" style="flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;background:white;">Online</button>
+  <button onclick="setPay('Due')" id="btnDue" style="flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;background:white;">Due</button>
+</div>
   if(Object.keys(cart).length===0){
     list.innerHTML = '<div class="text-center text-gray-400 text-[13px] mt-10">No items</div>';
   }
