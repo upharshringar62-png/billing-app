@@ -975,13 +975,19 @@ onSnapshot(catCol, (snap)=>{
   }
 });
 
-// ONLY ONE DELETE
 window.deleteProduct = async (id) => {
   let p = window.products.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
   if(!p) return;
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
   if(p.firebaseId){
     await deleteDoc(doc(db, "products", p.firebaseId));
+  } else {
+    window.products = window.products.filter(x=> String(x.id)!==String(id));
+    products = window.products;
+    localStorage.setItem('products', JSON.stringify(window.products));
+    if(window.renderProducts) window.renderProducts();
+    if(window.renderCategories) window.renderCategories();
+    updateTotal();
   }
 };
 
