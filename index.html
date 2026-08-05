@@ -602,9 +602,16 @@ t += line('-');
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
-     // PRINT DARK + BOLD
+     // ===== STRONG / DARK THERMAL PRINT =====
+
+// Bold ON
 await btCharacteristic.writeValueWithoutResponse(
   new Uint8Array([0x1B,0x45,0x01])
+);
+
+// Printer heating / density
+await btCharacteristic.writeValueWithoutResponse(
+  new Uint8Array([0x1B,0x37,0x14,0xFF,0x08])
 );
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
