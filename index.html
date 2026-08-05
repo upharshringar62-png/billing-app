@@ -27,8 +27,7 @@
 
 .product-card.product-selected{
   background:#b9ffbf !important;
-  height:350px !important;
-  min-height:350px !important;
+  border:1.5px solid #7be495 !important;
 }
 
 .product-delete-btn{
@@ -390,8 +389,9 @@ function renderProducts(){
   });
   filtered.forEach(p=>{
     const qty = cart[p.id] || p.qty || 0;
-    const card = document.createElement('div');
-    card.className = 'product-card bg-white rounded-xl border p-2 flex flex-col items-center relative';
+const isSelected = qty > 0;
+const card = document.createElement('div');
+card.className = `product-card bg-white rounded-xl p-2 flex flex-col relative ${isSelected?'product-selected':''}`;
    card.addEventListener('click', function(e) {
 
   if (e.target.closest('button')) return;
@@ -411,23 +411,19 @@ function renderProducts(){
 
 });
   card.innerHTML = `
-     <div class="w-full h-[80px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
-  ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
-</div> 
-      <div class="mt-2 text-[13px] font-bold text-center leading-tight min-h-[32px]">
-        ${p.name}
-      </div>
-      <div class="mt-2 w-full flex items-center gap-1">
-        <div class="flex-1 border border-dashed rounded px-2 py-1 text-[11px] font-bold text-center">
-          ₹ ${p.price}.0
-        </div>
-        <div class="w-[50px] border border-dashed rounded flex items-center justify-center gap-1 px-1 py-1 bg-[#f6f7ff]">
-          <button onclick="event.stopPropagation(); decQty('${p.id}')" class="w-5 h-5 bg-white rounded-full shadow text-[12px] font-bold">-</button>
-          <span class="text-[11px] font-bold w-4 text-center">${qty}</span>
-          <button onclick="event.stopPropagation(); incQty('${p.id}')" class="w-5 h-5 bg-[#2e3ae8] text-white rounded-full text-[12px] font-bold">+</button>
-        </div>
-      </div>
-    `; 
+  <div class="flex justify-between w-full mb-1">
+    <div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white">₹ ${p.price}.0</div>
+    <div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white min-w-[30px] text-center">${qty}</div>
+  </div>
+  <div class="w-full h-[110px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">
+    ${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}
+  </div>
+  <div class="mt-2 text-[13px] font-bold text-center min-h-[32px]">${p.name}</div>
+  <div class="flex justify-between items-center w-full mt-2">
+    <button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="text-[20px]">⋮</button>
+    ${isSelected? `<button onclick="event.stopPropagation(); decQty('${p.id}'); if((cart['${p.id}']||0)<=0) renderProducts();" class="w-6 h-6 border border-black rounded flex items-center justify-center bg-white">✕</button>` : ``}
+  </div>
+`;
      card.onclick = () => incQty(p.id);
 
   // YEH 4 LINE NAYA ADD KARO - LONG PRESS KE LIYE
