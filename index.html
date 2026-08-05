@@ -329,8 +329,19 @@ let searchText = '';
     renderCategories();
     renderProducts();
   }
-}
+} 
 // ================= RENDER CATEGORIES =================
+ if(!window.categories || window.categories.length===0){
+  window.categories = [{id:'1', name:'General'}, {id:'2', name:'Cosmetics'}];
+  localStorage.setItem('categories', JSON.stringify(window.categories));
+}
+if(!window.products || window.products.length===0){
+  window.products = [{id:'1', name:'Sample Item', price:20, cat:'1', qty:0, img:''}];
+  localStorage.setItem('products', JSON.stringify(window.products));
+}
+ }
+categories = window.categories;
+products = window.products;
 function renderCategories(){
   const el = document.getElementById('catList');
   el.innerHTML = '';
