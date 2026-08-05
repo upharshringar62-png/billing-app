@@ -253,6 +253,11 @@
         <span>Total</span>
         <span id="previewTotal">₹0</span>
       </div>
+        <div id="payMethods" style="display:flex;gap:8px;margin:12px 0;">
+<button onclick="setPay('Cash')" id="btnCash" style="flex:1;padding:10px;border-radius:20px;border:1px solid #2c3ae8;background:#2c3ae8;color:white;font-weight:bold;">Cash</button>
+<button onclick="setPay('Online')" id="btnOnline" style="flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;background:white;">Online</button>
+<button onclick="setPay('Due')" id="btnDue" style="flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;background:white;">Due</button>
+</div>
       <div class="flex gap-2 mt-3">
         <button onclick="closePreview()" class="flex-1 bg-gray-200 h-11 rounded-full font-bold">CLOSE</button>
         <button onclick="handleRealPrint()" class="flex-1 bg-[#00c853] text-white h-11 rounded-full font-bold">🖨️ PRINT</button>
