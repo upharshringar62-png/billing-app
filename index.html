@@ -464,6 +464,7 @@ function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-
 function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
 document.getElementById('menuBtn').onclick=openDrawer;
 document.getElementById('drawerOverlay').onclick=closeDrawer;
+ 
   async function handleRealPrint(){
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let custName = document.getElementById('custName')?.value || '';
@@ -506,21 +507,105 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
     });
   }
 
-  let t='';
-  t+=' UPHAR SINGHAR & GIFTS\n BHAGWATI CINEMA ROAD,\n NARKATIAGANJ, 845455\n MOB. +917256050678\n';
-  t+='--------------------------------\n';
-  t+=`Bill No:${billNo}\nDate:${dateStr}\n`;
-  if(custName) t+=`Customer: ${custName}\n`;
-  if(custMobile) t+=`Mob: ${custMobile}\n`;
-  t+='Payment:DUE\n--------------------------------\nSr. Item Rate Qty Amt\n--------------------------------\n';
-  let sr=1;
-  Object.keys(cart).forEach(id=>{ let p=products.find(x=>x.id==id); if(!p) return; t+=`${sr}.${p.name}`.padEnd(16,' ')+String(p.price).padStart(3,' ')+' '+String(cart[id]).padStart(2,' ')+' '+String((p.price*cart[id]).toFixed(1)).padStart(5,' ')+'\n'; sr++; });
-  t+='--------------------------------\n';
-  t+=`TOTAL ITEMS: ${totalItems}\nTOTAL QTY: ${totalQty}\nSubtotal: Rs. ${subtotal.toFixed(2)}\n--------------------------------\nGRAND TOTAL\nRs. ${subtotal.toFixed(2)}\n--------------------------------\n`;
+  let t = '';
+
+const W = 32;
+
+function line(ch='-'){
+  return ch.repeat(W) + '\n';
+}
+
+function row(sr, name, rate, qty, amt){
+  name = String(name || '').trim();
+  if(name.length > 14) name = name.substring(0,14);
+
+  return (
+    String(sr).padEnd(3,' ') +
+    name.padEnd(14,' ') +
+    String(rate).padStart(6,' ') +
+    String(qty).padStart(4,' ') +
+    String(amt).padStart(5,' ') +
+    '\n'
+  );
+}
+
+/* HEADER */
+t += '\x1B\x40';
+t += '\x1B\x61\x01';
+
+t += 'UPHAR\n';
+t += 'SINGHAR & GIFTS\n';
+t += 'BHAGWATI CINEMA ROAD\n';
+t += 'NARKATIAGANJ - 845455\n';
+t += 'MOB. +917256050678\n';
+
+t += line('-');
+
+t += '\x1B\x61\x00';
+
+t += `Bill No : ${billNo}\n`;
+t += `Date    : ${dateStr}\n`;
+
+if(custName) t += `Customer: ${custName}\n`;
+if(custMobile) t += `Mob     : ${custMobile}\n`;
+
+t += 'Payment : DUE\n';
+t += line('-');
+
+/* PRODUCT HEADER */
+t +=
+  'Sr.'.padEnd(3,' ') +
+  'Item'.padEnd(14,' ') +
+  'Rate'.padStart(6,' ') +
+  'Qty'.padStart(4,' ') +
+  'Amt'.padStart(5,' ') +
+  '\n';
+
+t += line('-');
+
+/* PRODUCTS */
+let sr = 1;
+
+Object.keys(cart).forEach(id => {
+
+  let p = products.find(x => String(x.id) === String(id));
+
+  if(!p) return;
+
+  let amount = p.price * cart[id];
+
+  t += row(
+    sr,
+    p.name,
+    Number(p.price).toFixed(1),
+    cart[id],
+    Number(amount).toFixed(1)
+  );
+
+  sr++;
+});
+
+t += line('-');
+
+t += `TOTAL ITEMS : ${totalItems}\n`;
+t += `TOTAL QTY   : ${totalQty}\n`;
+t += `Subtotal    : Rs. ${subtotal.toFixed(2)}\n`;
+
+t += line('-');
+
+t += '\x1B\x61\x01';
+t += 'GRAND TOTAL\n';
+t += `Rs. ${subtotal.toFixed(2)}\n`;
+
+t += line('-');
 
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
+     // PRINT DARK + BOLD
+await btCharacteristic.writeValueWithoutResponse(
+  new Uint8Array([0x1B,0x45,0x01])
+);
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
