@@ -637,26 +637,14 @@ t += `Subtotal    : Rs. ${subtotal.toFixed(2)}\n`;
 
 t += line('-');
 
-t += '\x1B\x61\x01';
-t += 'GRAND TOTAL\n';
-t += `Rs. ${subtotal.toFixed(2)}\n`;
-
-t += line('-');
-
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
+     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x37,0x0F,0xFF,0x08])); // ye line add kar
      // ===== STRONG / DARK THERMAL PRINT =====
 
 // Bold ON
-await btCharacteristic.writeValueWithoutResponse(
-  new Uint8Array([0x1B,0x45,0x01])
-);
-
-// Printer heating / density
-await btCharacteristic.writeValueWithoutResponse(
-  new Uint8Array([0x1B,0x37,0x14,0xFF,0x08])
-);
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
@@ -664,8 +652,10 @@ await btCharacteristic.writeValueWithoutResponse(
           for(let i=0;i<logoBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,40)); }
         }
       }
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
-      let enc=new TextEncoder(); let data=enc.encode(t);
+     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // left align
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01])); // BOLD ON - isse dark hoga
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x47,0x01])); // Double Strike ON
+let enc=new TextEncoder(); let data=enc.encode(t);
       for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,30)); }
       let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
       let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
@@ -674,10 +664,14 @@ await btCharacteristic.writeValueWithoutResponse(
       for(let i=0;i<upiString.length;i++) c.push(upiString.charCodeAt(i));
       c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
       let qrBytes=new Uint8Array(c);
+     // Total ko double height bold me print karo
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x11])); // Double size
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
       for(let i=0;i<qrBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,40)); }
       let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
       await btCharacteristic.writeValueWithoutResponse(foot);
+     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00])); // normal size
+await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x00])); // bold off
       closePreview();
     }catch(e){ alert('Error: '+e.message); }
     return;
