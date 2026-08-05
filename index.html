@@ -726,8 +726,15 @@ function addItemDirect(){
   let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`);
   if(!name) return;
   let price = prompt('Price:', '20');
-   window.products.push
-JSON.stringify(window.products)
+  window.products.push({
+    id: Date.now().toString(),
+    name: name,
+    price: parseFloat(price)||20,
+    cat: selectedCat==='all'?'1':selectedCat,
+    qty: 0,
+    img: ''
+  });
+  localStorage.setItem('products', JSON.stringify(window.products));
   renderProducts();
   renderCategories();
 }
