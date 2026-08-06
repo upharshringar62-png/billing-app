@@ -532,7 +532,7 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
     billNo: document.getElementById("billNoInput").value,
     customer: document.getElementById("custName").value,
     mobile: document.getElementById("custMobile").value,
-    total: subtotal,
+    total: document.getElementById('previewTotal').innerText.replace('₹',''),
     date: new Date().toLocaleString()
   });
 
