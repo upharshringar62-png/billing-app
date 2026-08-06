@@ -1145,7 +1145,7 @@ window.deleteCategory = async (id) => {
 };
 </script>
  <!-- ===== REPORT PAGES ===== -->
-<div id="reportModal" class="fixed inset-0 bg-white z-[60] hidden flex-col overflow-y-auto">
+<div id="reportModal" style="display:none; position:fixed; inset:0; background:white; z-index:9999; overflow-y:auto; flex-direction:column">
   <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center sticky top-0">
     <span id="reportTitle" class="font-bold">Report</span>
     <button onclick="closeReport()" class="w-8 h-8 bg-white/20 rounded-full">✕</button>
@@ -1157,12 +1157,12 @@ window.deleteCategory = async (id) => {
 function openReport(title, html){
   document.getElementById('reportTitle').innerText = title;
   document.getElementById('reportContent').innerHTML = html;
-  document.getElementById('reportModal').classList.remove('hidden');
-  document.getElementById('reportModal').classList.add('flex');
+  let m = document.getElementById('reportModal');
+  m.style.display = 'flex';
   if(typeof closeDrawer === 'function') closeDrawer();
 }
 function closeReport(){
-  document.getElementById('reportModal').classList.add('hidden');
+  document.getElementById('reportModal').style.display = 'none';
 }
 function showSalesReport(){
   let h = (typeof salesHistory !== 'undefined' ? salesHistory : []);
