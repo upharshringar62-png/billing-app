@@ -1144,5 +1144,78 @@ window.deleteCategory = async (id) => {
   }
 };
 </script>
+ <!-- ===== REPORT PAGES ===== -->
+<div id="reportModal" class="fixed inset-0 bg-white z-[60] hidden flex-col overflow-y-auto">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center sticky top-0">
+    <span id="reportTitle" class="font-bold">Report</span>
+    <button onclick="closeReport()" class="w-8 h-8 bg-white/20 rounded-full">✕</button>
+  </div>
+  <div id="reportContent" class="p-3"></div>
+</div>
+
+<script>
+function openReport(title, html){
+  document.getElementById('reportTitle').innerText = title;
+  document.getElementById('reportContent').innerHTML = html;
+  document.getElementById('reportModal').classList.remove('hidden');
+  document.getElementById('reportModal').classList.add('flex');
+  closeDrawer();
+}
+function closeReport(){
+  document.getElementById('reportModal').classList.add('hidden');
+}
+
+function showSalesReport(){
+  let h = salesHistory || [];
+  if(h.length==0) return openReport('Sales Report', '<div class=text-center mt-10 text-gray-400>No sales yet</div>');
+  let total=0; h.forEach(s=>total+=Number(s.total||0));
+  let html = `<div class="bg-[#eef0ff] p-3 rounded-lg mb-3"><div class="text-[12px]">Total Sale: ₹${total.toFixed(2)}</div><div class="text-[11px]">Bills: ${h.length}</div></div>`;
+  html += h.map(s=>`<div class="border-b py-2 flex justify-between"><div><div class="font-bold text-[13px]">${s.customer||'Customer'} - ${s.billNo}</div><div class="text-[11px] text-gray-500">${s.date} | ${s.payMode||''}</div></div><div class="font-bold">₹${s.total}</div></div>`).join('');
+  openReport('Sales Report', html);
+}
+function showItemWise(){
+  let map={};
+  (salesHistory||[]).forEach(b=>{}); // placeholder
+  let html = products.map(p=>`<div class="flex justify-between border-b py-2"><span>${p.name}</span><span class="font-bold">₹${p.price}</span></div>`).join('');
+  openReport('Item-wise Report', html || 'No items');
+}
+function showCategoryWise(){
+  let html = categories.map(c=>{
+    let count = products.filter(p=>String(p.cat)==String(c.id)).length;
+    return `<div class="flex justify-between border-b py-2"><span>${c.name}</span><span>${count} items</span></div>`;
+  }).join('');
+  openReport('Category-wise Report', html);
+}
+function showSalesHistoryByItem(){
+  showSalesReport();
+}
+function showPurchaseReport(){
+  openReport('Purchase Report', '<div class="text-center mt-10">Purchase feature coming - abhi Sales se hi kaam chalao</div>');
+}
+function showStockManage(){
+  let html = products.map(p=>`<div class="flex justify-between border-b py-2 items-center"><div><div class="font-bold text-[13px]">${p.name}</div><div class="text-[11px]">Qty: ${p.qty||0}</div></div><button onclick="let q=prompt('New Qty', '${p.qty||0}'); if(q!==null){ let pr=products.find(x=>x.id=='${p.id}'); pr.qty=parseInt(q)||0; syncData(); showStockManage(); renderProducts(); }" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[11px]">Edit</button></div>`).join('');
+  openReport('Stock Manage', html);
+}
+function showExpenseManage(){
+  openReport('Expense Manage', `<div class="p-2"><input id="expAmt" type="number" placeholder="Amount" class="border p-2 w-full rounded-lg mb-2"><input id="expNote" placeholder="Note" class="border p-2 w-full rounded-lg mb-2"><button onclick="let a=document.getElementById('expAmt').value; let n=document.getElementById('expNote').value; let ex=JSON.parse(localStorage.getItem('exp')||'[]'); ex.unshift({amt:a,note:n,date:new Date().toLocaleString()}); localStorage.setItem('exp',JSON.stringify(ex)); alert('Saved'); showExpenseManage();" class="w-full bg-red-600 text-white py-2 rounded-full font-bold">Add Expense</button><div class="mt-3">${JSON.parse(localStorage.getItem('exp')||'[]').map(e=>`<div class="border-b py-1 flex justify-between"><span>${e.note}</span><span class="font-bold">₹${e.amt}</span></div>`).join('')}</div></div>`);
+}
+function showProfitLoss(){
+  let saleTotal = (salesHistory||[]).reduce((s,x)=>s+Number(x.total||0),0);
+  let expTotal = JSON.parse(localStorage.getItem('exp')||'[]').reduce((s,x)=>s+Number(x.amt||0),0);
+  let profit = saleTotal - expTotal;
+  openReport('Profit & Loss', `<div class="space-y-3"><div class="bg-green-100 p-4 rounded-lg">Total Sale: <b>₹${saleTotal}</b></div><div class="bg-red-100 p-4 rounded-lg">Total Expense: <b>₹${expTotal}</b></div><div class="bg-blue-100 p-4 rounded-lg text-[18px]">Profit: <b>₹${profit}</b></div></div>`);
+}
+function showCustomersManage(){
+  let customers = [...new Map((salesHistory||[]).map(s=>[s.mobile, s])).values()];
+  let html = customers.map(c=>`<div class="border-b py-2"><div class="font-bold">${c.customer||'Unknown'}</div><div class="text-[11px]">${c.mobile||''} | Due: ${c.payMode=='Due'?'YES':''}</div></div>`).join('') || 'No customers';
+  openReport('Customers Manage', html);
+}
+function showDueList(){
+  let dues = (salesHistory||[]).filter(s=>s.payMode=='Due');
+  if(dues.length==0) return openReport('Due List', '<div class="text-center mt-10">No Due Bills - sab Cash/Online hai</div>');
+  let html = dues.map(d=>`<div class="border-b py-2 flex justify-between"><div><div class="font-bold">${d.customer||'Customer'} - ${d.billNo}</div><div class="text-[11px]">${d.date}</div></div><div class="font-bold text-red-600">₹${d.total}</div></div>`).join('');
+  openReport('Due List', html);
+}
+</script>
 </body>
 </html>
