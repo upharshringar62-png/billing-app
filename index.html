@@ -517,6 +517,14 @@ function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
  let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+ let subtotal = 0;
+
+function updateSubtotal() {
+  subtotal = Number(
+    document.getElementById("previewTotal")
+      ?.innerText.replace(/[^\d.]/g, "") || 0
+  );
+}
 function switchTab(tab){
   if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); }
   else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); }
@@ -532,13 +540,14 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
     billNo: document.getElementById("billNoInput").value,
     customer: document.getElementById("custName").value,
     mobile: document.getElementById("custMobile").value,
-    total: subtotal,
+   total: subtotal,
     date: new Date().toLocaleString()
   });
 
   localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
 }
   async function handleRealPrint(){
+   updateSubtotal();
    saveSaleHistory();
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let custName = document.getElementById('custName')?.value || '';
