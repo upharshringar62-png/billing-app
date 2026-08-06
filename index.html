@@ -159,22 +159,22 @@
   <div class="flex-1 overflow-y-auto p-2 space-y-4">
     <div>
       <div class="text-[10px] font-bold text-gray-400 px-2 py-2">SALES</div>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📊 Sales Report</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Item-wise Report</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📂 Category-wise Report</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📜 Sales History By Item</button>
+      <button onclick="showSalesReport()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📊 Sales Report</button>
+      <button onclick="showItemWise()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Item-wise Report</button>
+     <button onclick="showCategoryWise()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📂 Category-wise Report</button>
+    <button onclick="showSalesHistoryByItem()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📜 Sales History By Item</button>
     </div>
     <div>
       <div class="text-[10px] font-bold text-gray-400 px-2 py-2">PURCHASE</div>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">🛒 Purchase Report</button>
+     <button onclick="showPurchaseReport()" class="w-full text-left px-3 py-2.5... rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">🛒 Purchase Report</button>
     </div>
     <div>
       <div class="text-[10px] font-bold text-gray-400 px-2 py-2">MANAGE</div>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Stock Manage</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">💸 Expense Manage</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📈 Profit & Loss</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">👥 Customers Manage</button>
-      <button class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📋 Due List</button>
+      <button onclick="showStockManage()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Stock Manage</button>
+      <button onclick="showExpenseManage()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">💸 Expense Manage</button>
+      <button onclick="showProfitLoss()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📈 Profit & Loss</button>
+      <button onclick="showCustomersManage()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">👥 Customers Manage</button>
+      <button onclick="showDueList()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📋 Due List</button>
     </div>
   </div>
   <div class="p-3 text-[10px] text-center text-gray-400 border-t">
