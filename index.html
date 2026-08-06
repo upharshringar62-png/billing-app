@@ -570,7 +570,7 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
               let x=xb*8+b; if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<170) byte|=(0x80>>b);
+              if(gray<128) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
@@ -685,7 +685,8 @@ Object.keys(cart).forEach(id => {
         }
       }
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // left align
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01])); // BOLD ON - isse dark hoga
+      await btCharacteristic.writeValueWithoutResponse(
+new Uint8Array([0x1B,0x45,0x00]));
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x47,0x01])); // Double Strike ON
       let enc=new TextEncoder(); let data=enc.encode(t);
       for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); }
@@ -697,7 +698,8 @@ Object.keys(cart).forEach(id => {
       c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
       let qrBytes=new Uint8Array(c);
       // Total ko double height bold me print karo
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x11])); // Double size
+      await btCharacteristic.writeValueWithoutResponse(
+new Uint8Array([0x1D,0x21,0x00]));
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
       for(let i=0;i<qrBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+80)); }
       let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
