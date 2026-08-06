@@ -693,39 +693,7 @@ if(btCharacteristic && btServer && btServer.connected){
   alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
   return;
 }
-}
-  
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01]));
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00]));
-    let enc=new TextEncoder(); 
-    let data=enc.encode(t);
-    for(let i=0;i<data.length;i+=100){ 
-      await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); 
-    }
-    let upiId = localStorage.getItem('upId') || '7256050578@ybl';
-    let upiString = `upi://pay?pa=${upiId}&pn=UPHAR&am=${subtotal.toFixed(2)}&cu=INR`;
-    let qrBytes = await getQrBytes(upiString);
-    if(qrBytes){
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
-      for(let i=0;i<qrBytes.length;i+=120){
-        await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+120));
-      }
-    }
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00]));
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x00]));
-    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
-    let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
-    await btCharacteristic.writeValueWithoutResponse(foot);
-    closePreview();
-  }catch(e){ alert('Error: '+e.message); }
-  return;
-} else {
-  alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
-  return;
-}
-}
-        
+}              
 } 
 function renderPreview(){
  
