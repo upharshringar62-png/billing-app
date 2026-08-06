@@ -337,6 +337,7 @@
 let selectedCat = 'all';
 let searchText = '';
 let cart = {};
+ let salesHistory = JSON.parse(localStorage.getItem("salesHistory") || "[]");
  let paymentMode = localStorage.getItem('payMode') || 'Cash';
 function setPay(m){
   paymentMode = m;
@@ -524,8 +525,20 @@ function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-
 function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
 document.getElementById('menuBtn').onclick=openDrawer;
 document.getElementById('drawerOverlay').onclick=closeDrawer;
- 
+ function saveSaleHistory(){
+
+  salesHistory.unshift({
+    billNo: document.getElementById("billNoInput").value,
+    customer: document.getElementById("custName").value,
+    mobile: document.getElementById("custMobile").value,
+    total: subtotal,
+    date: new Date().toLocaleString()
+  });
+
+  localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+}
   async function handleRealPrint(){
+   saveSaleHistory();
   let billNo = document.getElementById('billNoInput')?.value || '655';
   let custName = document.getElementById('custName')?.value || '';
   let custMobile = document.getElementById('custMobile')?.value || '';
