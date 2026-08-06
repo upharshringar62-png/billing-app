@@ -652,18 +652,7 @@ t += `TOTAL QTY   : ${totalQty}\n`;
 t += `Subtotal    : Rs. ${subtotal.toFixed(2)}\n`;
 
 t += line('-');
-
-  if(btCharacteristic && btServer && btServer.connected){
-    try{
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
-     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
-await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x37,0x0F,0xFF,0x08])); // ye line add kar
-     // ===== STRONG / DARK THERMAL PRINT =====
-
-// Bold ON
-      if(savedLogo){
-        let logoBytes=await getLogoBytes(savedLogo);
-       if(btCharacteristic && btServer && btServer.connected){
+if(btCharacteristic && btServer && btServer.connected){
   try{
     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
@@ -675,6 +664,37 @@ await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x37,0x0F,
         }
       }
     }
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00]));
+    let enc=new TextEncoder(); 
+    let data=enc.encode(t);
+    for(let i=0;i<data.length;i+=100){ 
+      await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); 
+    }
+    let upiId = localStorage.getItem('upId') || '7256050578@ybl';
+    let upiString = `upi://pay?pa=${upiId}&pn=UPHAR&am=${subtotal.toFixed(2)}&cu=INR`;
+    let qrBytes = await getQrBytes(upiString);
+    if(qrBytes){
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+      for(let i=0;i<qrBytes.length;i+=120){
+        await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+120));
+      }
+    }
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x00]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+    let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
+    await btCharacteristic.writeValueWithoutResponse(foot);
+    closePreview();
+  }catch(e){ alert('Error: '+e.message); }
+  return;
+} else {
+  alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
+  return;
+}
+}
+  
     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01]));
     await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x21,0x00]));
