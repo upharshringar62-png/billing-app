@@ -516,6 +516,7 @@ function handlePreview(){
 function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
 }
+ let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
 function switchTab(tab){
   if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); }
   else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); }
