@@ -170,7 +170,7 @@
     </div>
     <div>
       <div class="text-[10px] font-bold text-gray-400 px-2 py-2">MANAGE</div>
-      <button onclick="showStockManage()"class="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 text-[13px]">📦 Stock Manage</button>
+      <button class="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 text-[13px] flex items-center gap-2">📦 Stock Manage</button>
       <button onclick="showExpenseManage()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">💸 Expense Manage</button>
       <button onclick="showProfitLoss()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📈 Profit & Loss</button>
       <button onclick="showCustomersManage()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">👥 Customers Manage</button>
@@ -1143,69 +1143,7 @@ window.deleteCategory = async (id) => {
     try{ await deleteDoc(doc(db, "categories", c.firebaseId)); }catch(e){ console.log(e); }
   }
 };
-</script>
- <!-- ===== REPORT PAGES ===== -->
-<div id="reportModal" style="display:none; position:fixed; inset:0; background:white; z-index:9999; overflow-y:auto; flex-direction:column">
-  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center sticky top-0">
-    <span id="reportTitle" class="font-bold">Report</span>
-    <button onclick="closeReport()" class="w-8 h-8 bg-white/20 rounded-full">✕</button>
-  </div>
-  <div id="reportContent" class="p-3"></div>
-</div>
-
-<script>
-function openReport(title, html){
-  document.getElementById('reportTitle').innerText = title;
-  document.getElementById('reportContent').innerHTML = html;
-  let m = document.getElementById('reportModal');
-  m.style.display = 'flex';
-  if(typeof closeDrawer === 'function') closeDrawer();
-}
-function closeReport(){
-  document.getElementById('reportModal').style.display = 'none';
-}
-function showSalesReport(){
-  let h = (typeof salesHistory !== 'undefined' ? salesHistory : []);
-  if(h.length==0) return openReport('Sales Report', '<div style="text-align:center;margin-top:40px;color:gray">No sales yet</div>');
-  let total=0; h.forEach(s=>total+=Number(s.total||0));
-  let html = '<div style="background:#eef0ff;padding:12px;border-radius:8px;margin-bottom:10px">Total Sale: Rs.'+total.toFixed(2)+' | Bills: '+h.length+'</div>';
-  html += h.map(s=>'<div style="border-bottom:1px solid #eee;padding:8px 0;display:flex;justify-content:space-between"><div><div style="font-weight:bold;font-size:13px">'+(s.customer||'Customer')+' - '+s.billNo+'</div><div style="font-size:11px;color:gray">'+s.date+' | '+(s.payMode||'')+'</div></div><div style="font-weight:bold">Rs.'+s.total+'</div></div>').join('');
-  openReport('Sales Report', html);
-}
-function showItemWise(){ 
-  let html = (typeof products !== 'undefined' ? products : []).map(p=>'<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0"><span>'+p.name+'</span><span style="font-weight:bold">Rs.'+p.price+'</span></div>').join('') || 'No items';
-  openReport('Item-wise Report', html);
-}
-function showCategoryWise(){ 
-  let html = (typeof categories !== 'undefined' ? categories : []).map(c=>{ let count = (typeof products !== 'undefined' ? products.filter(p=>String(p.cat)==String(c.id)).length : 0); return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0"><span>'+c.name+'</span><span>'+count+' items</span></div>'; }).join('');
-  openReport('Category-wise Report', html);
-}
-function showSalesHistoryByItem(){ showSalesReport(); }
-function showPurchaseReport(){ openReport('Purchase Report', '<div style="text-align:center;margin-top:40px">Purchase feature coming soon</div>'); }
-function showStockManage(){
-  let html = (typeof products !== 'undefined' ? products : []).map(p=>'<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0;align-items:center"><div><div style="font-weight:bold;font-size:13px">'+p.name+'</div><div style="font-size:11px">Qty: '+(p.qty||0)+'</div></div><button onclick="let q=prompt(\'New Qty\',\''+(p.qty||0)+'\'); if(q!==null){ let pr=products.find(x=>x.id==\''+p.id+'\'); pr.qty=parseInt(q)||0; if(typeof syncData===\'function\') syncData(); showStockManage(); if(typeof renderProducts===\'function\') renderProducts(); }" style="background:#2e3ae8;color:white;padding:4px 12px;border-radius:20px;font-size:11px">Edit</button></div>').join('');
-  openReport('Stock Manage', html);
-}
-function showExpenseManage(){
-  openReport('Expense Manage', '<div style="padding:8px"><input id="expAmt" type="number" placeholder="Amount" style="border:1px solid #ccc;padding:8px;width:100%;border-radius:8px;margin-bottom:8px"><input id="expNote" placeholder="Note" style="border:1px solid #ccc;padding:8px;width:100%;border-radius:8px;margin-bottom:8px"><button onclick="let a=document.getElementById(\'expAmt\').value; let n=document.getElementById(\'expNote\').value; let ex=JSON.parse(localStorage.getItem(\'exp\')||\'[]\'); ex.unshift({amt:a,note:n,date:new Date().toLocaleString()}); localStorage.setItem(\'exp\',JSON.stringify(ex)); alert(\'Saved\'); showExpenseManage();" style="width:100%;background:#dc2626;color:white;padding:8px;border-radius:20px;font-weight:bold">Add Expense</button><div style="margin-top:12px">'+JSON.parse(localStorage.getItem('exp')||'[]').map(e=>'<div style="border-bottom:1px solid #eee;padding:4px 0;display:flex;justify-content:space-between"><span>'+e.note+'</span><span style="font-weight:bold">Rs.'+e.amt+'</span></div>').join('')+'</div></div>');
-}
-function showProfitLoss(){
-  let saleTotal = (typeof salesHistory !== 'undefined' ? salesHistory : []).reduce((s,x)=>s+Number(x.total||0),0);
-  let expTotal = JSON.parse(localStorage.getItem('exp')||'[]').reduce((s,x)=>s+Number(x.amt||0),0);
-  let profit = saleTotal - expTotal;
-  openReport('Profit & Loss', '<div style="display:flex;flex-direction:column;gap:12px"><div style="background:#dcfce7;padding:16px;border-radius:8px">Total Sale: <b>Rs.'+saleTotal+'</b></div><div style="background:#fee2e2;padding:16px;border-radius:8px">Total Expense: <b>Rs.'+expTotal+'</b></div><div style="background:#dbeafe;padding:16px;border-radius:8px;font-size:18px">Profit: <b>Rs.'+profit+'</b></div></div>');
-}
-function showCustomersManage(){
-  let customers = [...new Map((typeof salesHistory !== 'undefined' ? salesHistory : []).map(s=>[s.mobile, s])).values()];
-  let html = customers.map(c=>'<div style="border-bottom:1px solid #eee;padding:8px 0"><div style="font-weight:bold">'+(c.customer||'Unknown')+'</div><div style="font-size:11px">'+(c.mobile||'')+' | '+(c.payMode||'')+'</div></div>').join('') || 'No customers';
-  openReport('Customers Manage', html);
-}
-function showDueList(){
-  let dues = (typeof salesHistory !== 'undefined' ? salesHistory : []).filter(s=>s.payMode=='Due');
-  if(dues.length==0) return openReport('Due List', '<div style="text-align:center;margin-top:40px">No Due Bills - sab Cash/Online hai</div>');
-  let html = dues.map(d=>'<div style="border-bottom:1px solid #eee;padding:8px 0;display:flex;justify-content:space-between"><div><div style="font-weight:bold">'+(d.customer||'Customer')+' - '+d.billNo+'</div><div style="font-size:11px">'+d.date+'</div></div><div style="font-weight:bold;color:red">Rs.'+d.total+'</div></div>').join('');
-  openReport('Due List', html);
-}
+ 
 </script>
 </body>
 </html>
