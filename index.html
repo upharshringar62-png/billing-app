@@ -490,6 +490,13 @@ function updateTotal(){
 function handleKOT(){
   alert('KOT Printed');
 }
+ let selectedPaymentMode = 'DUE';
+function setPayMode(mode){
+  selectedPaymentMode = mode;
+  document.querySelectorAll('.payBtn').forEach(b=> b.classList.remove('!border-[#2e3ae8]','bg-[#eef0ff]'));
+  document.getElementById('btn'+mode).classList.add('!border-[#2e3ae8]','bg-[#eef0ff]');
+  updateBillPreview();
+}
 function handlePreview(){
   renderPreview();
   document.getElementById('previewModal').classList.remove('hidden');
@@ -593,7 +600,7 @@ t += `Date    : ${dateStr}\n`;
 if(custName) t += `Customer: ${custName}\n`;
 if(custMobile) t += `Mob     : ${custMobile}\n`;
 
-t += 'Payment : DUE\n';
+t += 'Payment : ' + selectedPaymentMode + '\n';
 t += line('-');
 
 /* PRODUCT HEADER */
