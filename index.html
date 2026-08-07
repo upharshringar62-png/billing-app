@@ -1142,13 +1142,17 @@ window.deleteCategory = async (id) => {
 </script>
 
 <!-- ===== ALL REPORT PAGES ===== -->
-<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Stock yahan ayega</div></div>
+<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4"><div class="bg-blue-100 p-3 rounded font-bold" id="totalSaleAmt">Total: ₹0</div><div class="mt-3" id="salesList">Sale list yahan load hoga</div></div></div>
 
-<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
-  <div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
-  <div class="p-4">
-    <div class="bg-blue-100 p-3 rounded font-bold" id="totalSaleAmt">Total: ₹0</div>
-    <div class="mt-3" id="salesList">Sale list yahan load hoga</div>
+<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4" id="stockListData">Stock list yahan ayega</div></div>
+
+<div id="itemPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Item-wise Report</b><button onclick="closePage('itemPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Item-wise report yahan ayega</div></div>
+
+<div id="creditorsPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Creditors Manage</b><button onclick="closePage('creditorsPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Creditors list yahan ayega</div></div>
+
+<div id="profitPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Profit & Loss</b><button onclick="closePage('profitPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Profit & Loss yahan ayega</div></div>
+
+<div id="duePage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Due List</b><button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Due list yahan ayega</div></div>
   </div>
 </div>
 <script>
