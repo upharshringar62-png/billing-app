@@ -554,7 +554,7 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=300; let h=Math.round((img.height/img.width)*w);
+        let w=280; let h=Math.round((img.height/img.width)*w);
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
         ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,w,h);
@@ -570,7 +570,7 @@ document.getElementById('drawerOverlay').onclick=closeDrawer;
               let x=xb*8+b; if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<170) byte|=(0x80>>b);
+              if(gray<150) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
