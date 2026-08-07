@@ -499,7 +499,6 @@ function updateTotal(){
 function handleKOT(){
   alert('KOT Printed');
 }
-
 let selectedPaymentMode = 'DUE';
 
 function setPayMode(mode){
@@ -515,12 +514,17 @@ function setPayMode(mode){
     activeBtn.classList.remove('border-gray-200');
     activeBtn.classList.add('border-[#2e3ae8]','bg-[#eef0ff]');
   }
-  if(typeof updateBillPreview === 'function'){
-    updateBillPreview();
-  } else if(typeof renderPreview === 'function'){
+  if(typeof renderPreview === 'function'){
     renderPreview();
   }
 }
+
+function handlePreview(){
+  renderPreview();
+  document.getElementById('previewModal').classList.remove('hidden');
+  document.getElementById('previewModal').classList.add('flex');
+}
+
 
 function closePreview(){
   document.getElementById('previewModal').classList.add('hidden');
