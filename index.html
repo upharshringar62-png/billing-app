@@ -712,7 +712,7 @@ await btCharacteristic.writeValueWithoutResponse(
   await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
   let enc=new TextEncoder(); 
   let data=enc.encode(t);
-  for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,20)); }
+  for(let i=0;i<data.length;i+=100){
 
   let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
   let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
@@ -729,25 +729,6 @@ await btCharacteristic.writeValueWithoutResponse(
           await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // Left align wapas
         }
     }
-  await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
-  let enc=new TextEncoder(); let data=enc.encode(t);
-  for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,20)); }
-  let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
-  let upiString = 'upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR';
-  let len=upiString.length+3, pL=len&0xFF, pH=(len>>8)&0xFF, c=[];
-  // QR SIZE FIX - 0x08 se 0x04 kar diya hai
-  c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x06, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30]);
-  c.push(...[0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
-  for(let i=0;i<upiString.length;i++) c.push(upiString.charCodeAt(i));
-  c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
-  let qrBytes=new Uint8Array(c);
-  await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
-  for(let i=0;i<qrBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,20)); }
-  let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
-      await btCharacteristic.writeValueWithoutResponse(foot);
-      closePreview();
-    }catch(e){ alert('Error: '+e.message); }
-    return;
  } else {
   alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
   return;
