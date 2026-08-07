@@ -158,23 +158,14 @@
   <!-- Drawer Menu -->
   <div class="flex-1 overflow-y-auto p-2 space-y-4">
     <div>
-   <div class="text-[10px] font-bold text-gray-400 px-2 py-2">SALES</div>
-<button onclick="alert('Sales Report khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📊 Sales Report</button>
-<button onclick="alert('Item-wise Report khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Item-wise Report</button>
-<button onclick="alert('Category Report khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📂 Category-wise Report</button>
-<button onclick="alert('Sales History khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📜 Sales History</button>
-</div>
-<div>
-<div class="text-[10px] font-bold text-gray-400 px-2 py-2">PURCHASE</div>
-<button onclick="alert('Purchase Report khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">🛒 Purchase Report</button>
-</div>
-<div>
-<div class="text-[10px] font-bold text-gray-400 px-2 py-2">MANAGE</div>
-<button onclick="alert('Stock Manage khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📦 Stock Manage</button>
-<button onclick="alert('Expense Manage khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">💸 Expense Manage</button>
-<button onclick="alert('Profit & Loss khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📈 Profit & Loss</button>
-<button onclick="alert('Customer Manage khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">👥 Customers Manage</button>
-<button onclick="alert('Due List khulega'); closeDrawer()" class="w-full text-left px-3 py-2.5 rounded hover:bg-gray-50 text-[13px] flex items-center gap-3">📋 Due List</button>   
+<button onclick="openPage('salesPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📊 Sales Report</button>
+<button onclick="openPage('itemPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Item-wise Report</button>
+<button onclick="openPage('catPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📂 Category-wise</button>
+<button onclick="openPage('purchasePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">🛒 Purchase Report</button>
+<button onclick="openPage('stockPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Stock Manage</button>
+<button onclick="openPage('expensePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">💸 Expense Manage</button>
+<button onclick="openPage('profitPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📈 Profit & Loss</button>
+<button onclick="openPage('duePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📋 Due List</button>
   </div>
   <div class="p-3 text-[10px] text-center text-gray-400 border-t">
     UPHAR SINGHAR & GIFTS v1.0.195
@@ -1151,16 +1142,24 @@ window.deleteCategory = async (id) => {
   }
 };
 </script>
- <div id="reportSection" class="hidden fixed inset-0 bg-white z-[60] p-4">
-  <button onclick="this.parentElement.classList.add('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded">Close</button>
-  <p class="mt-4">Report yahan ayega</p>
-</div>
+
+<!-- ===== ALL REPORT PAGES ===== -->
+<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] p-0"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Stock data yahan ayega</div></div>
+<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] p-0"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Sales Report yahan ayega</div></div>
+
 <script>
-  const mb = document.getElementById('menuBtn');
-  const ld = document.getElementById('leftDrawer');
-  const ov = document.getElementById('drawerOverlay');
-  if(mb){ mb.addEventListener('click', ()=>{ ld.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); }); }
-  if(ov){ ov.addEventListener('click', ()=>{ ld.classList.add('-translate-x-full'); ov.classList.add('hidden'); }); }
+function openPage(id){
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById('leftDrawer').classList.add('-translate-x-full');
+  document.getElementById('drawerOverlay').classList.add('hidden');
+}
+function closePage(id){ document.getElementById(id).classList.add('hidden'); }
+const mb = document.getElementById('menuBtn');
+const ld = document.getElementById('leftDrawer');
+const ov = document.getElementById('drawerOverlay');
+if(mb){ mb.onclick = () => { ld.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); }; }
+if(ov){ ov.onclick = () => { ld.classList.add('-translate-x-full'); ov.classList.add('hidden'); }; }
 </script>
+
 </body>
 </html>
