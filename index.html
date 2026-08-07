@@ -242,8 +242,17 @@
       <button onclick="closePreview()" class="w-7 h-7 bg-white/20 rounded-full">✕</button>
     </div>
    <div class="p-3 border-b space-y-2 bg-[#f6f7ff]">
-  <input id="custName" placeholder="Customer Name (Mantu jee)" class="w-full h-9 rounded-full px-4 text-[12px] border outline-none">
+  <input id="custName" placeholder="Customer Name (Mantu jee)" class="w-full h-9 rounded-full px-4 text-[12px] border outline-none"> 
   <input id="custMobile" placeholder="Mobile No (9801104843)" type="number" class="w-full h-9 rounded-full px-4 text-[12px] border outline-none">
+</div>
+   <!-- PAYMENT MODE - CASH ONLINE DUE -->
+<div class="p-3 border-b bg-[#f0f2ff]">
+  <div class="text-[11px] font-bold mb-2">Payment Mode</div>
+  <div class="grid grid-cols-3 gap-2">
+    <button onclick="setPayMode('CASH')" id="btnCASH" class="payBtn border-2 border-gray-200 rounded-xl py-2.5 font-bold text-[11px]">💵 CASH</button>
+    <button onclick="setPayMode('ONLINE')" id="btnONLINE" class="payBtn border-2 border-gray-200 rounded-xl py-2.5 font-bold text-[11px]">📱 ONLINE</button>
+    <button onclick="setPayMode('DUE')" id="btnDUE" class="payBtn border-2 border-[#2e3ae8] bg-[#eef0ff] rounded-xl py-2.5 font-bold text-[11px]">📋 DUE</button>
+  </div>
 </div>
     <div id="previewList" class="flex-1 overflow-y-auto p-3 space-y-2">
       <!-- preview items -->
@@ -490,17 +499,27 @@ function updateTotal(){
 function handleKOT(){
   alert('KOT Printed');
 }
- let selectedPaymentMode = 'DUE';
+
+let selectedPaymentMode = 'DUE';
+
 function setPayMode(mode){
   selectedPaymentMode = mode;
-  document.querySelectorAll('.payBtn').forEach(b=> b.classList.remove('!border-[#2e3ae8]','bg-[#eef0ff]'));
-  document.getElementById('btn'+mode).classList.add('!border-[#2e3ae8]','bg-[#eef0ff]');
-  updateBillPreview();
-}
-function handlePreview(){
-  renderPreview();
-  document.getElementById('previewModal').classList.remove('hidden');
-  document.getElementById('previewModal').classList.add('flex');
+  // sab buttons ko normal karo
+  document.querySelectorAll('.payBtn').forEach(b=> {
+    b.classList.remove('border-[#2e3ae8]','bg-[#eef0ff]','!border-[#2e3ae8]');
+    b.classList.add('border-gray-200');
+  });
+  // selected ko active karo
+  let activeBtn = document.getElementById('btn'+mode);
+  if(activeBtn){
+    activeBtn.classList.remove('border-gray-200');
+    activeBtn.classList.add('border-[#2e3ae8]','bg-[#eef0ff]');
+  }
+  if(typeof updateBillPreview === 'function'){
+    updateBillPreview();
+  } else if(typeof renderPreview === 'function'){
+    renderPreview();
+  }
 }
 
 function closePreview(){
