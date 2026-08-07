@@ -1144,9 +1144,15 @@ window.deleteCategory = async (id) => {
 </script>
 
 <!-- ===== ALL REPORT PAGES ===== -->
-<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] p-0"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Stock data yahan ayega</div></div>
-<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] p-0"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Sales Report yahan ayega</div></div>
+<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Stock yahan ayega</div></div>
 
+<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div class="p-4">
+    <div class="bg-blue-100 p-3 rounded font-bold" id="totalSaleAmt">Total: ₹0</div>
+    <div class="mt-3" id="salesList">Sale list yahan load hoga</div>
+  </div>
+</div>
 <script>
 function openPage(id){
   document.getElementById(id).classList.remove('hidden');
