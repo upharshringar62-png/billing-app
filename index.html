@@ -174,7 +174,7 @@
 <div id="settingsPage" class="fixed inset-0 bg-[#f2f3f7] z-25 hidden overflow-y-auto pb-[80px]">
   <div class="bg-white p-4 border-b">
     <h2 class="font-bold text-[16px]">Profile Setting</h2>
-    <div class="text-[11px] text-gray-500 mt-1">1.0.195 | 7256050678 | <span id="billNoDisplay">655</span></div>
+    <div class="text-[11px] text-gray-500 mt-1">1.0.195 | 7256050678 | <span id="billNoDisplay">1</span>
   </div>
   <div class="p-3 space-y-4">
     <!-- Logo Section -->
@@ -191,7 +191,7 @@
     <div class="bg-white rounded-lg p-4 border grid grid-cols-2 gap-3">
       <div>
         <label class="text-[11px] font-bold">Running Bill No ✏️</label>
-        <input id="billNoInput" value="655" class="w-full border rounded-lg p-2 text-[13px] mt-1">
+        <input id="billNoInput"> class="w-full border rounded-lg p-2 text-[13px] mt-1">
       </div>
       <div>
         <label class="text-[11px] font-bold">Bill Prefix ✏️</label>
@@ -528,7 +528,7 @@ document.getElementById('menuBtn').onclick=openDrawer;
 document.getElementById('drawerOverlay').onclick=closeDrawer;
  
   async function handleRealPrint(){
-  let billNo = document.getElementById('billNoInput')?.value || '655';
+  let billNo = document.getElementById('billNoInput')?.value || localStorage.getItem('lastBillNo') || '1';
   let custName = document.getElementById('custName')?.value || '';
   let custMobile = document.getElementById('custMobile')?.value || '';
   let now = new Date();
@@ -696,6 +696,11 @@ await btCharacteristic.writeValueWithoutResponse(
       for(let i=0;i<qrBytes.length;i+=80){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+80)); await new Promise(r=>setTimeout(r,40)); }
       let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
       await btCharacteristic.writeValueWithoutResponse(foot);
+     // NEXT BILL AUTO
+let nextNo = parseInt(billNo) + 1;
+localStorage.setItem('lastBillNo', nextNo);
+if(document.getElementById('billNoInput')) document.getElementById('billNoInput').value = nextNo;
+if(document.getElementById('billNoDisplay')) document.getElementById('billNoDisplay').innerText = nextNo;
       closePreview();
     }catch(e){ alert('Error: '+e.message); }
     return;
