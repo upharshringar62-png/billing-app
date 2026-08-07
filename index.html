@@ -670,34 +670,28 @@ Object.keys(cart).forEach(id => {
   sr++;
 });
 
-t += line('-');
-
-t += `TOTAL ITEMS : ${totalItems}\n`;
-t += `TOTAL QTY   : ${totalQty}\n`;
-t += `Subtotal    : Rs. ${subtotal.toFixed(2)}\n`;
-
-t += line('-');
-
-t += '\x1B\x61\x01';
-t += 'GRAND TOTAL\n';
-t += `Rs. ${subtotal.toFixed(2)}\n`;
-
-t += line('-');
+  let t = "";
+  t += line('-');
+  // Product loop - yahi tumhara gayab ho gaya tha
+  Object.keys(cart).forEach(id=>{
+    let prod = products.find(p=>p.id==id);
+    if(!prod) return;
+    let qty = cart[id];
+    let amt = prod.price * qty;
+    t += `${prod.name}\n`;
+    t += ` ${prod.price} x ${qty} = Rs.${amt.toFixed(2)}\n`;
+  });
+  t += line('-');
+  t += `GRAND TOTAL\n`;
+  t += `Rs. ${subtotal.toFixed(2)}\n`;
+  t += line('-');
 
   if(btCharacteristic && btServer && btServer.connected){
-    try{
-      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
-     // ===== STRONG / DARK THERMAL PRINT =====
+   try{
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x45,0x01]));
+    await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x37,0x0A,0x00,0x03]));
 
-// Bold ON
-await btCharacteristic.writeValueWithoutResponse(
-  new Uint8Array([0x1B,0x45,0x01])
-);
-
-// Printer heating / density - isko kam rakho warna QR kala ho jayega
-await btCharacteristic.writeValueWithoutResponse(
-  new Uint8Array([0x1B,0x37,0x0A,0x00,0x03]) // low heat = clear QR
-);
     if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
@@ -706,13 +700,13 @@ await btCharacteristic.writeValueWithoutResponse(
             await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+20));
             await new Promise(r=>setTimeout(r,40));
           }
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A, 0x1B,0x61,0x00]));
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x0A,0x1B,0x61,0x00]));
         }
     }
   await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
-  let enc=new TextEncoder(); 
+  let enc=new TextEncoder();
   let data=enc.encode(t);
-  for(let i=0;i<data.length;i+=100){
+  for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,20)); }
 
   let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
   let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
@@ -725,13 +719,14 @@ await btCharacteristic.writeValueWithoutResponse(
   await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
   for(let i=0;i<qrBytes.length;i+=20){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+20)); await new Promise(r=>setTimeout(r,30)); }
   let foot=enc.encode("\nSCAN TO PAY\nThank You Visit Again!\n\n\n");
-    
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00])); // Left align wapas
-        }
-    }
+  await btCharacteristic.writeValueWithoutResponse(foot);
+  closePreview();
+  }catch(e){ alert('Error: '+e.message); }
+  return;
  } else {
   alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
   return;
+}
 }
 } 
 function renderPreview(){
