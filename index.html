@@ -308,6 +308,11 @@ async function handleRealPrint(){
 
   // 58mm thermal printer - clean columns
 const W = 32;
+ const COL_SR = 3;
+const COL_ITEM = 14;
+const COL_RATE = 6;
+const COL_QTY = 4;
+const COL_AMT = 5;
 
 function line(ch = '-') {
   return ch.repeat(W) + '\n';
