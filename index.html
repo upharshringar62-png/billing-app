@@ -436,23 +436,48 @@ window.deleteCategory = async (id) => {
   </div>
   <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
 </div>
-
 <script>
 async function loadDueList(){
   const container = document.getElementById('dueListContainer');
+  container.innerHTML = 'Loading Due from Firebase...';
   try {
     let bills = [];
-    if(window.sales) bills = window.sales;
-    let stored = localStorage.getItem('sales') || localStorage.getItem('bills');
-    if(stored) bills = JSON.parse(stored);
-    let due = bills.filter(b => (b.payment && b.payment.toUpperCase() === 'DUE') || b.due > 0);
-    if(due.length === 0){ container.innerHTML = '<p class="text-center text-gray-500 mt-10">Koi Due nahi hai</p>'; return; }
-    container.innerHTML = due.map(b => `<div class="border p-2 rounded mb-2"><b>${b.customer || b.name || 'Customer'}</b><br>Bill: ₹${b.total || b.grandTotal || 0} | Mob: ${b.mob || b.mobile || ''}<br><small>${b.date || ''}</small></div>`).join('');
-  } catch(e){ container.innerHTML = 'Error: '+e.message; }
+    // window.sales se le lo (Firebase se already aata hai)
+    if(window.sales && window.sales.length>0) bills = window.sales;
+    if(bills.length==0){
+      let stored = localStorage.getItem('sales') || localStorage.getItem('bills');
+      if(stored) bills = JSON.parse(stored);
+    }
+    console.log('Total:', bills.length, bills);
+    let due = bills.filter(b => {
+      let pay = (b.payment || b.paymentType || '').toString().toUpperCase();
+      return pay.includes('DUE') || (b.due && b.due>0);
+    });
+    if(due.length==0){
+      container.innerHTML = '<p class="text-center mt-10">Koi Due nahi mila<br>Total Bills: '+bills.length+'</p>';
+      return;
+    }
+    container.innerHTML = due.map(b => `<div class="border p-2 rounded mb-2"><b>${b.customer||b.name||'Customer'}</b><br>₹${b.total||0} | ${b.mob||''}<br><small>${b.date||''}</small></div>`).join('');
+  } catch(e){
+    container.innerHTML = 'Error: '+e.message;
+  }
 }
-function openPage(id){ document.getElementById(id).classList.remove('hidden'); if(id==='duePage') loadDueList(); }
-function closePage(id){ document.getElementById(id).classList.add('hidden'); }
+function openPage(id){
+  document.getElementById(id).classList.remove('hidden');
+  if(id==='duePage') loadDueList();
+}
+function closePage(id){
+  document.getElementById(id).classList.add('hidden');
+}
 function openDrawer(){
+  document.getElementById('leftDrawer').classList.remove('-translate-x-full');
+  document.getElementById('drawerOverlay').classList.remove('hidden');
+}
+function closeDrawer(){
+  document.getElementById('leftDrawer').classList.add('-translate-x-full');
+  document.getElementById('drawerOverlay').classList.add('hidden');
+}
+</script>
   const ld = document.getElementById('leftDrawer');
   const ov = document.getElementById('drawerOverlay');
   if(ld) ld.classList.remove('-translate-x-full');
