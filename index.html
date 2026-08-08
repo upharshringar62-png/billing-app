@@ -305,7 +305,8 @@ async function handleRealPrint(){
       img.onerror=()=>res(null); img.src=base64;
     });
   }
-
+ 
+ let t = '';
   // 58mm thermal printer - clean columns
 const W = 32;
  const COL_SR = 3;
