@@ -17,7 +17,15 @@
  @media print {
   body * { visibility: hidden !important; }
   #printArea, #printArea * { visibility: visible !important; }
-  #printArea { position: absolute !important; left:0 !important; top:0 !important; width:100% !important; background:white !important; padding:10px; }
+  #printArea { position: absolute !important; left:0 !important; top:0 !important; width:72mm !important; max-width:72mm !important; background:white; font-family: 'Courier New', monospace !important; font-size:10px !important; line-height:1.2 !important; padding:2mm !important; }
+  #printArea table { width: 68mm!important; table-layout: fixed!important; border-collapse: collapse!important; }
+#printArea th, #printArea td { font-size: 10px!important; padding: 1px 2px!important; word-wrap: break-word!important; }
+#printArea th:nth-child(1), #printArea td:nth-child(1) { width: 10%!important; }
+#printArea th:nth-child(2), #printArea td:nth-child(2) { width: 40%!important; }
+#printArea th:nth-child(3), #printArea td:nth-child(3) { width: 15%!important; text-align: right!important; }
+#printArea th:nth-child(4), #printArea td:nth-child(4) { width: 10%!important; text-align: center!important; }
+#printArea th:nth-child(5), #printArea td:nth-child(5) { width: 25%!important; text-align: right!important; }
+#printArea * { visibility: visible !important; font-family: 'Courier New', monospace !important; }
   header, nav, aside, #previewModal, #productActionModal, #editProductModal { display:none !important; }
 }
  .product-card{
@@ -415,14 +423,34 @@ window.deleteCategory = async (id) => {
   if(c.firebaseId){ try{ await deleteDoc(doc(db, "categories", c.firebaseId)); }catch(e){ console.log(e); } }
 };
 </script>
-<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Sales Report</b><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4"><div class="bg-blue-100 p-3 rounded font-bold" id="totalSaleAmt">Total: ₹0</div><div class="mt-3" id="salesList">Sale list yahan load hoga</div></div></div>
-<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Stock Manage</b><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4" id="stockListData">Stock list yahan ayega</div></div>
-<div id="itemPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Item-wise Report</b><button onclick="closePage('itemPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Item-wise report yahan ayega</div></div>
-<div id="creditorsPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Creditors Manage</b><button onclick="closePage('creditorsPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Creditors list yahan ayega</div></div>
-<div id="profitPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Profit & Loss</b><button onclick="closePage('profitPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Profit & Loss yahan ayega</div></div>
-<div id="duePage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"><div class="bg-[#2c3ac8] text-white p-4 flex justify-between"><b>Due List</b><button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button></div><div class="p-4">Due list yahan ayega</div></div>
+<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"></div>
+<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"></div>
+<div id="itemPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"></div>
+<div id="creditorsPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"></div>
+<div id="profitPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col"></div>
+
+<div id="duePage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center">
+    <h2 class="font-bold">Due List</h2>
+    <button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button>
+  </div>
+  <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
+</div>
+
 <script>
-function openPage(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
+async function loadDueList(){
+  const container = document.getElementById('dueListContainer');
+  try {
+    let bills = [];
+    if(window.sales) bills = window.sales;
+    let stored = localStorage.getItem('sales') || localStorage.getItem('bills');
+    if(stored) bills = JSON.parse(stored);
+    let due = bills.filter(b => (b.payment && b.payment.toUpperCase() === 'DUE') || b.due > 0);
+    if(due.length === 0){ container.innerHTML = '<p class="text-center text-gray-500 mt-10">Koi Due nahi hai</p>'; return; }
+    container.innerHTML = due.map(b => `<div class="border p-2 rounded mb-2"><b>${b.customer || b.name || 'Customer'}</b><br>Bill: ₹${b.total || b.grandTotal || 0} | Mob: ${b.mob || b.mobile || ''}<br><small>${b.date || ''}</small></div>`).join('');
+  } catch(e){ container.innerHTML = 'Error: '+e.message; }
+}
+function openPage(id){ document.getElementById(id).classList.remove('hidden'); if(id==='duePage') loadDueList(); }
 function closePage(id){ document.getElementById(id).classList.add('hidden'); }
 function openDrawer(){
   const ld = document.getElementById('leftDrawer');
