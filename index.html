@@ -306,37 +306,36 @@ async function handleRealPrint(){
     });
   }
 
-  let t = '';
-  // 58mm thermal-printer layout: 32 characters wide.
-  // Keeps Sr / Item / Rate / Qty / Amt on one line and wraps long item names below.
-  const W = 32;
-  const COL_SR=3, COL_ITEM=14, COL_RATE=6, COL_QTY=4, COL_AMT=5;
-  function line(ch='-'){ return ch.repeat(W) + '\n'; }
-  function wrapText(text, width){
-    text = String(text || '').trim();
-    if(!text) return [''];
-    const words = text.split(/\s+/);
-    const lines=[]; let cur='';
-    for(const word of words){
-      if(!cur){ cur=word; continue; }
-      if((cur+' '+word).length <= width) cur += ' '+word;
-      else { lines.push(cur); cur=word; }
-    }
-    if(cur) lines.push(cur);
-    return lines.length ? lines : [''];
+  // 58mm thermal printer - clean columns
+const W = 32;
+
+function line(ch = '-') {
+  return ch.repeat(W) + '\n';
+}
+
+function row(sr, name, rate, qty, amt) {
+
+  sr = String(sr);
+  name = String(name || '').trim();
+  rate = Number(rate || 0).toFixed(1);
+  qty = String(qty);
+  amt = Number(amt || 0).toFixed(1);
+
+  // Item name ko 15 characters tak rakho
+  if (name.length > 15) {
+    name = name.substring(0, 15);
   }
-  function row(sr, name, rate, qty, amt){
-    const parts = wrapText(name, COL_ITEM);
-    let out = String(sr).padEnd(COL_SR,' ') +
-      parts[0].padEnd(COL_ITEM,' ') +
-      String(rate).padStart(COL_RATE,' ') +
-      String(qty).padStart(COL_QTY,' ') +
-      String(amt).padStart(COL_AMT,' ') + '\n';
-    for(let i=1;i<parts.length;i++){
-      out += ' '.repeat(COL_SR) + parts[i].padEnd(COL_ITEM,' ') + '\n';
-    }
-    return out;
-  }
+
+  return (
+    sr.padEnd(3, ' ') +
+    name.padEnd(15, ' ') +
+    rate.padStart(6, ' ') +
+    qty.padStart(3, ' ') +
+    amt.padStart(5, ' ') +
+    '\n'
+  );
+}
+ 
   t += '\x1B\x40'; t += '\x1B\x4D\x00'; t += '\x1D\x21\x00'; t += '\x1B\x61\x01';
   t += '\x1B\x45\x01'; t += 'UPHAR\n'; t += 'SINGHAR & GIFTS\n'; t += '\x1B\x45\x00'; t += 'BHAGWATI CINEMA ROAD\n'; t += 'NARKATIAGANJ - 845455\n'; t += 'MOB. +917256050678\n';
   t += line('-'); t += '\x1B\x61\x00'; t += '\x1B\x45\x01';
