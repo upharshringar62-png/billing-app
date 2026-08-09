@@ -559,11 +559,25 @@ import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstat
 const firebaseConfig = { apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw", authDomain: "upharshringar-billing-5f4c9.firebaseapp.com", projectId: "upharshringar-billing-5f4c9", storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app", messagingSenderId: "1070290998158", appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf" };
 const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
 window.firebaseStorage = storage; window.getDownloadURL = getDownloadURL; window.ref = ref; window.uploadString = uploadString;
- window.firebaseUploadImage = async (base64, id) => {
-  const storageRef = ref(storage, 'products/' + id + '.jpg');
-  await uploadString(storageRef, base64, 'data_url');
-  return await getDownloadURL(storageRef);
-};
+// Bina Storage ke - Photo ko chota karke Firestore me save karega
+window.firebaseUploadImage = async (base64, id) => {
+  return new Promise((resolve) => {
+    let img = new Image();
+    img.onload = () => {
+      let canvas = document.createElement('canvas');
+      let maxW = 400; // photo ko 400px tak chota karega
+      let scale = maxW / img.width;
+      if(scale > 1) scale = 1;
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      let smallBase64 = canvas.toDataURL('image/jpeg', 0.6); // 60% quality - 50KB ban jayegi
+      resolve(smallBase64);
+    };
+    img.src = base64;
+  });
+}; 
 const prodCol = collection(db, "products");
 const catCol = collection(db, "categories");
 const salesCol = collection(db, "sales");
