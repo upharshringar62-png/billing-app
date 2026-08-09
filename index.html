@@ -517,14 +517,42 @@ async function saveUpdatedProduct(){
     closeEditModal(); renderProducts();
   }
 }
-function addProductWithCategory(){
+async function addProductWithCategory(){
   let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
-  let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, `1`);
+  let catChoice = prompt(`Kis Category me add karna hai?\n${catList}\n\nNumber likho (1-${categories.length}):`, '1');
   let catIdx = parseInt(catChoice)-1;
   let targetCatId = categories[catIdx]?.id || categories[0]?.id || '1';
   let name = prompt('Product name:'); if(!name) return;
-  let price = prompt('Price:', '20');
-  window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: targetCatId, qty: 0, stock: 100, costPrice: 0, img: '' });
+  let price = prompt('Price:', '20'); if(price===null) return;
+
+  // Photo select karwao
+  let imageData = '';
+  let wantPhoto = confirm('Photo bhi add karni hai? OK dabao');
+  if(wantPhoto){
+    imageData = await new Promise((resolve)=>{
+      let inp = document.createElement('input');
+      inp.type='file'; inp.accept='image/*';
+      inp.onchange = (e)=>{
+        let f = e.target.files[0]; if(!f) return resolve('');
+        let r = new FileReader();
+        r.onload = async (ev)=>{
+          let compressed = await window.firebaseUploadImage(ev.target.result, Date.now());
+          resolve(compressed);
+        };
+        r.readAsDataURL(f);
+      };
+      inp.click();
+    });
+  }
+
+  let newProd = { id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: targetCatId, qty: 0, stock: 0, costPrice: 0, image: imageData, img: imageData };
+  window.products.push(newProd);
+  // Firestore me bhi save
+  try{
+    let ref = await addDoc(prodCol, newProd);
+    newProd.firebaseId = ref.id;
+  }catch(e){ console.log(e); }
+  localStorage.setItem('products', JSON.stringify(products));
   syncData(); renderProducts(); renderCategories();
 }
 function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
