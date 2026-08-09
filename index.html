@@ -488,16 +488,34 @@ function showActionModal(id){ selectedProductId = id; let prod = products.find(p
 function closeActionModal(){ document.getElementById('productActionModal').classList.add('hidden'); }
 function openModifyModal(){ let prod = products.find(p=>p.id==selectedProductId); document.getElementById('editProductName').value = prod.name; document.getElementById('editProductPrice').value = prod.price; document.getElementById('editProductImage').src = prod.img || ''; document.getElementById('editProductImageInput').value = ''; document.getElementById('productActionModal').classList.add('hidden'); document.getElementById('editProductModal').classList.remove('hidden'); }
 function closeEditModal(){ document.getElementById('editProductModal').classList.add('hidden'); }
-function saveUpdatedProduct(){
-  let prod = products.find(p => p.id == selectedProductId); if(!prod) return;
+async function saveUpdatedProduct(){
+  let prod = products.find(p => String(p.id) === String(selectedProductId) || String(p.firebaseId) === String(selectedProductId)); if(!prod) return;
   prod.name = document.getElementById('editProductName').value;
   prod.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
   const imageInput = document.getElementById('editProductImageInput');
   if(imageInput.files && imageInput.files[0]){
     const reader = new FileReader();
-    reader.onload = function(e){ prod.img = e.target.result; localStorage.setItem('products', JSON.stringify(products)); closeEditModal(); renderProducts(); updateTotal(); alert('Product Updated!'); };
+    reader.onload = async function(e){
+      try{
+        let base64 = e.target.result;
+        // YAHAN UPLOAD HOGA FIREBASE ME
+        let url = await window.firebaseUploadImage(base64, prod.id || Date.now());
+        prod.img = url; prod.image = url;
+        localStorage.setItem('products', JSON.stringify(products));
+        if(window.firebaseUpdateProduct) await window.firebaseUpdateProduct(prod);
+        // Firestore me bhi image URL update
+        if(prod.firebaseId){
+          await updateDoc(doc(db, "products", prod.firebaseId), { image: url, img: url, name: prod.name, price: prod.price });
+        }
+        closeEditModal(); renderProducts(); alert('Photo Firebase me save ho gayi!');
+      }catch(err){ alert('Upload Error: '+err.message); }
+    };
     reader.readAsDataURL(imageInput.files[0]);
-  } else { localStorage.setItem('products', JSON.stringify(products)); closeEditModal(); renderProducts(); updateTotal(); alert('Product Updated!'); }
+  } else {
+    localStorage.setItem('products', JSON.stringify(products));
+    if(window.firebaseUpdateProduct) await window.firebaseUpdateProduct(prod);
+    closeEditModal(); renderProducts();
+  }
 }
 function addProductWithCategory(){
   let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
