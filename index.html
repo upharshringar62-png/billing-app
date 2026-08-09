@@ -206,7 +206,9 @@ window.categories = categories; window.products = products;
 function syncData(){
   window.categories = categories; window.products = products;
   localStorage.setItem('categories', JSON.stringify(categories));
-  localStorage.setItem('products', JSON.stringify(products));
+  // localStorage me bina photo ke save karo, warna fir full ho jayega
+let productsForLocal = products.map(p=>({...p, img: '', image: ''}));
+localStorage.setItem('products', JSON.stringify(productsForLocal));
 }
 function renderCategories(){
   const el = document.getElementById('catList'); el.innerHTML = '';
