@@ -327,7 +327,7 @@ async function handleRealPrint(){
               let x=xb*8+b; if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<128) byte|=(0x80>>b);
+              if(gray<170) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
@@ -351,33 +351,39 @@ async function handleRealPrint(){
     if(spaces<1) spaces=1;
     return left + ' '.repeat(spaces) + right + '\n';
   }
-  // Item Row - 2 line format for clean look
-  function itemBlock(sr, name, rate, qty, amt){
-    // Line1: Sr. + Name
-    let nameClean = name.substring(0,20);
-    let l1 = (sr+'. '+nameClean).substring(0,32);
-    // Line2: Rate x Qty = Amt  (right aligned)
-    let rateStr = Number(rate).toFixed(0);
-    let amtStr = Number(amt).toFixed(0);
-    let l2 = `    ${rateStr} x ${qty} = ${amtStr}`;
-    l2 = l2.padStart(32,' ');
-    return l1 + '\n' + l2 + '\n';
-  }
- 
-  let t = '';
+// Single Line - Product Name Qty Amount sab ek line me
+function itemBlock(sr, name, rate, qty, amt){
+  let nameClean = name.toString().substring(0,13).trim();
+  let rateStr = Number(rate).toFixed(0);
+  let qtyStr = Number(qty).toString();
+  let amtStr = Number(amt).toFixed(0);
+  
+  // Sr(2) + Space(1) + Name(13) + Space(1) + Rate(4) + Space(1) + Qty(2) + Space(1) + Amt(5) = 32
+  let srStr = String(sr).padStart(2,' ');
+  let line = srStr + ' ' + nameClean.padEnd(13,' ') + ' ' + rateStr.padStart(4,' ') + ' ' + qtyStr.padStart(2,' ') + ' ' + amtStr.padStart(5,' ');
+  
+  return line.substring(0,32) + '\n';
+}
+   let t = '';
   t += '\x1B\x40'; // init
   t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x00'; // normal font
+  t += '\x1B\x21\x18'; // BOLD + DOUBLE HEIGHT
+  t += '\x1B\x45\x01'; // Bold ON
   t += 'UPHAR SINGHAR & GIFTS\n';
-  t += '\x1B\x21\x00';
-  t += 'Bhagwati Cinema Road\n';
+  t += '\x1B\x45\x00';
+  t += '\x1B\x21\x00'; // normal
+  t += '\x1B\x21\x08'; // BOLD
+  t += 'Bhawati Cinema Road\n';
   t += 'Narkatiaganj - 845455\n';
   t += 'Mob: +91 7256050678\n';
+  t += '\x1B\x21\x00'; // normal
   t += line('=');
   t += '\x1B\x61\x00'; // left align
+  t += '\x1B\x21\x08'; // BOLD for bill info
   t += leftRight('Bill No: '+billNo, dateStr);
   if(custName) t += 'Customer: '+custName.substring(0,21)+'\n';
   if(custMobile) t += 'Mobile  : '+custMobile+'\n';
+  t += '\x1B\x21\x00';
   t += 'Payment : '+selectedPaymentMode+'\n';
   t += line('-');
   t += '\x1B\x21\x08'; // bold small
