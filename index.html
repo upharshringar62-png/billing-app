@@ -353,15 +353,14 @@ async function handleRealPrint(){
   }
 // Single Line - Product Name Qty Amount sab ek line me
 function itemBlock(sr, name, rate, qty, amt){
-  let nameClean = name.toString().substring(0,13).trim();
-  let rateStr = Number(rate).toFixed(0);
+  let nameClean = name.toString().substring(0,20);
+  let rateStr = Number(rate).toString();
   let qtyStr = Number(qty).toString();
-  let amtStr = Number(amt).toFixed(0);
-  
-  // Sr(2) + Space(1) + Name(13) + Space(1) + Rate(4) + Space(1) + Qty(2) + Space(1) + Amt(5) = 32
-  let srStr = String(sr).padStart(2,' ');
-  let line = srStr + ' ' + nameClean.padEnd(13,' ') + ' ' + rateStr.padStart(4,' ') + ' ' + qtyStr.padStart(2,' ') + ' ' + amtStr.padStart(5,' ');
-  
+  let amtStr = Number(amt).toFixed(1);
+
+  let srStr = (sr + '.').padEnd(3,' ');
+  // 3 + 20 + 1 + 4 + 1 + 3 + 1 + 6 = 39 -> 32 pe cut karenge toh saaf ayega
+  let line = srStr + nameClean.padEnd(20,' ') + ' ' + rateStr.padStart(4,' ') + ' ' + qtyStr.padStart(3,' ') + ' ' + amtStr.padStart(6,' ');
   return line.substring(0,32) + '\n';
 }
    let t = '';
@@ -387,7 +386,7 @@ function itemBlock(sr, name, rate, qty, amt){
   t += 'Payment : '+selectedPaymentMode+'\n';
   t += line('-');
   t += '\x1B\x21\x08'; // bold small
-  t += 'ITEM                 AMOUNT\n';
+  t += 'Sr. Item            Rate Qty  Amt.\n';
   t += '\x1B\x21\x00';
   t += line('-');
   let sr=1;
