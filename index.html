@@ -575,11 +575,13 @@ window.firebaseSaveSale = async (sale) => {
 };
 window.firebaseUpdateProduct = async (p) => {
   if(!p.firebaseId) return;
-  await updateDoc(doc(db, "products", p.firebaseId), {
+    await updateDoc(doc(db, "products", p.firebaseId), {
     stock: Number(p.stock || 0),
     costPrice: Number(p.costPrice || 0),
     price: Number(p.price || 0),
-    name: p.name || ''
+    name: p.name || '',
+    image: p.image || p.img || '',
+    img: p.image || p.img || ''
   });
 };
 window.firebaseUpdateSale = async (sale) => {
