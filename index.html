@@ -356,48 +356,54 @@ async function handleRealPrint(){
 // Single Line - Product Name Qty Amount sab ek line me
 function itemBlock(sr, name, rate, qty, amt){
     let out = '';
-    let fullName = name.toString();
-    let firstName = fullName.substring(0,16);
+    let fullName = name.toString().trim();
     let rateStr = Number(rate).toString();
     let qtyStr = Number(qty).toString();
-    let amtStr = Number(amt).toFixed(1);
-    let srStr = (sr + '.').padEnd(3,'');
-    let firstLine = srStr + firstName.padEnd(16,' ') + ' ' + rateStr.padStart(3,' ') + ' ' + qtyStr.padStart(2,' ') + ' ' + amtStr.padStart(6,' ');
-    out += firstLine.substring(0,32) + '\n';
-    if(fullName.length > 16){
-      let remaining = fullName.substring(16);
-      for(let i=0; i<remaining.length; i+=20){
-        let chunk = remaining.substring(i, i+20);
-        out += '   ' + chunk + '\n';
+    let amtStr = Number(amt).toFixed(0); // 90.0 ki jagah 90 - jagah bachega
+    let srStr = (sr + '.').padEnd(2,''); // 1. 2.
+    
+    // Pehli line: 2(Sr) + 13(Name) + 4(Rate) + 3(Qty) + 6(Amt) + 2 space = 30 -> 32 me fit
+    let firstName = fullName.substring(0,13);
+    let line1 = srStr + firstName.padEnd(13,' ') + ' ' + rateStr.padStart(3,' ') + ' ' + qtyStr.padStart(2,' ') + ' ' + amtStr.padStart(5,' ');
+    out += line1.substring(0,32) + '\n';
+    
+    // Lamba naam hai toh dusri line me
+    if(fullName.length > 13){
+      let rem = fullName.substring(13);
+      for(let i=0; i<rem.length; i+=18){
+        out += '  ' + rem.substring(i,i+18).trim() + '\n';
       }
     }
     return out;
   }
-   let t = '';
+    let t = '';
   t += '\x1B\x40'; // init
+  t += '\x1B\x45\x01'; // BOLD ON - PURA BILL BOLD
   t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x18'; // BOLD + DOUBLE HEIGHT
-  t += '\x1B\x45\x01'; // Bold ON
+  t += '\x1B\x21\x30'; // BOLD + DOUBLE HEIGHT + DOUBLE WIDTH - SHOP NAME DARK
   t += 'UPHAR SINGHAR & GIFTS\n';
-  t += '\x1B\x45\x00';
-  t += '\x1B\x21\x00'; // normal
+  t += '\x1B\x21\x00';
+  t += '\x1B\x45\x01'; // BOLD ON fir se
+  t += '\x1B\x61\x01'; // center
   t += '\x1B\x21\x08'; // BOLD
   t += 'Bhawati Cinema Road\n';
   t += 'Narkatiaganj - 845455\n';
   t += 'Mob: +91 7256050678\n';
-  t += '\x1B\x21\x00'; // normal
+  t += '\x1B\x21\x00';
+  t += '\x1B\x45\x01';
   t += line('=');
   t += '\x1B\x61\x00'; // left align
   t += '\x1B\x21\x08'; // BOLD for bill info
   t += leftRight('Bill No: '+billNo, dateStr);
   if(custName) t += 'Customer: '+custName.substring(0,21)+'\n';
-  if(custMobile) t += 'Mobile  : '+custMobile+'\n';
-  t += '\x1B\x21\x00';
+  if(custMobile) t += 'Mobile : '+custMobile+'\n';
   t += 'Payment : '+selectedPaymentMode+'\n';
   t += line('-');
-  t += '\x1B\x21\x08'; // bold small
-  t += 'Sr. Item            Rate Qty  Amt.\n';
+  t += '\x1B\x45\x01'; // BOLD ON
+  t += '\x1B\x21\x08';
+  t += 'No Item Rate Qty Amt\n';
   t += '\x1B\x21\x00';
+  t += '\x1B\x45\x01';
   t += line('-');
   let sr=1;
   Object.keys(cart).forEach(id => {
@@ -408,18 +414,19 @@ function itemBlock(sr, name, rate, qty, amt){
     sr++;
   });
   t += line('-');
+  t += '\x1B\x21\x08'; // BOLD
   t += leftRight('TOTAL ITEMS: '+totalItems, 'QTY: '+totalQty);
   t += leftRight('Subtotal:', 'Rs. '+subtotal.toFixed(0));
   t += line('=');
-  t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x10'; // double height bold for total
+  t += '\x1B\x61\x01';
+  t += '\x1B\x21\x10'; // BOLD BIG
   t += 'GRAND TOTAL\n';
   t += 'Rs. '+subtotal.toFixed(0)+'\n';
   t += '\x1B\x21\x00';
+  t += '\x1B\x45\x01';
   t += line('-');
   t += '\x1B\x61\x01';
-  t += 'Thank You Visit Again!\n';
-  t += '\n';
+  t += 'Thank You Visit Again!\n\n'; 
 
   if(btCharacteristic && btServer && btServer.connected){
     try{
