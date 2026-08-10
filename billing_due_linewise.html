@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Due List Line Wise</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f2f3f7] p-2">
+<div class="max-w-[600px] mx-auto bg-white rounded-xl overflow-hidden shadow">
+<div class="bg-[#2e3ae8] text-white p-3 flex justify-between"><h2 class="font-bold">📋 Due List - Line by Line</h2><span id="totalDueTop" class="bg-red-500 px-3 py-1 rounded-full text-[12px] font-bold">₹0</span></div>
+<div class="p-2 bg-yellow-50 border-b text-[11px]">✅ Firebase SAFE - Delete nahi hoga | Har bill line by line</div>
+<div class="p-2 flex gap-2"><input id="dueSearch" placeholder="Search customer / mobile / bill no..." class="flex-1 h-10 border rounded-full px-4 text-[13px] outline-none"></div>
+<div id="dueListContainer" class="p-2 space-y-3 max-h-[80vh] overflow-y-auto">Loading...</div>
+</div>
+<script>
+let allSales = JSON.parse(localStorage.getItem('sales') || '[]');
+function money(n){ return '₹'+Number(n||0).toFixed(0); }
+function esc(v){ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function renderDueList(filterText=''){
+  const container = document.getElementById('dueListContainer');
+  let bills = allSales.filter(b=> String(b.payment||'').toUpperCase()==='DUE' || Number(b.due||0)>0);
+  if(filterText){
+    const q=filterText.toLowerCase();
+    bills = bills.filter(b=> String(b.customer||'').toLowerCase().includes(q) || String(b.mob||'').includes(q) || String(b.billNo||'').includes(q));
+  }
+  let totalDue = bills.reduce((s,b)=>s+Number(b.due||b.total||0),0);
+  document.getElementById('totalDueTop').innerText = money(totalDue)+' DUE';
+  if(bills.length===0){ container.innerHTML=`<div class="text-center py-20 text-gray-400">Koi Due nahi hai<br><span class="text-[11px]">Total Bills in Firebase: ${allSales.length}</span></div>`; return; }
+  container.innerHTML = bills.map((b, idx)=>{
+    let itemsHtml = (b.items||[]).map((it, i)=>`<div class="grid grid-cols-[20px_1fr_40px_30px_60px] text-[11px] py-1.5 border-b border-dashed"><span>${i+1}.</span><span class="font-medium truncate">${esc(it.name||'Item')}</span><span class="text-center">₹${it.price}</span><span class="text-center">x${it.qty}</span><span class="text-right font-bold">${money(it.amount||it.price*it.qty)}</span></div>`).join('');
+    return `<div class="border-2 border-red-200 rounded-xl overflow-hidden bg-white">
+      <div class="bg-red-50 p-2.5 flex justify-between items-center">
+        <div><div class="font-bold text-[13px]"> #${idx+1} | Bill No: ${esc(b.billNo)} | ${esc(b.customer||'Customer')}</div><div class="text-[11px] text-gray-600">${esc(b.mob||'No Mobile')} | ${esc(b.date||'')}</div></div>
+        <div class="text-right"><div class="font-bold text-red-600 text-[15px]">${money(b.due||b.total)}</div><div class="text-[10px] text-gray-500">${b.totalItems|| (b.items||[]).length} items</div></div>
+      </div>
+      <div class="p-2 bg-gray-50">
+        <div class="grid grid-cols-[20px_1fr_40px_30px_60px] text-[10px] font-bold text-gray-500 py-1"><span>#</span><span>Item Name</span><span class="text-center">Rate</span><span class="text-center">Qty</span><span class="text-right">Amt</span></div>
+        ${itemsHtml}
+        <div class="flex justify-between font-bold text-[12px] pt-2 mt-1 border-t"><span>Total Due Amount</span><span class="text-red-600 text-[14px]">${money(b.due||b.total)}</span></div>
+      </div>
+      <div class="p-2 grid grid-cols-2 gap-2 bg-white">
+        <button onclick="markPaid('${b.firebaseId||''}','${b.billNo}')" class="bg-green-600 text-white py-2.5 rounded-full font-bold text-[12px]">✓ DUE CLEAR - PAID</button>
+        <button onclick="shareDue('${b.billNo}')" class="bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-full font-bold text-[12px]">📲 Share / WhatsApp</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function markPaid(firebaseId,billNo){
+  if(!firebaseId){ alert('Ye bill local hai, Firebase ID nahi hai. Local se hata dunga.'); allSales = allSales.filter(x=> String(x.billNo)!==String(billNo)); localStorage.setItem('sales', JSON.stringify(allSales)); renderDueList(); return; }
+  if(!confirm('Bill No '+billNo+' ko PAID karna hai? Due clear ho jayega!')) return;
+  // Firebase update - dynamic import
+  import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js").then(async (mod)=>{
+    const { getFirestore, doc, updateDoc } = mod;
+    const db = getFirestore();
+    try{
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+      // App already initialized in main file, but for standalone test we init again safely
+      await updateDoc(doc(db, "sales", firebaseId), { payment:'PAID', due:0 });
+      allSales = allSales.map(s=> s.firebaseId===firebaseId ? {...s, payment:'PAID', due:0} : s);
+      localStorage.setItem('sales', JSON.stringify(allSales));
+      renderDueList(document.getElementById('dueSearch').value);
+      alert('✅ Due Clear! Firebase me PAID ho gaya!');
+    }catch(e){ alert('Error: '+e.message); }
+  });
+}
+
+function shareDue(billNo){
+  let b = allSales.find(x=> String(x.billNo)===String(billNo));
+  if(!b) return;
+  let text = `*UPHAR SINGHAR & GIFTS*%0ABill No: ${b.billNo}%0ACustomer: ${b.customer}%0ADate: ${b.date}%0A*Due Amount: ₹${b.due||b.total}*%0A%0AItems:%0A` + (b.items||[]).map((it,i)=>`${i+1}. ${it.name} x${it.qty} = ₹${it.amount||it.price*it.qty}`).join('%0A') + `%0A%0ATotal Due: ₹${b.due||b.total}%0AThank You!`;
+  window.open(`https://wa.me/${b.mob||''}?text=${text}`, '_blank');
+}
+
+document.getElementById('dueSearch').addEventListener('input', e=> renderDueList(e.target.value));
+
+// Load from Firebase if available (when integrated in main app)
+window.addEventListener('message', e=>{
+  if(e.data && e.data.sales){ allSales=e.data.sales; renderDueList(); }
+});
+
+// Initial
+renderDueList();
+
+// For main app integration - function to be called from Firebase onSnapshot
+window.updateDueFromFirebase = function(salesList){
+  allSales = salesList;
+  renderDueList(document.getElementById('dueSearch')?.value||'');
+};
+
+// Expose
+window.renderDueList = renderDueList;
+window.markPaid = markPaid;
+</script>
+
+<!-- FIREBASE CONNECT FOR STANDALONE TEST -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw", authDomain: "upharshringar-billing-5f4c9.firebaseapp.com", projectId: "upharshringar-billing-5f4c9", storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app", messagingSenderId: "1070290998158", appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf" };
+let app; try{ app=initializeApp(firebaseConfig); }catch(e){ app=undefined; }
+const db=getFirestore();
+const salesCol=collection(db,"sales");
+onSnapshot(salesCol,(snap)=>{
+  const list=[]; snap.forEach(d=>{ const data=d.data(); data.firebaseId=d.id; list.push(data); });
+  list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  allSales=list;
+  localStorage.setItem('sales', JSON.stringify(list));
+  if(window.updateDueFromFirebase) window.updateDueFromFirebase(list);
+});
+</script>
+</body>
+</html>
