@@ -384,47 +384,161 @@ function itemBlock(sr, name, rate, qty, amt){
   return out;
 }
    let t = '';
-  t += '\x1B\x40'; // init
-  t += '\x1B\x45\x00'; // bold OFF for clean
-  t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x10'; // double height bold
-  t += 'UPHAR SINGHAR & GIFTS\n';
-  t += '\x1B\x21\x00';
-  t += '\x1B\x61\x01';
-  t += 'Bhawati Cinema Road\n';
-  t += 'Narkatiaganj - 845455\n';
-  t += 'Mob: +91 7256050678\n';
-  t += '\x1B\x21\x00';
-  t += line('=');
-  t += '\x1B\x61\x00'; // left
-  t += leftRight('Bill No: '+billNo, dateStr);
-  if(custName) t += 'Customer: '+custName.substring(0,20)+'\n';
-  if(custMobile) t += 'Mobile: '+custMobile+'\n';
-  t += 'Payment : '+selectedPaymentMode+'\n';
-  t += line('-');
-  t += 'No Item Rate Qty Amt\n';
-  t += line('-');
-  let sr=1;
-  Object.keys(cart).forEach(id => {
-    let p = products.find(x => String(x.id) === String(id));
-    if(!p) return;
-    let amount = p.price * cart[id];
-    t += itemBlock(sr, p.name, p.price, cart[id], amount);
-    sr++;
-  });
-  t += line('-');
-  t += leftRight('TOTAL ITEMS: '+totalItems, 'QTY: '+totalQty);
-  t += leftRight('Subtotal:', 'Rs. '+subtotal.toFixed(0));
-  t += line('=');
-  t += '\x1B\x61\x01';
-  t += '\x1B\x21\x10'; // BIG BOLD
-  t += 'GRAND TOTAL\n';
-  t += 'Rs. '+subtotal.toFixed(0)+'\n';
-  t += '\x1B\x21\x00';
-  t += line('-');
-  t += '\x1B\x61\x01';
-  t += 'Thank You Visit Again!\n';
-  t += '\n\n\n';
+
+t += '\x1B\x40';        // RESET
+t += '\x1B\x45\x00';   // BOLD OFF
+t += '\x1B\x61\x01';   // CENTER
+
+t += 'UPHAR SINGHAR & GIFTS\n';
+t += 'Bhagwati Cinema Road\n';
+t += 'Narkatiaganj - 845455\n';
+t += 'Mob: +91 7256050678\n';
+
+t += '\x1B\x61\x00';   // LEFT
+
+t += line('-');
+
+t += leftRight(
+  'Bill No: ' + billNo,
+  dateStr
+);
+
+if(custName){
+  t += 'Customer: ' + custName + '\n';
+}
+
+if(custMobile){
+  t += 'Mobile: ' + custMobile + '\n';
+}
+
+t += 'Payment: ' + selectedPaymentMode + '\n';
+
+t += line('-');
+
+// ================= ITEMS =================
+
+// Header
+t +=
+  'ITEM'.padEnd(16, ' ') +
+  'QTY'.padStart(3, ' ') +
+  'RATE'.padStart(6, ' ') +
+  'AMT'.padStart(7, ' ') +
+  '\n';
+
+t += line('-');
+
+let sr = 1;
+
+Object.keys(cart).forEach(id => {
+
+  let p = products.find(x => String(x.id) === String(id));
+
+  if(!p) return;
+
+  let qty = Number(cart[id] || 0);
+  let rate = Number(p.price || 0);
+  let amount = rate * qty;
+
+  // Product name ko 16 character me rakho
+  let name = String(p.name || '').trim();
+
+  // Number + product name
+  let firstName = sr + '. ' + name;
+
+  // First line
+  if(firstName.length <= 16){
+
+    t +=
+      firstName.padEnd(16, ' ') +
+      String(qty).padStart(3, ' ') +
+      rate.toFixed(0).padStart(6, ' ') +
+      amount.toFixed(0).padStart(7, ' ') +
+      '\n';
+
+  } else {
+
+    // Product name ko safely 16 character me todna
+    let words = name.split(/\s+/);
+    let first = sr + '.';
+    let current = first;
+
+    let firstLineDone = false;
+
+    words.forEach(word => {
+
+      let test = current + ' ' + word;
+
+      if(test.length <= 16){
+        current = test;
+      } else {
+
+        if(!firstLineDone){
+
+          t +=
+            current.padEnd(16, ' ') +
+            String(qty).padStart(3, ' ') +
+            rate.toFixed(0).padStart(6, ' ') +
+            amount.toFixed(0).padStart(7, ' ') +
+            '\n';
+
+          firstLineDone = true;
+
+        } else {
+
+          t += current.padEnd(16, ' ') + '\n';
+
+        }
+
+        current = '  ' + word;
+      }
+    });
+
+    // Last line
+    if(current.trim()){
+      if(!firstLineDone){
+
+        t +=
+          current.padEnd(16, ' ') +
+          String(qty).padStart(3, ' ') +
+          rate.toFixed(0).padStart(6, ' ') +
+          amount.toFixed(0).padStart(7, ' ') +
+          '\n';
+
+      } else {
+
+        t += current.padEnd(16, ' ') + '\n';
+
+      }
+    }
+  }
+
+  sr++;
+});
+
+t += line('-');
+
+t += leftRight(
+  'TOTAL ITEMS: ' + totalItems,
+  'QTY: ' + totalQty
+);
+
+t += leftRight(
+  'Subtotal:',
+  'Rs. ' + subtotal.toFixed(0)
+);
+
+t += line('-');
+
+t += '\x1B\x45\x01';   // BOLD ON
+t += '\x1B\x61\x01';   // CENTER
+
+t += 'GRAND TOTAL\n';
+t += 'Rs. ' + subtotal.toFixed(0) + '\n';
+
+t += '\x1B\x45\x00';   // BOLD OFF
+
+t += '\n';
+t += 'Thank You Visit Again!\n';
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
