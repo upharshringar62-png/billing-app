@@ -212,6 +212,7 @@ localStorage.setItem('products', JSON.stringify(productsForLocal));
 }
 function renderCategories(){
   const el = document.getElementById('catList'); el.innerHTML = '';
+ categories.sort((a,b)=> String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
   categories.forEach(c=>{
     const div = document.createElement('div');
     div.className = 'flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50 cursor-pointer';
