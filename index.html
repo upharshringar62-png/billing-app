@@ -690,12 +690,28 @@ onSnapshot(salesCol, (snap)=>{
   snap.forEach(d=>{
     const data = d.data();
     data.firebaseId = d.id;
+    if(!data.id) data.id = d.id;
     list.push(data);
   });
-  if(list.length > 0){
-    window.sales = list;
-    localStorage.setItem('sales', JSON.stringify(list));
-  }
+  let localSales = JSON.parse(localStorage.getItem('sales')||'[]');
+  // Agar local me Paid hai aur Firestore me Due hai, to Paid hi rakho
+  let merged = list.map(fb=>{
+    let loc = localSales.find(l=> String(l.firebaseId)===String(fb.firebaseId) || String(l.id)===String(fb.id));
+    if(loc && Number(loc.due)===0 && Number(fb.due)>0){
+      fb.due = 0;
+      fb.paid = fb.total;
+      fb.payment = 'PAID';
+    }
+    return fb;
+  });
+  // Jo local me hai par Firestore me nahi, usko bhi rakho
+  localSales.forEach(l=>{
+    if(!merged.find(m=> String(m.firebaseId)===String(l.firebaseId) || String(m.id)===String(l.id))){
+      merged.push(l);
+    }
+  });
+  window.sales = merged;
+  localStorage.setItem('sales', JSON.stringify(merged));
   if(window.refreshAllReports) window.refreshAllReports();
 });
 onSnapshot(prodCol, (snap)=>{ let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; if(data.stock===undefined) data.stock=100; if(data.costPrice===undefined) data.costPrice=0; list.push(data); }); if(list.length > 0){ products = list; window.products = products; localStorage.setItem('products', JSON.stringify(products)); } if(window.renderProducts) window.renderProducts(); if(window.renderCategories) window.renderCategories(); if(window.refreshAllReports) window.refreshAllReports(); });
