@@ -570,7 +570,7 @@ window.firebaseUploadImage = async (base64, id) => {
     let img = new Image();
     img.onload=()=>{
       let canvas=document.createElement('canvas');
-      let MAX=200; // 200x200 pe compress — 15KB hi hogi
+      let MAX=200;
       let w=img.width, h=img.height;
       if(w>h){ if(w>MAX){ h=Math.round(h*MAX/w); w=MAX; } }
       else{ if(h>MAX){ w=Math.round(w*MAX/h); h=MAX; } }
@@ -578,8 +578,7 @@ window.firebaseUploadImage = async (base64, id) => {
       let ctx=canvas.getContext('2d');
       ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
       ctx.drawImage(img,0,0,w,h);
-      let smallBase64 = canvas.toDataURL('image/jpeg', 0.4); // 40% quality
-      // IndexedDB me bhi backup
+      let smallBase64 = canvas.toDataURL('image/jpeg', 0.4);
       try{ localStorage.setItem('img_'+id, smallBase64); }catch(e){}
       resolve(smallBase64);
     };
