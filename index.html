@@ -365,24 +365,7 @@ async function handleRealPrint(){
     if(spaces<1) spaces=1;
     return left + ' '.repeat(spaces) + right + '\n';
   }
-// Single Line - Product Name Qty Amount sab ek line me
-function itemBlock(sr, name, rate, qty, amt){
-  let full = name.toString().trim();
-  let first = full.substring(0,14).padEnd(14,' ');
-  let rateStr = Number(rate).toString().padStart(3,' ');
-  let qtyStr = Number(qty).toString().padStart(2,' ');
-  let amtStr = Number(amt).toFixed(0).padStart(5,' ');
-  let srStr = (sr+'.').padEnd(3,' ');
-  let out = srStr + first + rateStr + ' ' + qtyStr + ' ' + amtStr + '\n';
-  // Agar naam lamba hai toh dusri line me pura naam
-  if(full.length > 14){
-    let rest = full.substring(14);
-    for(let i=0; i<rest.length; i+=26){
-      out += ' ' + rest.substring(i,i+26).trim() + '\n';
-    }
-  }
-  return out;
-}
+
    let t = '';
 
 t += '\x1B\x40';        // RESET
@@ -415,13 +398,12 @@ t += 'Payment: ' + selectedPaymentMode + '\n';
 
 t += line('-');
 
-// ================= ITEMS =================
+// ================= ITEMS ================
 
-// Header
 t +=
-  'ITEM'.padEnd(16, ' ') +
+  'ITEM'.padEnd(17, ' ') +
   'QTY'.padStart(3, ' ') +
-  'RATE'.padStart(6, ' ') +
+  'RATE'.padStart(5, ' ') +
   'AMT'.padStart(7, ' ') +
   '\n';
 
@@ -439,76 +421,30 @@ Object.keys(cart).forEach(id => {
   let rate = Number(p.price || 0);
   let amount = rate * qty;
 
-  // Product name ko 16 character me rakho
   let name = String(p.name || '').trim();
 
-  // Number + product name
-  let firstName = sr + '. ' + name;
+  let fullName = sr + '. ' + name;
 
-  // First line
-  if(firstName.length <= 16){
+  // First 17 characters
+  let firstLine = fullName.substring(0, 17);
 
-    t +=
-      firstName.padEnd(16, ' ') +
-      String(qty).padStart(3, ' ') +
-      rate.toFixed(0).padStart(6, ' ') +
-      amount.toFixed(0).padStart(7, ' ') +
-      '\n';
+  t +=
+    firstLine.padEnd(17, ' ') +
+    String(qty).padStart(3, ' ') +
+    rate.toFixed(0).padStart(5, ' ') +
+    amount.toFixed(0).padStart(7, ' ') +
+    '\n';
 
-  } else {
+  // Remaining name
+  if(fullName.length > 17){
 
-    // Product name ko safely 16 character me todna
-    let words = name.split(/\s+/);
-    let first = sr + '.';
-    let current = first;
+    let rest = fullName.substring(17);
 
-    let firstLineDone = false;
+    while(rest.length > 0){
 
-    words.forEach(word => {
+      t += rest.substring(0, 17).padEnd(17, ' ') + '\n';
 
-      let test = current + ' ' + word;
-
-      if(test.length <= 16){
-        current = test;
-      } else {
-
-        if(!firstLineDone){
-
-          t +=
-            current.padEnd(16, ' ') +
-            String(qty).padStart(3, ' ') +
-            rate.toFixed(0).padStart(6, ' ') +
-            amount.toFixed(0).padStart(7, ' ') +
-            '\n';
-
-          firstLineDone = true;
-
-        } else {
-
-          t += current.padEnd(16, ' ') + '\n';
-
-        }
-
-        current = '  ' + word;
-      }
-    });
-
-    // Last line
-    if(current.trim()){
-      if(!firstLineDone){
-
-        t +=
-          current.padEnd(16, ' ') +
-          String(qty).padStart(3, ' ') +
-          rate.toFixed(0).padStart(6, ' ') +
-          amount.toFixed(0).padStart(7, ' ') +
-          '\n';
-
-      } else {
-
-        t += current.padEnd(16, ' ') + '\n';
-
-      }
+      rest = rest.substring(17);
     }
   }
 
@@ -516,6 +452,7 @@ Object.keys(cart).forEach(id => {
 });
 
 t += line('-');
+
 
 t += leftRight(
   'TOTAL ITEMS: ' + totalItems,
