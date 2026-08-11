@@ -674,14 +674,20 @@ window.firebaseSaveSale = async (sale) => {
 };
 window.firebaseUpdateProduct = async (p) => {
   if(!p.firebaseId) return;
-    await updateDoc(doc(db, "products", p.firebaseId), {
-    stock: Number(p.stock || 0),
-    costPrice: Number(p.costPrice || 0),
-    price: Number(p.price || 0),
-    name: p.name || '',
-    image: p.image || p.img || '',
-    img: p.image || p.img || ''
-  });
+  try{
+    const { doc, updateDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.firebaseDb || getFirestore();
+    let data = {
+      stock: Number(p.stock || 0),
+      costPrice: Number(p.costPrice || 0),
+      price: Number(p.price || 0),
+      name: p.name || ''
+    };
+    // Image ka lock - khali hai to update hi nahi karo
+    if(p.image && p.image!=='') { data.image = p.image; data.img = p.image; }
+    else if(p.img && p.img!=='') { data.image = p.img; data.img = p.img; }
+    await updateDoc(doc(db, "products", p.firebaseId), data);
+  }catch(e){ console.log(e); }
 };
 window.firebaseUpdateSale = async (sale) => {
   if(!sale.firebaseId) return;
@@ -720,7 +726,25 @@ onSnapshot(salesCol, (snap)=>{
   localStorage.setItem('sales', JSON.stringify(merged));
   if(window.refreshAllReports) window.refreshAllReports();
 });
-onSnapshot(prodCol, (snap)=>{ let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; if(data.stock===undefined) data.stock=100; if(data.costPrice===undefined) data.costPrice=0; list.push(data); }); if(list.length > 0){ products = list; window.products = products; localStorage.setItem('products', JSON.stringify(products)); } if(window.renderProducts) window.renderProducts(); if(window.renderCategories) window.renderCategories(); if(window.refreshAllReports) window.refreshAllReports(); });
+onSnapshot(prodCol, (snap)=>{
+  let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
+  let local = JSON.parse(localStorage.getItem('products')||'[]');
+  let merged = [...local];
+  list.forEach(fb=>{
+    let i = merged.findIndex(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
+    if(i>=0){
+      if((!fb.image || fb.image==='') && merged[i].image) fb.image=merged[i].image;
+      if((!fb.img || fb.img==='') && merged[i].img) fb.img=merged[i].img;
+      if(fb.image) merged[i].image=fb.image; if(fb.img) merged[i].img=fb.img;
+      merged[i]={...merged[i],...fb};
+      if(!merged[i].image && merged[i].img) merged[i].image=merged[i].img;
+      if(!merged[i].img && merged[i].image) merged[i].img=merged[i].image;
+    } else merged.push(fb);
+  });
+  window.products=merged; products=merged;
+  localStorage.setItem('products', JSON.stringify(merged));
+  if(window.renderProducts) renderProducts();
+});
 onSnapshot(catCol, (snap)=>{ let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); }); if(list.length >= 0){ const firebaseCats = list; const hasAll = firebaseCats.some(c => String(c.id) === 'all' || c.name === 'All Items'); if(!hasAll) firebaseCats.unshift({id:'all', name:'All Items'}); let merged = [...firebaseCats]; categories.forEach(lc=>{ if(!merged.some(fc=> String(fc.id)===String(lc.id) || fc.name===lc.name )){ if(lc.id!=='all') merged.push(lc); } }); categories = merged; window.categories = categories; localStorage.setItem('categories', JSON.stringify(categories)); if(window.renderCategories) window.renderCategories(); } });
 window.deleteProduct = async (id) => {
   const p = window.products.find(x => String(x.firebaseId) === String(id) || String(x.id) === String(id));
