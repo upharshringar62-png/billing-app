@@ -605,6 +605,24 @@ async function connectBluetooth(){
 }
 document.getElementById('printBtn').onclick = ()=>{ handlePreview(); };
 document.getElementById('btConnectBtn').onclick = connectBluetooth;
+ // ===== FIXED - Photo kabhi gayab nahi hogi =====
+window.firebaseUploadImage = async function(base64, id){
+  try{
+    const { getStorage, ref, uploadString, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+    const storage = getStorage();
+    const storageRef = ref(storage, 'products/' + id + '.jpg');
+    await uploadString(storageRef, base64, 'data_url');
+    const url = await getDownloadURL(storageRef);
+    console.log('Upload success:', url);
+    return url;
+  }catch(e){
+    console.error('Upload fail:', e);
+    throw e;
+  }
+};
+// ===== FIX END =====
+
+let logoInput=document.getElementById('logoInput');
 let logoInput=document.getElementById('logoInput'); let logoIcon=document.getElementById('logoIcon'); let logoImg=document.getElementById('logoImg');
 if(logoInput){ logoInput.onchange=e=>{ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=()=>{ logoIcon.style.display='none'; logoImg.src=r.result; logoImg.classList.remove('hidden'); localStorage.setItem('shopLogo',r.result); }; r.readAsDataURL(f); }; let s=localStorage.getItem('shopLogo'); if(s){logoIcon.style.display='none';logoImg.src=s;logoImg.classList.remove('hidden');} }
  async function loadProductsFromFirebase(){
