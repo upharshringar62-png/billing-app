@@ -306,19 +306,26 @@ async function handleRealPrint(){
   Object.keys(cart).forEach(id=>{ let p=products.find(x=>x.id==id); if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; } });
   let savedLogo = localStorage.getItem('shopLogo') || '';
 
-  async function getLogoBytes(base64){
+   async function getLogoBytes(base64){
     return new Promise(res=>{
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=320; 
+        let w=250;
         let h=Math.round((img.height/img.width)*w);
-        if(h>320) { h=320; w=Math.round((img.width/img.height)*h); }
+        if(h>200) { h=200; w=Math.round((img.width/img.height)*h); }
         canvas.width=w; canvas.height=h;
         let ctx=canvas.getContext('2d');
         ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,w,h);
         ctx.drawImage(img,0,0,w,h);
         let data=ctx.getImageData(0,0,w,h).data;
+
+        // Auto detect - agar logo black background wala hai toh invert karo
+        let totalGray=0;
+        for(let i=0;i<data.length;i+=4){ totalGray += (0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]); }
+        let avgGray = totalGray / (w*h);
+        let isDarkBackground = avgGray < 100; // Tera logo dark hai toh true hoga
+
         let bytes=[]; let xBytes=Math.ceil(w/8);
         let xL=xBytes & 0xFF, xH=(xBytes>>8)&0xFF, yL=h & 0xFF, yH=(h>>8)&0xFF;
         bytes.push(...[0x1D,0x76,0x30,0, xL, xH, yL, yH]);
@@ -329,7 +336,13 @@ async function handleRealPrint(){
               let x=xb*8+b; if(x>=w) continue;
               let idx=(y*w+x)*4;
               let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-              if(gray<170) byte|=(0x80>>b);
+              let shouldBeBlack;
+              if(isDarkBackground){
+                shouldBeBlack = gray > 150; // Dark logo hai toh white text ko black banao
+              }else{
+                shouldBeBlack = gray < 150; // Normal logo hai toh black text ko black banao
+              }
+              if(shouldBeBlack) byte|=(0x80>>b);
             }
             bytes.push(byte);
           }
@@ -338,8 +351,7 @@ async function handleRealPrint(){
       };
       img.onerror=()=>res(null); img.src=base64;
     });
-  }
- 
+  } 
   // ===== FIXED HD BILL DESIGN FOR 58MM (32 CHARS) =====
   function centerLine(txt){ 
     txt = txt.toString();
@@ -355,55 +367,42 @@ async function handleRealPrint(){
   }
 // Single Line - Product Name Qty Amount sab ek line me
 function itemBlock(sr, name, rate, qty, amt){
-    let out = '';
-    let fullName = name.toString().trim();
-    let rateStr = Number(rate).toString();
-    let qtyStr = Number(qty).toString();
-    let amtStr = Number(amt).toFixed(0); // 90.0 ki jagah 90 - jagah bachega
-    let srStr = (sr + '.').padEnd(2,''); // 1. 2.
-    
-    // Pehli line: 2(Sr) + 13(Name) + 4(Rate) + 3(Qty) + 6(Amt) + 2 space = 30 -> 32 me fit
-    let firstName = fullName.substring(0,13);
-    let line1 = srStr + firstName.padEnd(13,' ') + ' ' + rateStr.padStart(3,' ') + ' ' + qtyStr.padStart(2,' ') + ' ' + amtStr.padStart(5,' ');
-    out += line1.substring(0,32) + '\n';
-    
-    // Lamba naam hai toh dusri line me
-    if(fullName.length > 13){
-      let rem = fullName.substring(13);
-      for(let i=0; i<rem.length; i+=18){
-        out += '  ' + rem.substring(i,i+18).trim() + '\n';
-      }
+  let full = name.toString().trim();
+  let first = full.substring(0,14).padEnd(14,' ');
+  let rateStr = Number(rate).toString().padStart(3,' ');
+  let qtyStr = Number(qty).toString().padStart(2,' ');
+  let amtStr = Number(amt).toFixed(0).padStart(5,' ');
+  let srStr = (sr+'.').padEnd(3,' ');
+  let out = srStr + first + rateStr + ' ' + qtyStr + ' ' + amtStr + '\n';
+  // Agar naam lamba hai toh dusri line me pura naam
+  if(full.length > 14){
+    let rest = full.substring(14);
+    for(let i=0; i<rest.length; i+=26){
+      out += ' ' + rest.substring(i,i+26).trim() + '\n';
     }
-    return out;
   }
-    let t = '';
+  return out;
+}
+   let t = '';
   t += '\x1B\x40'; // init
-  t += '\x1B\x45\x01'; // BOLD ON - PURA BILL BOLD
+  t += '\x1B\x45\x00'; // bold OFF for clean
   t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x30'; // BOLD + DOUBLE HEIGHT + DOUBLE WIDTH - SHOP NAME DARK
+  t += '\x1B\x21\x10'; // double height bold
   t += 'UPHAR SINGHAR & GIFTS\n';
   t += '\x1B\x21\x00';
-  t += '\x1B\x45\x01'; // BOLD ON fir se
-  t += '\x1B\x61\x01'; // center
-  t += '\x1B\x21\x08'; // BOLD
+  t += '\x1B\x61\x01';
   t += 'Bhawati Cinema Road\n';
   t += 'Narkatiaganj - 845455\n';
   t += 'Mob: +91 7256050678\n';
   t += '\x1B\x21\x00';
-  t += '\x1B\x45\x01';
   t += line('=');
-  t += '\x1B\x61\x00'; // left align
-  t += '\x1B\x21\x08'; // BOLD for bill info
+  t += '\x1B\x61\x00'; // left
   t += leftRight('Bill No: '+billNo, dateStr);
-  if(custName) t += 'Customer: '+custName.substring(0,21)+'\n';
-  if(custMobile) t += 'Mobile : '+custMobile+'\n';
+  if(custName) t += 'Customer: '+custName.substring(0,20)+'\n';
+  if(custMobile) t += 'Mobile: '+custMobile+'\n';
   t += 'Payment : '+selectedPaymentMode+'\n';
   t += line('-');
-  t += '\x1B\x45\x01'; // BOLD ON
-  t += '\x1B\x21\x08';
   t += 'No Item Rate Qty Amt\n';
-  t += '\x1B\x21\x00';
-  t += '\x1B\x45\x01';
   t += line('-');
   let sr=1;
   Object.keys(cart).forEach(id => {
@@ -414,20 +413,18 @@ function itemBlock(sr, name, rate, qty, amt){
     sr++;
   });
   t += line('-');
-  t += '\x1B\x21\x08'; // BOLD
   t += leftRight('TOTAL ITEMS: '+totalItems, 'QTY: '+totalQty);
   t += leftRight('Subtotal:', 'Rs. '+subtotal.toFixed(0));
   t += line('=');
   t += '\x1B\x61\x01';
-  t += '\x1B\x21\x10'; // BOLD BIG
+  t += '\x1B\x21\x10'; // BIG BOLD
   t += 'GRAND TOTAL\n';
   t += 'Rs. '+subtotal.toFixed(0)+'\n';
   t += '\x1B\x21\x00';
-  t += '\x1B\x45\x01';
   t += line('-');
   t += '\x1B\x61\x01';
-  t += 'Thank You Visit Again!\n\n'; 
-
+  t += 'Thank You Visit Again!\n';
+  t += '\n\n\n';
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
