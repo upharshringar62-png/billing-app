@@ -656,7 +656,7 @@ window.firebaseUploadImage = async (base64, id) => {
       let ctx=canvas.getContext('2d');
       ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
       ctx.drawImage(img,0,0,w,h);
-      let smallBase64 = canvas.toDataURL('image/jpeg', 0.4);
+      let smallBase64 = canvas.toDataURL('image/jpeg', 1.0);
       try{ localStorage.setItem('img_'+id, smallBase64); }catch(e){}
       resolve(smallBase64);
     };
