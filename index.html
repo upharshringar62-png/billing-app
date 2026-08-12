@@ -736,17 +736,38 @@ onSnapshot(prodCol, (snap)=>{
   let local = JSON.parse(localStorage.getItem('products')||'[]');
   let merged = [...local];
   list.forEach(fb=>{
+    // 1. Phone me se image pakka wapas lao
+    let savedImg = localStorage.getItem('img_'+fb.id) || localStorage.getItem('img_'+fb.firebaseId) || localStorage.getItem('img_'+(fb.firebaseId||'').replace(/\//g,"")) || localStorage.getItem('img_'+fb.firebaseId) || fb.image || fb.img;
+    if(savedImg){
+      fb.image = savedImg;
+      fb.img = savedImg;
+    }
     let i = merged.findIndex(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
-      let savedImg = localStorage.getItem('img_'+fb.id) || localStorage.getItem('img_'+fb.firebaseId) || localStorage.getItem('img_'+(fb.firebaseId||'').replace(/\//g,""));
-   if(savedImg && (!fb.image || fb.image=='')) { fb.image = savedImg; fb.img = savedImg; }
     if(i>=0){
-      if((!fb.image || fb.image==='') && merged[i].image) fb.image=merged[i].image;
-      if((!fb.img || fb.img==='') && merged[i].img) fb.img=merged[i].img;
-      if(fb.image) merged[i].image=fb.image; if(fb.img) merged[i].img=fb.img;
+      // 2. Agar Firebase khali bheje to local wala bacha lo
+      if((!fb.image || fb.image==='') && merged[i].image) { fb.image=merged[i].image; fb.img=merged[i].image; }
+      if((!fb.img || fb.img==='') && merged[i].img) { fb.img=merged[i].img; fb.image=merged[i].img; }
+      // 3. Merge karo par image ko delete mat karo
+      if(fb.image) merged[i].image=fb.image;
+      if(fb.img) merged[i].img=fb.img;
       merged[i]={...merged[i],...fb};
-      if(!merged[i].image && merged[i].img) merged[i].image=merged[i].img;
-      if(!merged[i].img && merged[i].image) merged[i].img=merged[i].image;
-    } else merged.push(fb);
+      // 4. Phone me hamesha save rakho
+      try{
+        if(merged[i].image) {
+          localStorage.setItem('img_'+merged[i].id, merged[i].image);
+          localStorage.setItem('img_'+merged[i].firebaseId, merged[i].image);
+        }
+      }catch(e){}
+    } else {
+      // Naya product hai to bhi phone me save karo
+      try{
+        if(fb.image) {
+          localStorage.setItem('img_'+fb.id, fb.image);
+          localStorage.setItem('img_'+fb.firebaseId, fb.image);
+        }
+      }catch(e){}
+      merged.push(fb);
+    }
   });
   window.products=merged; products=merged;
   localStorage.setItem('products', JSON.stringify(merged));
