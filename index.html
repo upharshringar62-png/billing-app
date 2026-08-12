@@ -647,7 +647,7 @@ window.firebaseUpdateProduct = async (p) => {
   try{
     const { doc, updateDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const db = window.firebaseDb || getFirestore();
-    // Image ko Firebase pe kabhi mat bhejo - sirf naam, daam, stock bhejo
+    // IMPORTANT: Image ko Firebase pe bhej hi mat, sirf naam daam stock bhej
     let data = {
       stock: Number(p.stock || 0),
       costPrice: Number(p.costPrice || 0),
@@ -655,14 +655,7 @@ window.firebaseUpdateProduct = async (p) => {
       name: p.name || ''
     };
     await updateDoc(doc(db, "products", p.firebaseId), data);
-    // Image ko phone ke andar safe rakho
-    if(p.image || p.img){
-      try{
-        localStorage.setItem('img_'+p.id, p.image || p.img);
-        localStorage.setItem('img_'+p.firebaseId, p.image || p.img);
-      }catch(e){}
-    }
-  }catch(e){ console.log(e); }
+  }catch(e){ console.log("firebaseUpdate skip", e); }
 };
 window.firebaseUpdateSale = async (sale) => {
   if(!sale.firebaseId) return;
@@ -706,38 +699,27 @@ onSnapshot(prodCol, (snap)=>{
   let local = JSON.parse(localStorage.getItem('products')||'[]');
   let merged = [...local];
   list.forEach(fb=>{
-    // 1. Phone me se image pakka wapas lao
-    let savedImg = localStorage.getItem('img_'+fb.id) || localStorage.getItem('img_'+fb.firebaseId) || localStorage.getItem('img_'+(fb.firebaseId||'').replace(/\//g,"")) || localStorage.getItem('img_'+fb.firebaseId) || fb.image || fb.img;
-    if(savedImg){
-      fb.image = savedImg;
-      fb.img = savedImg;
-    }
     let i = merged.findIndex(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
+    // Agar Firebase se image khali aaya hai toh local se uthao
     if(i>=0){
-      // 2. Agar Firebase khali bheje to local wala bacha lo
-      if((!fb.image || fb.image==='') && merged[i].image) { fb.image=merged[i].image; fb.img=merged[i].image; }
-      if((!fb.img || fb.img==='') && merged[i].img) { fb.img=merged[i].img; fb.image=merged[i].img; }
-      // 3. Merge karo par image ko delete mat karo
-      if(fb.image) merged[i].image=fb.image;
-      if(fb.img) merged[i].img=fb.img;
-      merged[i]={...merged[i],...fb};
-      // 4. Phone me hamesha save rakho
-      try{
-        if(merged[i].image) {
-          localStorage.setItem('img_'+merged[i].id, merged[i].image);
-          localStorage.setItem('img_'+merged[i].firebaseId, merged[i].image);
-        }
-      }catch(e){}
+      if(!fb.image && merged[i].image) fb.image = merged[i].image;
+      if(!fb.img && merged[i].img) fb.img = merged[i].img;
+      if(!fb.image && merged[i].img) fb.image = merged[i].img;
+      // Phone memory se bhi try karo
+      let mem = localStorage.getItem('img_'+merged[i].id) || localStorage.getItem('img_'+merged[i].firebaseId);
+      if(mem &&!fb.image) { fb.image = mem; fb.img = mem; }
+      merged[i] = {...merged[i],...fb};
     } else {
-      // Naya product hai to bhi phone me save karo
-      try{
-        if(fb.image) {
-          localStorage.setItem('img_'+fb.id, fb.image);
-          localStorage.setItem('img_'+fb.firebaseId, fb.image);
-        }
-      }catch(e){}
       merged.push(fb);
     }
+    // Har baar phone me backup bana ke rakho
+    try{
+      let idx = merged.findIndex(x=> String(x.id)===String(fb.id) || String(x.firebaseId)===String(fb.firebaseId));
+      if(idx>=0 && merged[idx].image){
+        localStorage.setItem('img_'+merged[idx].id, merged[idx].image);
+        localStorage.setItem('img_'+merged[idx].firebaseId, merged[idx].image);
+      }
+    }catch(e){}
   });
   window.products=merged; products=merged;
   localStorage.setItem('products', JSON.stringify(merged));
