@@ -13,56 +13,21 @@
   *{font-family: 'Poppins', sans-serif;}
   .scrollbar-hide::-webkit-scrollbar{display:none}
   @keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
- @media print {
+@media print {
   body * { visibility: hidden !important; }
   #printArea, #printArea * { visibility: visible !important; }
-  #printArea { 
-    position: absolute !important; left:0 !important; top:0 !important; 
-    width:72mm !important; max-width:72mm !important; 
-    background:white !important; 
-    font-family: 'Courier New', Consolas, monospace !important; 
-    font-size: 12px !important; 
-    line-height:1.3 !important; 
-    padding:2mm !important;
-    color: #000 !important;
+  #printArea {
+    position: absolute !important; left:0 !important; top:0 !important;
+    width:72mm !important; background:white !important;
+    color:#000 !important;
+    font-family: 'Courier New', monospace !important;
+    font-size:12px !important; line-height:1.3 !important;
+    font-weight:900 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  /* Sab kuch ekdum kaala aur bold */
-  #printArea * { 
-    color: #000 !important; 
-    font-weight: 900 !important; 
-    font-family: 'Courier New', monospace !important;
-    -webkit-print-color-adjust: exact !important;
-    text-shadow: 0 0 0.2px #000 !important;
-    letter-spacing: 0.2px !important;
-  }
-  #printArea h1, #printArea h2, #printArea h3, #printArea b, #printArea strong {
-    font-weight: 900 !important;
-    font-size: 13px !important;
-  }
-  #printArea table { width: 68mm!important; table-layout: fixed!important; border-collapse: collapse!important; }
-  #printArea th, #printArea td { 
-    font-size: 11px!important; 
-    padding: 2px 2px!important; 
-    word-wrap: break-word!important;
-    font-weight: 800 !important;
-  }
-  /* Logo ko pure black kar dega */
-#printArea img {
-  filter: contrast(300%) brightness(100%) !important;
-  -webkit-filter: contrast(300%) brightness(100%) !important;
-}
-    -webkit-filter: contrast(200%) brightness(0%) !important;
-  }
-  /* QR ko sharp karega */
-   #printArea canvas, #printArea img.qr {
-  width: 200px !important;
-  height: 200px !important;
-  image-rendering: pixelated !important;
-  filter: contrast(300%) brightness(100%) !important;
-} 
-  
+  #printArea img { max-width:80px !important; margin:0 auto !important; display:block !important; }
+  #printArea canvas { width:180px !important; height:180px !important; margin:0 auto !important; display:block !important; }
   header, nav, aside, #previewModal, #productActionModal, #editProductModal { display:none !important; }
 }
  .animate-slide{animation:slideIn 0.25s ease}
