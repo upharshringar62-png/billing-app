@@ -677,16 +677,21 @@ window.firebaseUpdateProduct = async (p) => {
   try{
     const { doc, updateDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const db = window.firebaseDb || getFirestore();
+    // Image ko Firebase pe kabhi mat bhejo - sirf naam, daam, stock bhejo
     let data = {
       stock: Number(p.stock || 0),
       costPrice: Number(p.costPrice || 0),
       price: Number(p.price || 0),
       name: p.name || ''
     };
-    // Image ka lock - khali hai to update hi nahi karo
-    if(p.image && p.image!=='') { data.image = p.image; data.img = p.image; }
-    else if(p.img && p.img!=='') { data.image = p.img; data.img = p.img; }
     await updateDoc(doc(db, "products", p.firebaseId), data);
+    // Image ko phone ke andar safe rakho
+    if(p.image || p.img){
+      try{
+        localStorage.setItem('img_'+p.id, p.image || p.img);
+        localStorage.setItem('img_'+p.firebaseId, p.image || p.img);
+      }catch(e){}
+    }
   }catch(e){ console.log(e); }
 };
 window.firebaseUpdateSale = async (sale) => {
@@ -732,6 +737,8 @@ onSnapshot(prodCol, (snap)=>{
   let merged = [...local];
   list.forEach(fb=>{
     let i = merged.findIndex(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
+      let savedImg = localStorage.getItem('img_'+fb.id) || localStorage.getItem('img_'+fb.firebaseId) || localStorage.getItem('img_'+(fb.firebaseId||'').replace(/\//g,""));
+   if(savedImg && (!fb.image || fb.image=='')) { fb.image = savedImg; fb.img = savedImg; }
     if(i>=0){
       if((!fb.image || fb.image==='') && merged[i].image) fb.image=merged[i].image;
       if((!fb.img || fb.img==='') && merged[i].img) fb.img=merged[i].img;
