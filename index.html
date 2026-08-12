@@ -50,14 +50,19 @@
   }
   /* Logo ko pure black kar dega */
   #printArea img {
-    filter: contrast(200%) brightness(0%) !important;
+  filter: contrast(300%) brightness(100%) !important;
+  -webkit-filter: contrast(300%) brightness(100%) !important;
+}
     -webkit-filter: contrast(200%) brightness(0%) !important;
   }
   /* QR ko sharp karega */
-  #printArea canvas, #printArea img.qr {
-    image-rendering: pixelated !important;
-    filter: contrast(300%) !important;
-  }
+   #printArea canvas, #printArea img.qr {
+  width: 200px !important;
+  height: 200px !important;
+  image-rendering: pixelated !important;
+  filter: contrast(300%) brightness(100%) !important;
+} 
+  
   header, nav, aside, #previewModal, #productActionModal, #editProductModal { display:none !important; }
 }
  .animate-slide{animation:slideIn 0.25s ease}
