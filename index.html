@@ -576,8 +576,9 @@ window.addProductWithCategory = async () => {
   
   // Firebase me image ke saath save
   try{
-    const { addDoc, collection, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    const db = window.firebaseDb || getFirestore();
+    const { getFirestore, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { getApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const db = getFirestore(getApp());
     const prodCol = collection(db, "products");
     let docRef = await addDoc(prodCol, {
       id: p.id,
