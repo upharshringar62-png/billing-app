@@ -599,7 +599,7 @@ window.addProductWithCategory = async () => {
 
 // NO. 3 — Firebase DB ko global rakho
 window.firebaseDB = db;
-
+alert("FIREBASE DB READY");
 const docRef = await addDoc(
   collection(window.firebaseDB, "products"),
       {
@@ -617,6 +617,7 @@ const docRef = await addDoc(
     );
 
     p.firebaseId = docRef.id;
+   alert("PRODUCT FIREBASE SAVE OK: " + docRef.id);
 
     console.log("PRODUCT FIREBASE SAVE:", docRef.id);
 
