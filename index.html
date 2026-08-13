@@ -542,7 +542,7 @@ async function saveUpdatedProduct(){
         if(window.firebaseUpdateProduct) await window.firebaseUpdateProduct(prod);
         // Firestore me bhi image URL update
         if(prod.firebaseId){
-          await updateDoc(doc(db, "products", prod.firebaseId), { image: url, img: url, name: prod.name, price: prod.price });
+       await updateDoc(doc(window.firebaseDb, "products", prod.firebaseId), {
         }
         closeEditModal(); renderProducts(); alert('Photo Firebase me save ho gayi!');
       }catch(err){ alert('Upload Error: '+err.message); }
@@ -656,7 +656,8 @@ import { getFirestore, collection, onSnapshot, deleteDoc, doc, addDoc, updateDoc
 import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 const firebaseConfig = { apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw", authDomain: "upharshringar-billing-5f4c9.firebaseapp.com", projectId: "upharshringar-billing-5f4c9", storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app", messagingSenderId: "1070290998158", appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf" };
 const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
-window.firebaseStorage = storage; window.getDownloadURL = getDownloadURL; window.ref = ref; window.uploadString = uploadString;
+window.firebaseDb = db; window.firebaseApp = app;
+window.firebaseStorage = storage;
 // Bina Storage ke - Photo ko chota karke Firestore me save karega
 window.firebaseUploadImage = async (base64, id) => {
   return new Promise((resolve)=>{
