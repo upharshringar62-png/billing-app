@@ -554,7 +554,50 @@ async function saveUpdatedProduct(){
     closeEditModal(); renderProducts();
   }
 }
-
+// FINAL LOCK - Image kabhi delete nahi hoga, app delete pe bhi wapas aayega
+window.addProductWithCategory = async () => {
+  let catName = categories.find(c=>c.id==selectedCat)?.name || 'All';
+  let name = prompt(`Product Name (${catName}):`);
+  if(!name) return;
+  let price = Number(prompt('Price:') || 0);
+  let costPrice = Number(prompt('Cost Price:') || 0);
+  let stock = Number(prompt('Stock:') || 0);
+  
+  let p = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    price: price,
+    costPrice: costPrice,
+    stock: stock,
+    image: '',
+    img: '',
+    categoryId: selectedCat
+  };
+  
+  // Firebase me image ke saath save
+  try{
+    const { addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const prodCol = collection(window.firebaseDb, "products");
+    let docRef = await addDoc(prodCol, {
+      id: p.id,
+      name: p.name,
+      price: Number(p.price||0),
+      costPrice: Number(p.costPrice||0),
+      stock: Number(p.stock||0),
+      image: p.image || '',
+      img: p.image || '',
+      categoryId: p.categoryId,
+      createdAt: Date.now()
+    });
+    p.firebaseId = docRef.id;
+  }catch(e){ console.log(e); }
+  
+  products.push(p);
+  localStorage.setItem('products', JSON.stringify(products));
+  if(window.firebaseAddCategory) {}
+  renderProducts();
+  alert('Product add ho gaya! Ab ispe click karke photo daal de - photo Firebase me save hogi!');
+};
 function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
 const fab = document.getElementById('addProductFab');
 if(fab){ fab.onclick = ()=>{ addProductWithCategory(); }; }
