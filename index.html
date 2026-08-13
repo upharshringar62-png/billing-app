@@ -666,7 +666,7 @@ window.firebaseUploadImage = async (base64, id) => {
       let canvas=document.createElement('canvas');
       let MAX=200;
       let w=img.width, h=img.height;
-      if(w>h){ if(w>MAX){ h=Math.round(h*MAX/w); w=MAX; } }
+      if(w>h){ if(w>MAX){ h=Math.round(h*MAX/w); w=MAX; } } 
       else{ if(h>MAX){ w=Math.round(w*MAX/h); h=MAX; } }
       canvas.width=w; canvas.height=h;
       let ctx=canvas.getContext('2d');
