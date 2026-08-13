@@ -566,19 +566,18 @@ window.addProductWithCategory = async () => {
   let price = Number(prompt('Price:') || 0);
   let costPrice = Number(prompt('Cost Price:') || 0);
   let stock = Number(prompt('Stock:') || 0);
-
-  let p = {
-    id: Date.now().toString(),
-    name: name.trim(),
-    price: price,
-    costPrice: costPrice,
-    stock: stock,
-    image: '',
-    img: '',
-    categoryId: selectedCat,
-    cat: selectedCat,
-    createdAt: Date.now()
-  };
+let p = {
+  id: Date.now().toString(),
+  name: name.trim(),
+  price: price,
+  costPrice: costPrice,
+  stock: stock,
+  image: '',
+  img: '',
+  cat: String(selectedCat),
+  categoryId: String(selectedCat),
+  qty: 0
+};
 
   try {
 
@@ -611,7 +610,7 @@ const docRef = await addDoc(
         image: "",
         img: "",
         categoryId: p.categoryId,
-        cat: p.cat,
+        cat: String(p.cat),
         createdAt: Date.now()
       }
     );
