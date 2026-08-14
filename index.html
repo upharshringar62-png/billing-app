@@ -557,8 +557,7 @@ async function saveUpdatedProduct(){
 // FINAL LOCK - Image kabhi delete nahi hoga, app delete pe bhi wapas aayega
 window.addProductWithCategory = async () => {
 
-  let catName =
-    categories.find(c => String(c.id) === String(selectedCat))?.name || 'All';
+  let catName = categories.find(c => c.id == selectedCat)?.name || 'All';
 
   let name = prompt(`Product Name (${catName}):`);
   if(!name) return;
@@ -566,83 +565,67 @@ window.addProductWithCategory = async () => {
   let price = Number(prompt('Price:') || 0);
   let costPrice = Number(prompt('Cost Price:') || 0);
   let stock = Number(prompt('Stock:') || 0);
-let p = {
-  id: Date.now().toString(),
-  name: name.trim(),
-  price: price,
-  costPrice: costPrice,
-  stock: stock,
-  image: '',
-  img: '',
-  cat: String(selectedCat),
-  categoryId: String(selectedCat),
-  qty: 0
-};
+
+  let p = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    price: price,
+    costPrice: costPrice,
+    stock: stock,
+    image: '',
+    img: '',
+    categoryId: selectedCat,
+    createdAt: Date.now()
+  };
 
   try {
 
-    // Firebase ka current app/db use karo
+    // Firebase ka already initialized database
+    const { getFirestore, getApp } =
+      await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    const db = getFirestore(getApp());
+
     const { collection, addDoc } =
       await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
-    const firebaseApp = window.firebaseApp;
-
-    if(!firebaseApp){
-      throw new Error("Firebase App initialize nahi hua");
-    }
-
-    const { getFirestore } =
-      await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-   const db = getFirestore(firebaseApp);
-
-// NO. 3 — Firebase DB ko global rakho
-window.firebaseDB = db;
-alert("FIREBASE DB READY");
-const docRef = await addDoc(
-  collection(window.firebaseDB, "products"),
+    const docRef = await addDoc(
+      collection(db, "products"),
       {
         id: p.id,
         name: p.name,
-        price: Number(p.price),
-        costPrice: Number(p.costPrice),
-        stock: Number(p.stock),
-        image: "",
-        img: "",
+        price: Number(p.price || 0),
+        costPrice: Number(p.costPrice || 0),
+        stock: Number(p.stock || 0),
+        image: '',
+        img: '',
         categoryId: p.categoryId,
-        cat: String(p.cat),
         createdAt: Date.now()
       }
     );
 
+    // Firebase document ID
     p.firebaseId = docRef.id;
-   alert("PRODUCT FIREBASE SAVE OK: " + docRef.id);
 
-    console.log("PRODUCT FIREBASE SAVE:", docRef.id);
+    // Local me bhi save
+    products.push(p);
+    localStorage.setItem('products', JSON.stringify(products));
+
+    renderProducts();
+
+    alert('✅ Product Firebase me save ho gaya!');
 
   } catch(e) {
 
-    console.error("PRODUCT FIREBASE ERROR:", e);
+    console.error('PRODUCT FIREBASE ERROR:', e);
 
     alert(
-      "❌ Product Firebase me save nahi hua!\n\n" +
-      e.code + "\n" +
+      '❌ Product Firebase me save nahi hua!\n\n' +
       e.message
     );
 
     return;
   }
-
-  products.push(p);
-
-  localStorage.setItem(
-    'products',
-    JSON.stringify(products)
-  );
-
-  renderProducts();
-
-  alert("✅ Product Firebase me save ho gaya!");
 };
 function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
 const fab = document.getElementById('addProductFab');
