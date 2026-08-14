@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPHAR Billing - Clean Code</title>
+ <script type="importmap">
+{ "imports": { "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js", "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" } }
+</script>
+<script src="https://cdn.tailwindcss.com">
+</script>
+<style>
+  *{font-family: 'Poppins', sans-serif;}
+  .scrollbar-hide::-webkit-scrollbar{display:none}
+  @keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@media print {
+  body * { visibility: hidden !important; }
+  #printArea, #printArea * { visibility: visible !important; }
+  #printArea {
+    position: absolute !important; left:0 !important; top:0 !important;
+    width:72mm !important; background:white !important;
+    color:#000 !important;
+    font-family: 'Courier New', monospace !important;
+    font-size:12px !important; line-height:1.3 !important;
+    font-weight:900 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #printArea img { max-width:80px !important; margin:0 auto !important; display:block !important; }
+  #printArea canvas { width:180px !important; height:180px !important; margin:0 auto !important; display:block !important; }
+  header, nav, aside, #previewModal, #productActionModal, #editProductModal { display:none !important; }
+}
+ .animate-slide{animation:slideIn 0.25s ease}
+
+ .product-card{
+  position:relative;
+  transition:height .25s ease, background .25s ease;
+}
+
+.product-card.product-selected{
+  background:#b9ffbf !important;
+  border:1.5px solid #7be495 !important;
+}
+
+.product-delete-btn{
+  display:none;
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  width:38px;
+  height:38px;
+  border:2px solid #111;
+  border-radius:10px;
+  background:transparent;
+  font-size:24px;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+}
+</style>
+</head>
+<body class="bg-[#f2f3f7]">
+<header class="bg-[#2e3ae8] h-[56px] flex items-center justify-between px-3 text-white sticky top-0 z-20">
+  <div class="flex items-center gap-3">
+    <button id="menuBtn" onclick="openDrawer()" class="w-8 h-8 flex flex-col justify-center gap-1">
+      <span class="w-5 h-0.5 bg-white"></span>
+      <span class="w-5 h-0.5 bg-white"></span>
+      <span class="w-5 h-0.5 bg-white"></span>
+    </button>
+  </div>
+  <div class="flex items-center gap-2">
+    <button id="printBtn" onclick="handlePreview()" class="bg-[#00c853] px-4 py-2 rounded-full flex items-center gap-2 text-[13px] font-bold">
+      <span>🖨️ PRINT</span>
+    </button>
+   <span id="totalAmt" class="hidden">₹0.0</span>
+  </div>
+</header>
+<div class="flex min-h-[calc(100vh-56px)]">
+<aside class="w-[130px] bg-white border-r shrink-0 flex flex-col">
+  <div class="p-2">
+    <button id="newCatBtn" class="bg-[#2e3ae8] text-white rounded-full h-7 px-3 text-[10px] font-bold ml-1">+ NEW CATEGORY</button>
+  </div>
+  <div id="catList" class="flex-1 overflow-y-auto scrollbar-hide"></div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0">
+  <div class="bg-white p-2 border-b flex gap-2">
+    <div class="flex-1 relative">
+     <input type="file" id="imgInput" accept="image/*" hidden>
+      <input id="searchInput" placeholder="Search item..." class="w-full h-10 bg-[#f6f7ff] rounded-full pl-10 pr-10 text-[13px] outline-none border border-transparent focus:border-[#2e3ae8]/30">
+      <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+      <button class="absolute right-2 top-1.5 w-7 h-7 bg-white rounded-full shadow flex items-center justify-center">🎙️</button>
+    </div>
+  </div>
+  <div class="p-2 flex-1 overflow-y-auto">
+    <div id="productGrid" class="grid grid-cols-2 gap-2"></div>
+  </div>
+  <div class="bg-white border-t px-2 py-2 flex items-center gap-2 sticky bottom-[60px]">
+    <button onclick="handleKOT()" class="px-4 py-2 border rounded-lg text-[11px] font-bold">KOT</button>
+    <button onclick="handlePreview()" class="px-4 py-2 border rounded-lg text-[11px] font-bold">PREVIEW</button>
+  </div>
+</main>
+</div>
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t h-[60px] flex items-center z-20">
+  <button onclick="switchTab('BILL')" class="flex-1 flex flex-col items-center text-[#2e3ae8]"><span class="text-[18px]">📄</span><span class="text-[10px] font-bold">NEW BILL</span></button>
+  <button onclick="switchTab('REPORT')" class="flex-1 flex flex-col items-center text-gray-400"><span class="text-[18px]">📊</span><span class="text-[10px]">REPORT</span></button>
+  <div class="flex-1 flex justify-center"><button id="addProductFab" class="w-14 h-14 bg-[#2e3ae8] text-white rounded-full flex flex-col items-center justify-center shadow-lg -mt-6"><span class="text-[20px]">+</span><span class="text-[8px]">Product Add +</span></button></div>
+  <button onclick="switchTab('PARTY')" class="flex-1 flex flex-col items-center text-gray-400"><span class="text-[18px]">👥</span><span class="text-[10px]">PARTY</span></button>
+  <button onclick="switchTab('SETTINGS')" class="flex-1 flex flex-col items-center text-gray-400"><span class="text-[18px]">⚙️</span><span class="text-[10px]">SETTINGS</span></button>
+</nav>
+<div id="drawerOverlay" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
+<div id="leftDrawer" class="fixed left-0 top-0 bottom-0 w-[78%] max-w-[320px] bg-white z-40 -translate-x-full transition-transform duration-200 flex flex-col">
+  <div class="bg-[#2c3ac8] text-white p-4 space-y-2"><div class="text-[11px] leading-tight font-bold">NARKATIAGANJ 845455</div><div class="text-[11px]">MOB +917256050678</div><div class="flex items-center gap-2 mt-2"><span class="bg-[#2ecc71] text-[10px] px-3 py-1 rounded-full font-bold">LOGGED IN : ADMIN</span></div><div class="text-[10px] opacity-80">7256050678 V.1.0.195</div></div>
+  <div class="flex-1 overflow-y-auto p-2 space-y-4"><div>
+<button onclick="openPage('salesPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📊 Sales Report</button>
+<button onclick="openPage('itemPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Item-wise Report</button>
+<button onclick="openPage('stockPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Stock Manage</button>
+<button onclick="openPage('expensePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">💸 Creditors Manage</button>
+<button onclick="openPage('profitPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📈 Profit & Loss</button>
+<button onclick="openPage('duePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📋 Due List</button>
+  </div><div class="p-3 text-[10px] text-center text-gray-400 border-t">UPHAR SINGHAR & GIFTS v1.0.195</div></div>
+</div>
+<div id="settingsPage" class="fixed inset-0 bg-[#f2f3f7] z-25 hidden overflow-y-auto pb-[80px]">
+  <div class="bg-white p-4 border-b"><h2 class="font-bold text-[16px]">Profile Setting</h2><div class="text-[11px] text-gray-500 mt-1">1.0.195 | 7256050678 | <span id="billNoDisplay">1</span></div></div>
+  <div class="p-3 space-y-4">
+    <div class="bg-white rounded-lg p-4 border flex flex-col items-center">
+    <div id="logoBox" class="w-20 h-20 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-full flex items-center justify-center overflow-hidden"><span id="logoIcon">👑</span><img id="logoImg" class="hidden w-full h-full object-cover"><input type="file" id="logoInput" accept="image/*" hidden></div>  
+     <button onclick="document.getElementById('logoInput').click()" class="mt-3 text-[12px] bg-[#eef0ff] text-[#2e3ae8] px-4 py-1.5 rounded-full font-bold">Change Logo ✏️</button> 
+    </div>
+    <div class="bg-white rounded-lg p-4 border"><label class="text-[11px] font-bold">Enter Business/Shop Tittle ✏️</label><textarea id="businessTitle" class="w-full border rounded-lg p-3 text-[13px] mt-2">UPHAR SINGHAR & GIFTS BHAGWATI CINEMA ROAD, NARKATIAGANJ, 845455 MOB. +917256050678</textarea></div>
+    <div class="bg-white rounded-lg p-4 border grid grid-cols-2 gap-3"><div><label class="text-[11px] font-bold">Running Bill No ✏️</label><input id="billNoInput" class="w-full border rounded-lg p-2 text-[13px] mt-1" value="1"></div><div><label class="text-[11px] font-bold">Bill Prefix ✏️</label><input value="UPHAR-" class="w-full border rounded-lg p-2 text-[13px] mt-1"></div></div>
+    <div class="bg-white rounded-lg p-4 border"><label class="text-[11px] font-bold">Enter KOT Prefix Name ✏️</label><input value="KITCHEN ORDER TICKET" class="w-full border rounded-lg p-2 text-[13px] mt-1"></div>
+    <div class="bg-white rounded-lg p-4 border"><label class="text-[11px] font-bold">Enter Bill Footer ✏️</label><textarea class="w-full border rounded-lg p-2 text-[13px] mt-1">Thank you visit again! - Uphar Singhar & Gifts</textarea></div>
+    <div class="bg-white rounded-lg p-4 border"><label class="text-[11px] font-bold">Bluetooth Printer (Long Connect) ✏️</label><div class="flex items-center gap-2 mt-2"><span id="printerName" class="text-[12px] flex-1">PSF588 5C:57:9E:27:D4:4F</span><span id="printerStatus" class="text-[10px] px-2 py-1 rounded-full bg-red-100 text-red-600">Disconnected</span><button id="btConnectBtn" class="bg-[#2e3ae8] text-white px-4 py-1.5 rounded-full text-[11px] font-bold">Connect</button></div><div class="text-[10px] text-gray-500 mt-2">Keep-alive ping every 15 sec to prevent disconnect</div></div>
+    <button onclick="switchTab('BILL')" class="w-full bg-[#2e3ae8] text-white h-12 rounded-full font-bold">Back to Billing</button>
+  </div>
+</div>
+<div id="previewModal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-end sm:items-center justify-center">
+  <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><span class="text-[13px] font-bold">Bill Preview</span><button onclick="closePreview()" class="w-7 h-7 bg-white/20 rounded-full">✕</button></div>
+   <div class="p-3 border-b space-y-2 bg-[#f6f7ff]">
+  <input id="custName" placeholder="Customer Name (Mantu jee)" class="w-full h-9 rounded-full px-4 text-[12px] border outline-none"> 
+  <input id="custMobile" placeholder="Mobile No (9801104843)" type="number" class="w-full h-9 rounded-full px-4 text-[12px] border outline-none">
+</div>
+<div class="p-3 border-b bg-[#f0f2ff]"><div class="text-[11px] font-bold mb-2">Payment Mode</div><div class="grid grid-cols-3 gap-2"><button onclick="setPayMode('CASH')" id="btnCASH" class="payBtn border-2 border-gray-200 rounded-xl py-2.5 font-bold text-[11px]">💵 CASH</button><button onclick="setPayMode('ONLINE')" id="btnONLINE" class="payBtn border-2 border-gray-200 rounded-xl py-2.5 font-bold text-[11px]">📱 ONLINE</button><button onclick="setPayMode('DUE')" id="btnDUE" class="payBtn border-2 border-[#2e3ae8] bg-[#eef0ff] rounded-xl py-2.5 font-bold text-[11px]">📋 DUE</button></div></div>
+    <div id="previewList" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+       <div class="p-3 border-t"><div class="flex justify-between font-bold text-[14px]"><span>Total</span><span id="previewTotal">₹0</span></div><div class="flex gap-2 mt-3"><button onclick="closePreview()" class="flex-1 bg-gray-200 h-11 rounded-full font-bold">CLOSE</button><button onclick="handleRealPrint()" class="flex-1 bg-[#00c853] text-white h-11 rounded-full font-bold">🖨️ PRINT</button></div></div> 
+  </div>
+</div>
+<div id="productActionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100] p-4"><div class="bg-white rounded-lg w-full max-w-[300px] p-5"><h3 class="font-bold text-[16px]">Modify Product</h3><p id="actionProductName" class="text-[13px] text-gray-600 my-3"></p><div class="flex justify-between mt-4"><button onclick="deleteProduct(selectedProductId)" class="text-red-500 font-bold">DELETE</button><button onclick="closeActionModal()" class="text-gray-500 font-bold">CANCEL</button><button onclick="openModifyModal()" class="text-green-600 font-bold">MODIFY</button></div></div></div>
+<div id="editProductModal" class="fixed inset-0 bg-[#f5f5f5] hidden z-[101] overflow-y-auto"><div class="bg-[#3f51b5] text-white p-3 flex gap-3"><button onclick="closeEditModal()">←</button><h2 class="font-bold">Update Product</h2></div><div class="p-4"><div class="flex flex-col items-center"><img id="editProductImage" class="h-20 w-20 object-contain mx-auto bg-white border rounded-lg"><input type="file" id="editProductImageInput" accept="image/*" hidden><button type="button" onclick="document.getElementById('editProductImageInput').click()" class="mt-3 bg-[#eef0ff] text-[#3f51b5] px-5 py-2 rounded-full text-[12px] font-bold">📷 CHANGE IMAGE</button></div><input id="editProductName" class="w-full mt-4 border p-3 rounded-lg font-bold" placeholder="Product Name"><input id="editProductPrice" type="number" class="w-full mt-3 border p-3 rounded-lg" placeholder="Sale Price"><button onclick="saveUpdatedProduct()" class="w-full bg-[#3f51b5] text-white py-3 rounded-lg font-bold mt-4">Update Product</button></div></div>
+<script>
+// DATA
+let selectedCat = 'all';
+let searchText = '';
+let cart = {};
+let longPressTimer = null;
+let selectedProductId = null;
+let categories = JSON.parse(localStorage.getItem('categories') || '[]');
+let products = JSON.parse(localStorage.getItem('products') || '[]');
+let savedBillNo = parseInt(localStorage.getItem('lastBillNo') || '1', 10);
+if(!Number.isFinite(savedBillNo) || savedBillNo < 1) savedBillNo = 1;
+try {
+  const existingSales = JSON.parse(localStorage.getItem('sales') || '[]');
+  if(Array.isArray(existingSales) && existingSales.length){
+    const maxBill = existingSales.reduce((m,b)=>Math.max(m, Number(b.billNo)||0), 0);
+    if(maxBill >= savedBillNo) savedBillNo = maxBill + 1;
+  }
+} catch(e) {}
+localStorage.setItem('lastBillNo', String(savedBillNo));
+if (!Array.isArray(categories) || categories.length === 0) {
+  categories = [{id:'all', name:'All Items'},{id:'1', name:'General'},{id:'2', name:'Cosmetics'}];
+  localStorage.setItem('categories', JSON.stringify(categories));
+}
+if (!Array.isArray(products)) products = [];
+window.categories = categories; window.products = products;
+function syncData(){
+  window.categories = categories; window.products = products;
+  localStorage.setItem('categories', JSON.stringify(categories));
+  // localStorage me bina photo ke save karo, warna fir full ho jayega
+let productsForLocal = products.map(p=>({...p, img: '', image: ''}));
+localStorage.setItem('products', JSON.stringify(productsForLocal));
+}
+function renderCategories(){
+  const el = document.getElementById('catList'); el.innerHTML = '';
+ categories.sort((a,b)=> String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
+  categories.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'flex items-center justify-between px-3 py-3 border-b hover:bg-gray-50 cursor-pointer';
+    div.innerHTML = `<div><div class="text-[13px] font-medium">${c.name}</div><div class="text-[11px] text-gray-400">(0.0)</div></div><button onclick="event.stopPropagation(); deleteCategory('${c.id}')" class="w-6 h-6 text-gray-400 text-[16px]">...</button>`;
+    div.onclick = ()=>{ selectedCat = c.id; renderProducts(); };
+    el.appendChild(div);
+  });
+}
+function renderProducts(){
+  const grid = document.getElementById('productGrid'); grid.innerHTML = '';
+  let filtered = products.filter(p=>{ if(p.active === false) return false; if(selectedCat!=='all' && String(p.cat)!==String(selectedCat)) return false; if(searchText && !p.name.toLowerCase().includes(searchText.toLowerCase())) return false; return true; });
+ filtered.sort((a,b)=> String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
+  filtered.forEach(p=>{
+    const qty = cart[p.id] || p.qty || 0;
+    const isSelected = qty > 0;
+    const card = document.createElement('div');
+    card.className = `product-card bg-white rounded-xl p-2 flex flex-col relative ${isSelected?'product-selected':''}`;
+    card.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return;
+      document.querySelectorAll('.product-card').forEach(function(c) {
+        c.classList.remove('product-selected');
+        c.style.removeProperty('background'); c.style.removeProperty('height'); c.style.removeProperty('min-height');
+      });
+      card.classList.add('product-selected');
+      card.style.setProperty('background', '#b9ffbf', 'important');
+      card.style.setProperty('height', '350px', 'important');
+      card.style.setProperty('min-height', '350px', 'important');
+    });
+    card.innerHTML = `<div class="flex justify-between w-full mb-1"><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white">₹ ${p.price}.0</div><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white min-w-[30px] text-center">${qty}</div></div><div class="w-full h-[110px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}</div><div class="mt-2 text-[13px] font-bold text-center min-h-[32px]">${p.name}</div><div class="flex justify-between items-center w-full mt-2"><button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="text-[20px]">⋮</button>${isSelected? `<button onclick="event.stopPropagation(); decQty('${p.id}'); if((cart['${p.id}']||0)<=0) renderProducts();" class="w-6 h-6 border border-black rounded flex items-center justify-center bg-white">✕</button>` : ``}</div>`;
+    card.onclick = () => incQty(p.id);
+    card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+    card.onmouseup = () => clearTimeout(longPressTimer);
+    card.onmouseleave = () => clearTimeout(longPressTimer);
+    card.ontouchstart = (e) => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
+    card.ontouchend = () => clearTimeout(longPressTimer);
+    card.ontouchcancel = () => clearTimeout(longPressTimer);
+    grid.appendChild(card);
+  });
+  const newCard = document.createElement('div');
+  newCard.className = 'bg-white rounded-xl border border-dashed border-blue-400 p-2 flex flex-col items-center justify-center min-h-[140px] cursor-pointer';
+  newCard.innerHTML = `<div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">+</div><div class="text-[14px] font-bold mt-3 text-blue-600">NEW ITEM</div>`;
+  newCard.onclick = ()=> addNewItemInCat(); grid.appendChild(newCard);
+}
+function incQty(id){ cart[id] = (cart[id]||0) + 1; let prod = products.find(p=>p.id===id); if(prod) prod.qty = cart[id]; syncData(); updateTotal(); renderProducts(); renderPreview(); }
+function decQty(id){ if(!cart[id]) return; cart[id] = cart[id] - 1; if(cart[id]<=0) delete cart[id]; let prod = products.find(p=>p.id===id); if(prod) prod.qty = cart[id]||0; syncData(); updateTotal(); renderProducts(); renderPreview(); }
+function updateTotal(){ let total = 0; Object.keys(cart).forEach(id=>{ let prod = products.find(p=>p.id===id); if(prod){ total += prod.price * cart[id]; } }); document.getElementById('totalAmt').innerText = '₹'+total.toFixed(1); }
+function handleKOT(){ alert('KOT Printed'); }
+let selectedPaymentMode = 'DUE';
+function setPayMode(mode){
+  selectedPaymentMode = mode;
+  document.querySelectorAll('.payBtn').forEach(b=> { b.classList.remove('border-[#2e3ae8]','bg-[#eef0ff]'); b.classList.add('border-gray-200'); });
+  let activeBtn = document.getElementById('btn'+mode);
+  if(activeBtn){ activeBtn.classList.remove('border-gray-200'); activeBtn.classList.add('border-[#2e3ae8]','bg-[#eef0ff]'); }
+  if(typeof renderPreview === 'function'){ renderPreview(); }
+}
+function handlePreview(){ renderPreview(); document.getElementById('previewModal').classList.remove('hidden'); document.getElementById('previewModal').classList.add('flex'); }
+function closePreview(){ document.getElementById('previewModal').classList.add('hidden'); }
+function switchTab(tab){ if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); } else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); } else { alert(tab+' - Coming Soon'); } }
+function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-translate-x-full'); document.getElementById('drawerOverlay').classList.remove('hidden'); }
+function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
+document.getElementById('menuBtn').onclick=openDrawer;
+document.getElementById('drawerOverlay').onclick=closeDrawer;
+(function initBillNumber(){
+  const input = document.getElementById('billNoInput');
+  const display = document.getElementById('billNoDisplay');
+  if(input) input.value = savedBillNo;
+  if(display) display.innerText = savedBillNo;
+  localStorage.setItem('lastBillNo', String(savedBillNo));
+})();
+document.getElementById('billNoInput')?.addEventListener('change', function(){
+  let n = parseInt(this.value, 10);
+  if(!Number.isFinite(n) || n < 1) n = 1;
+  savedBillNo = n;
+  this.value = n;
+  localStorage.setItem('lastBillNo', String(n));
+  const display = document.getElementById('billNoDisplay');
+  if(display) display.innerText = n;
+});
+
+async function handleRealPrint(){
+  let billNo = parseInt(localStorage.getItem('lastBillNo') || savedBillNo || 1, 10);
+  if(!Number.isFinite(billNo) || billNo < 1) billNo = 1;
+  try {
+    const existingSales = JSON.parse(localStorage.getItem('sales') || '[]');
+    const used = new Set(Array.isArray(existingSales) ? existingSales.map(x=>Number(x.billNo)||0) : []);
+    while(used.has(billNo)) billNo++;
+  } catch(e) {}
+  let custName = document.getElementById('custName')?.value || '';
+  let custMobile = document.getElementById('custMobile')?.value || '';
+  let now = new Date(); 
+  let dateStr = now.toLocaleDateString('en-IN') + ' ' + now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+  let totalItems=0,totalQty=0,subtotal=0;
+  Object.keys(cart).forEach(id=>{ let p=products.find(x=>x.id==id); if(p){ totalItems++; totalQty+=cart[id]; subtotal+=p.price*cart[id]; } });
+  let savedLogo = localStorage.getItem('shopLogo') || '';
+
+   async function getLogoBytes(base64){
+    return new Promise(res=>{
+      let img=new Image();
+      img.onload=()=>{
+        let canvas=document.createElement('canvas');
+        let w=250;
+        let h=Math.round((img.height/img.width)*w);
+        if(h>200) { h=200; w=Math.round((img.width/img.height)*h); }
+        canvas.width=w; canvas.height=h;
+        let ctx=canvas.getContext('2d');
+        ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        let data=ctx.getImageData(0,0,w,h).data;
+
+        // Auto detect - agar logo black background wala hai toh invert karo
+        let totalGray=0;
+        for(let i=0;i<data.length;i+=4){ totalGray += (0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]); }
+        let avgGray = totalGray / (w*h);
+        let isDarkBackground = avgGray < 100; // Tera logo dark hai toh true hoga
+
+        let bytes=[]; let xBytes=Math.ceil(w/8);
+        let xL=xBytes & 0xFF, xH=(xBytes>>8)&0xFF, yL=h & 0xFF, yH=(h>>8)&0xFF;
+        bytes.push(...[0x1D,0x76,0x30,0, xL, xH, yL, yH]);
+        for(let y=0;y<h;y++){
+          for(let xb=0; xb<xBytes; xb++){
+            let byte=0;
+            for(let b=0;b<8;b++){
+              let x=xb*8+b; if(x>=w) continue;
+              let idx=(y*w+x)*4;
+              let gray=0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
+              let shouldBeBlack;
+              if(isDarkBackground){
+                shouldBeBlack = gray > 150; // Dark logo hai toh white text ko black banao
+              }else{
+                shouldBeBlack = gray < 150; // Normal logo hai toh black text ko black banao
+              }
+              if(shouldBeBlack) byte|=(0x80>>b);
+            }
+            bytes.push(byte);
+          }
+        }
+        res(new Uint8Array(bytes));
+      };
+      img.onerror=()=>res(null); img.src=base64;
+    });
+  } 
+  // ===== FIXED HD BILL DESIGN FOR 58MM (32 CHARS) =====
+  function centerLine(txt){ 
+    txt = txt.toString();
+    let pad = Math.max(0, Math.floor((32 - txt.length)/2));
+    return ' '.repeat(pad) + txt + '\n';
+  }
+  function line(ch='-'){ return ch.repeat(32)+'\n'; }
+  function leftRight(left,right){
+    left=left.toString(); right=right.toString();
+    let spaces = 32 - left.length - right.length;
+    if(spaces<1) spaces=1;
+    return left + ' '.repeat(spaces) + right + '\n';
+  }
+
+   let t = '';
+
+t += '\x1B\x40';        // RESET
+t += '\x1B\x45\x00';   // BOLD ON
+t += '\x1B\x61\x01';   // CENTER
+
+t += 'UPHAR SINGHAR & GIFTS\n';
+t += 'Bhagwati Cinema Road\n';
+t += 'Narkatiaganj - 845455\n';
+t += 'Mob: +91 7256050678\n';
+
+t += '\x1B\x61\x00';   // LEFT
+
+t += line('-');
+
+t += leftRight(
+  'Bill No: ' + billNo,
+  dateStr
+);
+
+if(custName){
+  t += 'Customer: ' + custName + '\n';
+}
+
+if(custMobile){
+  t += 'Mobile: ' + custMobile + '\n';
+}
+
+t += 'Payment: ' + selectedPaymentMode + '\n';
+
+t += line('-');
+
+// ================= ITEMS ================
+
+t +=
+  'ITEM'.padEnd(17, ' ') +
+  'QTY'.padStart(3, ' ') +
+  'RATE'.padStart(5, ' ') +
+  'AMT'.padStart(7, ' ') +
+  '\n';
+
+t += line('-');
+
+let sr = 1;
+
+Object.keys(cart).forEach(id => {
+
+  let p = products.find(x => String(x.id) === String(id));
+
+  if(!p) return;
+
+  let qty = Number(cart[id] || 0);
+  let rate = Number(p.price || 0);
+  let amount = rate * qty;
+
+  let name = String(p.name || '').trim();
+
+  let fullName = sr + '. ' + name;
+
+  // First 17 characters
+  let firstLine = fullName.substring(0, 17);
+
+  t +=
+    firstLine.padEnd(17, ' ') +
+    String(qty).padStart(3, ' ') +
+    rate.toFixed(0).padStart(5, ' ') +
+    amount.toFixed(0).padStart(7, ' ') +
+    '\n';
+
+  // Remaining name
+  if(fullName.length > 17){
+
+    let rest = fullName.substring(17);
+
+    while(rest.length > 0){
+
+      t += rest.substring(0, 17).padEnd(17, ' ') + '\n';
+
+      rest = rest.substring(17);
+    }
+  }
+
+  sr++;
+});
+
+t += line('-');
+
+
+t += leftRight(
+  'TOTAL ITEMS: ' + totalItems,
+  'QTY: ' + totalQty
+);
+
+t += leftRight(
+  'Subtotal:',
+  'Rs. ' + subtotal.toFixed(0)
+);
+
+t += line('-');
+
+t += '\x1B\x45\x01';   // BOLD ON
+t += '\x1B\x61\x01';   // CENTER
+
+t += 'GRAND TOTAL\n';
+t += 'Rs. ' + subtotal.toFixed(0) + '\n';
+
+t += '\x1B\x45\x00';   // BOLD OFF
+
+t += '\n';
+t += 'Thank You Visit Again!\n';
+  if(btCharacteristic && btServer && btServer.connected){
+    try{
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
+      if(savedLogo){
+        let logoBytes=await getLogoBytes(savedLogo);
+        if(logoBytes){
+          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+          for(let i=0;i<logoBytes.length;i+=120){ await btCharacteristic.writeValueWithoutResponse(logoBytes.slice(i,i+120)); await new Promise(r=>setTimeout(r,30)); }
+        }
+      }
+      let enc=new TextEncoder(); 
+      // Fix for Hindi / clear text - use CP437
+      let data=enc.encode(t);
+      for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,30)); }
+      let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
+      let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
+      let len=upiString.length+3, pL=len&0xFF, pH=(len>>8)&0xFF, c=[];
+      c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30, 0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
+      for(let i=0;i<upiString.length;i++) c.push(upiString.charCodeAt(i));
+      c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
+      let qrBytes=new Uint8Array(c);
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+      for(let i=0;i<qrBytes.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+100)); await new Promise(r=>setTimeout(r,40)); }
+      let foot=enc.encode("\nSCAN TO PAY\n\n\n\n");
+      await btCharacteristic.writeValueWithoutResponse(foot);
+
+       const sale = {
+         billNo: Number(billNo),
+         date: dateStr,
+         customer: custName || 'Customer',
+         mob: custMobile || '',
+         payment: selectedPaymentMode,
+         due: selectedPaymentMode === 'DUE' ? Number(subtotal.toFixed(2)) : 0,
+         paid: selectedPaymentMode === 'DUE' ? 0 : Number(subtotal.toFixed(2)),
+         total: Number(subtotal.toFixed(2)),
+         totalItems,
+         totalQty,
+         items: Object.keys(cart).map(id => {
+           const p = products.find(x => String(x.id) === String(id));
+           return p ? {
+             id:p.id, name:p.name, price:Number(p.price)||0, qty:Number(cart[id])||0,
+             amount:Number(((Number(p.price)||0) * (Number(cart[id])||0)).toFixed(2))
+           } : null;
+         }).filter(Boolean),
+         createdAt: Date.now()
+       };
+       let sales = JSON.parse(localStorage.getItem('sales') || '[]');
+       if(!Array.isArray(sales)) sales = [];
+       sales.unshift(sale);
+       localStorage.setItem('sales', JSON.stringify(sales));
+       window.sales = sales;
+       if(window.firebaseSaveSale){
+         try {
+           const firebaseId = await window.firebaseSaveSale(sale);
+           if(firebaseId) sale.firebaseId = firebaseId;
+           localStorage.setItem('sales', JSON.stringify(sales));
+           window.sales = sales;
+         }
+         catch(firebaseErr){ console.error('Sale Firebase save error:', firebaseErr); }
+       }
+       let nextNo = Number(billNo) + 1;
+      localStorage.setItem('lastBillNo', nextNo);
+      if(document.getElementById('billNoInput')) document.getElementById('billNoInput').value = nextNo;
+      if(document.getElementById('billNoDisplay')) document.getElementById('billNoDisplay').innerText = nextNo;
+      closePreview();
+    }catch(e){ alert('Error: '+e.message); }
+    return;
+  } else {
+    alert('Bluetooth Printer Connect Nahi Hai! Settings me Connect karo');
+    return;
+  }
+} 
+function renderPreview(){
+  const list = document.getElementById('previewList'); list.innerHTML = ''; let total = 0;
+  Object.keys(cart).forEach(id=>{ let prod = products.find(p=>p.id===id); if(!prod) return; total += prod.price * cart[id]; const row = document.createElement('div'); row.className = 'flex items-center justify-between border-b py-2'; row.innerHTML = `<div class="flex-1"><div class="text-[13px] font-medium">${prod.name}</div><div class="text-[11px] text-gray-500">₹${prod.price} x ${cart[id]} = ₹${prod.price*cart[id]}</div></div><div class="flex items-center gap-1 bg-gray-100 rounded-full px-1 py-1"><button onclick="decQty('${id}')" class="w-7 h-7 bg-white rounded-full shadow font-bold">-</button><span class="w-6 text-center text-[12px] font-bold">${cart[id]}</span><button onclick="incQty('${id}')" class="w-7 h-7 bg-[#2e3ae8] text-white rounded-full font-bold">+</button></div>`; list.appendChild(row); });
+  document.getElementById('previewTotal').innerText = '₹'+total.toFixed(1);
+  if(Object.keys(cart).length===0){ list.innerHTML = '<div class="text-center text-gray-400 text-[13px] mt-10">No items</div>'; }
+}
+function showActionModal(id){ selectedProductId = id; let prod = products.find(p => String(p.id) === String(id)); if(!prod){ alert('Product nahi mila'); return; } document.getElementById('actionProductName').innerText = `Do you want to modify '${prod.name}'?`; document.getElementById('productActionModal').classList.remove('hidden'); }
+function closeActionModal(){ document.getElementById('productActionModal').classList.add('hidden'); }
+function openModifyModal(){ let prod = products.find(p=>p.id==selectedProductId); document.getElementById('editProductName').value = prod.name; document.getElementById('editProductPrice').value = prod.price; document.getElementById('editProductImage').src = prod.img || ''; document.getElementById('editProductImageInput').value = ''; document.getElementById('productActionModal').classList.add('hidden'); document.getElementById('editProductModal').classList.remove('hidden'); }
+function closeEditModal(){ document.getElementById('editProductModal').classList.add('hidden'); }
+async function saveUpdatedProduct(){
+  let prod = products.find(p => String(p.id) === String(selectedProductId) || String(p.firebaseId) === String(selectedProductId)); if(!prod) return;
+  prod.name = document.getElementById('editProductName').value;
+  prod.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
+  const imageInput = document.getElementById('editProductImageInput');
+  if(imageInput.files && imageInput.files[0]){
+    const reader = new FileReader();
+    reader.onload = async function(e){
+      try{
+        let base64 = e.target.result;
+        // YAHAN UPLOAD HOGA FIREBASE ME
+        let url = await window.firebaseUploadImage(base64, prod.id || Date.now());
+        prod.img = url; prod.image = url;
+        localStorage.setItem('products', JSON.stringify(products));
+        if(window.firebaseUpdateProduct) await window.firebaseUpdateProduct(prod);
+        // Firestore me bhi image URL update
+        if(prod.firebaseId){
+          await updateDoc(doc(db, "products", prod.firebaseId), { image: url, img: url, name: prod.name, price: prod.price });
+        }
+        closeEditModal(); renderProducts(); alert('Photo Firebase me save ho gayi!');
+      }catch(err){ alert('Upload Error: '+err.message); }
+    };
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+    localStorage.setItem('products', JSON.stringify(products));
+    if(window.firebaseUpdateProduct) await window.firebaseUpdateProduct(prod);
+    closeEditModal(); renderProducts();
+  }
+}
+// FINAL LOCK - Image kabhi delete nahi hoga, app delete pe bhi wapas aayega
+window.addProductWithCategory = async () => {
+  let catName = categories.find(c=>c.id==selectedCat)?.name || 'All';
+  let name = prompt(`Product Name (${catName}):`);
+  if(!name) return;
+  let price = Number(prompt('Price:') || 0);
+  let costPrice = Number(prompt('Cost Price:') || 0);
+  let stock = Number(prompt('Stock:') || 0);
+  
+  let p = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    price: price,
+    costPrice: costPrice,
+    stock: stock,
+    image: '',
+    img: '',
+    categoryId: selectedCat
+  };
+  
+  // Firebase me image ke saath save
+  try{
+    const { getFirestore, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { getApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const db = getFirestore(getApp());
+    const prodCol = collection(db, "products");
+    let docRef = await addDoc(prodCol, {
+      id: p.id,
+      name: p.name,
+      price: Number(p.price||0),
+      costPrice: Number(p.costPrice||0),
+      stock: Number(p.stock||0),
+      image: p.image || '',
+      img: p.image || '',
+      categoryId: p.categoryId,
+      createdAt: Date.now()
+    });
+    p.firebaseId = docRef.id;
+  }catch(e){ console.log(e); }
+  
+  products.push(p);
+  localStorage.setItem('products', JSON.stringify(products));
+  if(window.firebaseAddCategory) {}
+  renderProducts();
+  alert('Product add ho gaya! Ab ispe click karke photo daal de - photo Firebase me save hogi!');
+};
+function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
+const fab = document.getElementById('addProductFab');
+if(fab){ fab.onclick = ()=>{ addProductWithCategory(); }; }
+function addNewItemInCat(){ addItemDirect(); }
+document.getElementById('newCatBtn').onclick = async ()=>{ let name = prompt('New Category name likho:'); name = (name || '').trim(); if(!name) return; const id = Date.now().toString(); const cat = {id, name}; categories.push(cat); syncData(); renderCategories(); if(window.firebaseAddCategory){ try { await window.firebaseAddCategory(cat); } catch(e){ console.error(e); alert('Category local me save hui, Firebase save nahi hui: '+e.message); } } };
+document.getElementById('drawerOverlay').onclick = closeDrawer;
+document.getElementById('searchInput').addEventListener('input', (e)=>{ searchText = e.target.value; renderProducts(); });
+let btDevice = null; let btServer = null; let btCharacteristic = null;
+async function connectBluetooth(){
+  try{
+    document.getElementById('printerStatus').innerText = 'Connecting...';
+    btDevice = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] });
+    btServer = await btDevice.gatt.connect();
+    const services = await btServer.getPrimaryServices();
+    for(let service of services){ const chars = await service.getCharacteristics(); for(let char of chars){ if(char.properties.write || char.properties.writeWithoutResponse){ btCharacteristic = char; break; } } if(btCharacteristic) break; }
+    if(btCharacteristic){ document.getElementById('printerStatus').innerText = 'Connected: '+btDevice.name; document.getElementById('printerStatus').className = 'text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700'; document.getElementById('printerName').innerText = btDevice.name; alert('Printer Connected!'); } else { alert('Printer mila par write support nahi'); }
+  }catch(err){ document.getElementById('printerStatus').innerText = 'Disconnected'; alert('Bluetooth Error: '+err.message); }
+}
+document.getElementById('printBtn').onclick = ()=>{ handlePreview(); };
+document.getElementById('btConnectBtn').onclick = connectBluetooth;
+let logoInput=document.getElementById('logoInput'); let logoIcon=document.getElementById('logoIcon'); let logoImg=document.getElementById('logoImg');
+if(logoInput){ logoInput.onchange=e=>{ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=()=>{ logoIcon.style.display='none'; logoImg.src=r.result; logoImg.classList.remove('hidden'); localStorage.setItem('shopLogo',r.result); }; r.readAsDataURL(f); }; let s=localStorage.getItem('shopLogo'); if(s){logoIcon.style.display='none';logoImg.src=s;logoImg.classList.remove('hidden');} }
+ async function loadProductsFromFirebase(){
+  try{
+    const { collection, getDocs, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.firebaseDb || getFirestore();
+    const snap = await getDocs(collection(db, "products"));
+    let fbProducts=[];
+    snap.forEach(d=>{ fbProducts.push({firebaseId:d.id,...d.data()}); });
+    if(fbProducts.length>0){
+      let localProducts = JSON.parse(localStorage.getItem('products')||'[]');
+      fbProducts = fbProducts.map(fb=>{
+        let loc = localProducts.find(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
+        if(loc){
+          if((!fb.image || fb.image==='') && loc.image) { fb.image = loc.image; fb.img = loc.image; }
+          if((!fb.img || fb.img==='') && loc.img) { fb.img = loc.img; fb.image = loc.img; }
+        }
+        return fb;
+      });
+      window.products = fbProducts;
+      products = window.products;
+      localStorage.setItem('products', JSON.stringify(products));
+      renderProducts();
+    }
+  }catch(e){ console.log(e); }
+}
+setTimeout(()=>{ try{ loadProductsFromFirebase(); }catch(e){} }, 2000);
+window.renderCategories = renderCategories; window.renderProducts = renderProducts; window.syncData = syncData;
+renderCategories(); renderProducts(); updateTotal();
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+const firebaseConfig = { apiKey: "AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw", authDomain: "upharshringar-billing-5f4c9.firebaseapp.com", projectId: "upharshringar-billing-5f4c9", storageBucket: "upharshringar-billing-5f4c9.firebasestorage.app", messagingSenderId: "1070290998158", appId: "1:1070290998158:web:33792d0bbc4a719e6c8adf" };
+const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
+window.firebaseStorage = storage; window.getDownloadURL = getDownloadURL; window.ref = ref; window.uploadString = uploadString;
+// Bina Storage ke - Photo ko chota karke Firestore me save karega
+window.firebaseUploadImage = async (base64, id) => {
+  return new Promise((resolve)=>{
+    let img = new Image();
+    img.onload=()=>{
+      let canvas=document.createElement('canvas');
+      let MAX=200;
+      let w=img.width, h=img.height;
+      if(w>h){ if(w>MAX){ h=Math.round(h*MAX/w); w=MAX; } }
+      else{ if(h>MAX){ w=Math.round(w*MAX/h); h=MAX; } }
+      canvas.width=w; canvas.height=h;
+      let ctx=canvas.getContext('2d');
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      let smallBase64 = canvas.toDataURL('image/jpeg', 1.0);
+      try{ localStorage.setItem('img_'+id, smallBase64); }catch(e){}
+      resolve(smallBase64);
+    };
+    img.src=base64;
+  });
+};
+const prodCol = collection(db, "products");
+const catCol = collection(db, "categories");
+const salesCol = collection(db, "sales");
+window.firebaseAddCategory = async (cat) => {
+  await addDoc(catCol, { id: cat.id, name: cat.name, createdAt: Date.now() });
+};
+window.firebaseSaveSale = async (sale) => {
+  const ref = await addDoc(salesCol, sale);
+  return ref.id;
+};
+window.firebaseUpdateProduct = async (p) => {
+  if(!p.firebaseId) return;
+  try{
+    const { doc, updateDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.firebaseDb || getFirestore();
+    let data = {
+      stock: Number(p.stock || 0),
+      costPrice: Number(p.costPrice || 0),
+      price: Number(p.price || 0),
+      name: p.name || ''
+    };
+    // Image hai toh Firebase pe bhejo - tabhi app delete pe bhi wapas aayega
+    if(p.image && p.image!='' && p.image.length > 100) { 
+      data.image = p.image; 
+      data.img = p.image; 
+    } else if(p.img && p.img!='' && p.img.length > 100) { 
+      data.image = p.img; 
+      data.img = p.img; 
+    }
+    // Agar image khali hai toh data me image add hi mat karo, purana wala bacha rahega
+    await updateDoc(doc(db, "products", p.firebaseId), data);
+  }catch(e){ console.log("firebaseUpdate skip", e); }
+};
+window.firebaseUpdateSale = async (sale) => {
+  if(!sale.firebaseId) return;
+  await updateDoc(doc(db, "sales", sale.firebaseId), {
+    payment: sale.payment || 'PAID',
+    due: Number(sale.due || 0),
+    paid: Number(sale.paid || sale.total || 0)
+  });
+};
+onSnapshot(salesCol, (snap)=>{
+  const list = [];
+  snap.forEach(d=>{
+    const data = d.data();
+    data.firebaseId = d.id;
+    if(!data.id) data.id = d.id;
+    list.push(data);
+  });
+  // Firebase sales are the source of truth.
+  // Isse Due bills Firebase me bhi aur Due List me bhi same rahenge.
+  let merged = list;
+  window.sales = merged;
+  localStorage.setItem('sales', JSON.stringify(merged));
+  if(window.refreshAllReports) window.refreshAllReports();
+});
+onSnapshot(prodCol, (snap)=>{
+  let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
+  let local = JSON.parse(localStorage.getItem('products')||'[]');
+  let merged = [...local];
+  list.forEach(fb=>{
+    let i = merged.findIndex(l=> String(l.id)===String(fb.id) || String(l.firebaseId)===String(fb.firebaseId));
+    // Agar Firebase se image khali aaya hai toh local se uthao
+    if(i>=0){
+      if(!fb.image && merged[i].image) fb.image = merged[i].image;
+      if(!fb.img && merged[i].img) fb.img = merged[i].img;
+      if(!fb.image && merged[i].img) fb.image = merged[i].img;
+      // Phone memory se bhi try karo
+      let mem = localStorage.getItem('img_'+merged[i].id) || localStorage.getItem('img_'+merged[i].firebaseId);
+      if(mem &&!fb.image) { fb.image = mem; fb.img = mem; }
+      merged[i] = {...merged[i],...fb};
+    } else {
+      merged.push(fb);
+    }
+    // Har baar phone me backup bana ke rakho
+    try{
+      let idx = merged.findIndex(x=> String(x.id)===String(fb.id) || String(x.firebaseId)===String(fb.firebaseId));
+      if(idx>=0 && merged[idx].image){
+        localStorage.setItem('img_'+merged[idx].id, merged[idx].image);
+        localStorage.setItem('img_'+merged[idx].firebaseId, merged[idx].image);
+      }
+    }catch(e){}
+  });
+  window.products=merged; products=merged;
+  localStorage.setItem('products', JSON.stringify(merged));
+  if(window.renderProducts) renderProducts();
+});
+onSnapshot(catCol, (snap)=>{ let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); }); if(list.length >= 0){ const firebaseCats = list; const hasAll = firebaseCats.some(c => String(c.id) === 'all' || c.name === 'All Items'); if(!hasAll) firebaseCats.unshift({id:'all', name:'All Items'}); let merged = [...firebaseCats]; categories.forEach(lc=>{ if(!merged.some(fc=> String(fc.id)===String(lc.id) || fc.name===lc.name )){ if(lc.id!=='all') merged.push(lc); } }); categories = merged; window.categories = categories; localStorage.setItem('categories', JSON.stringify(categories)); if(window.renderCategories) window.renderCategories(); } });
+window.deleteProduct = async (id) => {
+  const p = window.products.find(x => String(x.firebaseId) === String(id) || String(x.id) === String(id));
+  if(!p){ alert('Product nahi mila'); return; }
+  if(!confirm(`"${p.name}" delete karna hai?`)) return;
+  try {
+    if(p.firebaseId){
+      await updateDoc(doc(db, "products", p.firebaseId), {
+        active: false,
+        deletedAt: Date.now()
+      });
+      p.active = false;
+    }
+    window.products = window.products.map(x =>
+      (String(x.firebaseId) === String(id) || String(x.id) === String(id))
+        ? {...x, active:false}
+        : x
+    );
+    products = window.products; localStorage.setItem('products', JSON.stringify(products));
+    if(typeof cart !== 'undefined'){ delete cart[p.id]; }
+    selectedProductId = null; closeActionModal(); renderProducts(); renderCategories(); updateTotal(); alert('Product Deleted');
+  } catch(e) { alert('Delete error: '+e.message); }
+};
+window.deleteCategory = async (id) => {
+  let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
+  if(!c) return; if(!confirm(`Category "${c.name}" delete karna hai?`)) return;
+  window.categories = window.categories.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
+  categories = window.categories; localStorage.setItem('categories', JSON.stringify(window.categories));
+  if(window.renderCategories) window.renderCategories(); if(window.renderProducts) window.renderProducts();
+  if(c.firebaseId){ try{ await deleteDoc(doc(db, "categories", c.firebaseId)); }catch(e){ console.log(e); } }
+};
+</script>
+<div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📊 Sales Report</h2><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div id="salesReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+</div>
+<div id="itemPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📦 Item-wise Report</h2><button onclick="closePage('itemPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div id="itemReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+</div>
+<div id="stockPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📦 Stock Manage</h2><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div id="stockReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+</div>
+<div id="creditorsPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">💸 Creditors Manage</h2><button onclick="closePage('creditorsPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div id="creditorsReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+</div>
+<div id="profitPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📈 Profit & Loss</h2><button onclick="closePage('profitPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div id="profitReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+</div>
+<div id="duePage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center">
+    <h2 class="font-bold">Due List</h2>
+    <button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button>
+  </div>
+  <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
+</div>
+<script>
+async function loadDueList(){
+  const container = document.getElementById('dueListContainer');
+  container.innerHTML = 'Loading Due from Firebase...';
+  try {
+    let bills = Array.isArray(window.sales) ? window.sales : [];
+    const due = bills.filter(b => {
+      const pay = String(b.payment || b.paymentType || '').toUpperCase().trim();
+      return pay === 'DUE' || pay.includes('DUE') || Number(b.due || 0) > 0;
+    });
+    if(due.length===0){
+      container.innerHTML = '<p class="text-center mt-10">Koi Due nahi mila<br>Total Bills: '+bills.length+'</p>';
+      return;
+    }
+       // NUMBER BY NUMBER - 1 monu 200, 2 pinku 170 jaise
+    container.innerHTML = `
+      <div class="bg-gray-100 grid grid-cols-[35px_1fr_70px_50px] p-2 text-[11px] font-bold border-b rounded-t-lg"><span>No</span><span>Name</span><span>Due</span><span>✓</span></div>
+      ${due.map((b, i) => `
+      <div class="grid grid-cols-[35px_1fr_70px_50px] items-center p-3 border-b bg-white">
+        <span class="font-bold">${i+1}</span>
+        <div><div class="font-bold text-[13px]">${b.customer || 'Customer'}</div><div class="text-[10px] text-gray-500">Bill: ${b.billNo} | ${b.mob||''}</div></div>
+        <span class="font-bold text-red-600">₹${Number(b.due||b.total||0).toFixed(0)}</span>
+        <button onclick="markDuePaid('${String(b.firebaseId||'').replace(/'/g,"") }','${b.billNo}')" class="bg-green-600 text-white w-8 h-8 rounded-full font-bold">✓</button>
+      </div>
+    `).join('')}
+    <div class="p-2 text-center text-[11px] font-bold bg-green-50">Total Due: ₹${due.reduce((s,b)=>s+Number(b.due||b.total||0),0).toFixed(0)} | Firebase SAFE ✅</div>
+    `; 
+  } catch(e){
+    container.innerHTML = 'Error: '+e.message;
+  }
+}
+window.markDuePaid = async function(firebaseId, billNo){
+  if(!firebaseId &&!billNo) return;
+  if(!confirm('Kya iska Due PAID kar du?')) return;
+  try{
+    let sales = JSON.parse(localStorage.getItem('sales')||'[]');
+    let idx = sales.findIndex(s=> String(s.firebaseId)===String(firebaseId) || String(s.billNo)===String(billNo));
+    if(idx>=0){
+      sales[idx].due = 0;
+      sales[idx].paid = Number(sales[idx].total||0);
+      sales[idx].payment = 'PAID';
+      sales[idx].paymentType = 'PAID';
+      localStorage.setItem('sales', JSON.stringify(sales));
+      window.sales = sales;
+    }
+    if(firebaseId){
+      const { doc, updateDoc, getFirestore } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+      const db = window.firebaseDb || getFirestore();
+      await updateDoc(doc(db, "sales", firebaseId), { due: 0, paid: Number(sales[idx]?.total||0), payment: 'PAID', paymentType: 'PAID' });
+    }
+    loadDueList();
+    if(window.refreshAllReports) window.refreshAllReports();
+    alert('Paid ho gaya! ✅');
+  }catch(e){
+    alert('Error: '+e.message);
+    console.log(e);
+  }
+};
+function openPage(id){ openReportPage(id); } 
+function closePage(id){
+  document.getElementById(id).classList.add('hidden');
+}
+function openDrawer(){
+  document.getElementById('leftDrawer').classList.remove('-translate-x-full');
+  document.getElementById('drawerOverlay').classList.remove('hidden');
+}
+function closeDrawer(){
+  document.getElementById('leftDrawer').classList.add('-translate-x-full');
+  document.getElementById('drawerOverlay').classList.add('hidden');
+}
+</script>
+<script>
+// ================= REPORTS / STOCK / CREDITORS =================
+function getAllSales(){
+  try{
+    if(Array.isArray(window.sales) && window.sales.length) return window.sales;
+    const x=JSON.parse(localStorage.getItem('sales')||'[]');
+    return Array.isArray(x)?x:[];
+  }catch(e){ return []; }
+}
+function money(n){ return '₹'+Number(n||0).toFixed(2); }
+function esc(v){ return String(v??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function openReportPage(id){
+  closeDrawer();
+  ['salesPage','itemPage','stockPage','creditorsPage','profitPage','duePage'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.classList.add('hidden');
+  });
+  const el=document.getElementById(id); if(el) el.classList.remove('hidden');
+  if(id==='salesPage') renderSalesReport();
+  if(id==='itemPage') renderItemReport();
+  if(id==='stockPage') renderStockReport();
+  if(id==='creditorsPage') renderCreditorsReport();
+  if(id==='profitPage') renderProfitReport();
+  if(id==='duePage') loadDueList();
+}
+window.openPage = openReportPage;
+function renderSalesReport(){
+  const c=document.getElementById('salesReportContainer'); if(!c) return;
+  const bills=getAllSales();
+  let total=0,cash=0,online=0,due=0,paid=0;
+  bills.forEach(b=>{
+    const t=Number(b.total||0); total+=t;
+    const p=String(b.payment||b.paymentType||'').toUpperCase();
+    if(p.includes('DUE')) due+=t; else if(p.includes('ONLINE')) online+=t; else cash+=t;
+    if(!p.includes('DUE')) paid+=t;
+  });
+  let html=`<div class="grid grid-cols-2 gap-2 mb-3">
+    <div class="border rounded-xl p-3 bg-blue-50"><div class="text-[11px] text-gray-500">TOTAL BILLS</div><b class="text-xl">${bills.length}</b></div>
+    <div class="border rounded-xl p-3 bg-green-50"><div class="text-[11px] text-gray-500">TOTAL SALES</div><b class="text-xl">${money(total)}</b></div>
+  </div>`;
+  if(!bills.length) html+=`<div class="text-center text-gray-400 mt-10">Koi sale nahi mila</div>`;
+  else html+=bills.slice().sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).map(b=>{
+    const p=String(b.payment||'').toUpperCase();
+    return `<div class="border rounded-xl p-3 mb-2 shadow-sm">
+      <div class="flex justify-between font-bold"><span>Bill No: ${esc(b.billNo??'-')}</span><span>${money(b.total)}</span></div>
+      <div class="text-[13px] mt-1">${esc(b.customer||'Customer')}</div>
+      <div class="text-[11px] text-gray-500">${esc(b.mob||'')} · ${esc(b.date||'')}</div>
+      <div class="text-[11px] mt-1 font-bold ${p.includes('DUE')?'text-red-600':'text-green-600'}">${esc(b.payment||'PAID')}</div>
+    </div>`;
+  }).join('');
+  c.innerHTML=html;
+}
+function renderItemReport(){ const c=document.getElementById('itemReportContainer'); if(!c) return; const map={}; getAllSales().forEach(b=>(b.items||[]).forEach(i=>{ const key=String(i.id||i.name); if(!map[key]) map[key]={name:i.name||'Item',qty:0,amount:0}; map[key].qty += Number(i.qty||0); map[key].amount += Number(i.amount||((i.price||0)*(i.qty||0))); })); const arr=Object.values(map).sort((a,b)=>b.amount-a.amount); const totalQty=arr.reduce((s,x)=>s+x.qty,0), total=arr.reduce((s,x)=>s+x.amount,0); let html=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="border rounded-xl p-3"><div class="text-[11px] text-gray-500">ITEMS SOLD</div><b class="text-xl">${arr.length}</b></div><div class="border rounded-xl p-3"><div class="text-[11px] text-gray-500">TOTAL QTY</div><b class="text-xl">${totalQty}</b></div></div>`; html+=`<div class="border rounded-xl overflow-hidden"><div class="grid grid-cols-[1fr_55px_85px] bg-gray-100 p-2 text-[11px] font-bold"><span>ITEM</span><span>QTY</span><span class="text-right">AMOUNT</span></div>`; html+=arr.length?arr.map(x=>`<div class="grid grid-cols-[1fr_55px_85px] p-3 border-t text-[12px]"><span>${esc(x.name)}</span><span>${x.qty}</span><b class="text-right">${money(x.amount)}</b></div>`).join(''):`<div class="p-6 text-center text-gray-400">Koi item sale nahi hua</div>`; html+=`</div><div class="text-right font-bold mt-3">Total: ${money(total)}</div>`; c.innerHTML=html; }
+async function saveProductData(p){ p.stock=Math.max(0,Number(p.stock||0)); p.costPrice=Math.max(0,Number(p.costPrice||0)); localStorage.setItem('products',JSON.stringify(products)); window.products=products; if(window.firebaseUpdateProduct){ try{ await window.firebaseUpdateProduct(p); }catch(e){ console.error(e); } } }
+function renderStockReport(){ const c=document.getElementById('stockReportContainer'); if(!c) return; let arr=Array.isArray(products)?products:[]; const totalStock=arr.reduce((s,p)=>s+Number(p.stock||0),0); let html=`<div class="border rounded-xl p-3 mb-3 bg-blue-50"><div class="text-[11px] text-gray-500">TOTAL PRODUCTS</div><b class="text-xl">${arr.length}</b><span class="text-[12px] ml-3">Total Stock Qty: <b>${totalStock}</b></span></div>`; if(!arr.length){ c.innerHTML=html+'<div class="text-center text-gray-400 mt-10">Koi product nahi mila</div>'; return; } html+=arr.map(p=>`<div class="border rounded-xl p-3 mb-2"><div class="flex gap-2"><div class="flex-1"><b>${esc(p.name)}</b><div class="text-[11px] text-gray-500">Sale: ${money(p.price)} · Cost: ${money(p.costPrice||0)}</div></div><div class="text-right"><div class="text-[10px] text-gray-500">STOCK</div><b>${Number(p.stock||0)}</b></div></div></div>`).join(''); c.innerHTML=html; }
+function renderCreditorsReport(){ const c=document.getElementById('creditorsReportContainer'); if(!c) return; const due=getAllSales().filter(b=>String(b.payment||b.paymentType||'').toUpperCase().includes('DUE') || Number(b.due||0)>0); const total=due.reduce((s,b)=>s+Number(b.due||b.total||0),0); let html=`<div class="border rounded-xl p-3 mb-3 bg-red-50"><div class="text-[11px] text-gray-500">TOTAL CREDIT / DUE</div><b class="text-2xl text-red-600">${money(total)}</b><span class="text-[12px] ml-3">Bills: ${due.length}</span></div>`; if(!due.length){ c.innerHTML=html+'<div class="text-center text-gray-400 mt-10">Koi creditor / due nahi hai</div>'; return; } html+=due.map(b=>`<div class="border rounded-xl p-3 mb-2"><div class="flex justify-between font-bold"><span>Bill No: ${esc(b.billNo??'-')}</span><span class="text-red-600">${money(b.due||b.total)}</span></div></div>`).join(''); c.innerHTML=html; }
+function renderProfitReport(){ const c=document.getElementById('profitReportContainer'); if(!c) return; let sales=0,cost=0,qty=0; getAllSales().forEach(b=>(b.items||[]).forEach(i=>{ const p=products.find(x=>String(x.id)===String(i.id)); const q=Number(i.qty||0), saleAmt=Number(i.amount||((i.price||0)*q)); sales+=saleAmt; qty+=q; if(p && Number(p.costPrice||0)>0) cost+=Number(p.costPrice)*q; })); const profit=sales-cost; c.innerHTML=`<div class="grid grid-cols-2 gap-2"><div class="border rounded-xl p-4 bg-blue-50"><div class="text-[11px] text-gray-500">SALES</div><b class="text-xl">${money(sales)}</b></div><div class="border rounded-xl p-4 bg-orange-50"><div class="text-[11px] text-gray-500">COST</div><b class="text-xl">${money(cost)}</b></div><div class="border rounded-xl p-4 ${profit>=0?'bg-green-50':'bg-red-50'}"><div class="text-[11px] text-gray-500">PROFIT</div><b class="text-2xl ${profit>=0?'text-green-600':'text-red-600'}">${money(profit)}</b></div></div>`; }
+window.refreshAllReports=function(){ if(!document.getElementById('salesPage')?.classList.contains('hidden')) renderSalesReport(); if(!document.getElementById('itemPage')?.classList.contains('hidden')) renderItemReport(); };
+</script>
+<script>
+const ov = document.getElementById('drawerOverlay');
+if(ov){ ov.onclick = () => { closeDrawer(); }; }
+</script>
+</body>
+</html>
