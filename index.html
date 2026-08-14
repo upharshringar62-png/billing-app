@@ -784,7 +784,12 @@ window.deleteProduct = async (id) => {
   if(!p){ alert('Product nahi mila'); return; }
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
   try {
-    if(p.firebaseId){ await deleteDoc(doc(db, "products", p.firebaseId)); }
+    if(p.firebaseId){ 
+  // Pehle backup collection me daalo
+  try{ await addDoc(collection(db, "deleted_products"), {...p, deletedAt: Date.now()}); }catch(e){}
+  // Fir main collection se delete
+  await deleteDoc(doc(db, "products", p.firebaseId)); 
+}
     window.products = window.products.filter(x => String(x.firebaseId) !== String(id) && String(x.id) !== String(id));
     products = window.products; localStorage.setItem('products', JSON.stringify(products));
     if(typeof cart !== 'undefined'){ delete cart[p.id]; }
