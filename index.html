@@ -590,55 +590,92 @@ async function saveUpdatedProduct(){
   }
 }
 // FINAL LOCK - Image kabhi delete nahi hoga, app delete pe bhi wapas aayega
-window.addProductWithCategory = async () => {
-  let catName = categories.find(c=>c.id==selectedCat)?.name || 'All';
-  let name = prompt(`Product Name (${catName}):`);
-  if(!name) return;
-  let price = Number(prompt('Price:') || 0);
-  let costPrice = Number(prompt('Cost Price:') || 0);
-  let stock = Number(prompt('Stock:') || 0);
-  
+// === NAYA PRODUCT ADD - SIRF NAME SE SAVE HOGA ===
+let tempProductImage = '';
+
+window.openProductModal = function(){
+  const catName = categories.find(c=>c.id==selectedCat)?.name || 'All';
+  const el = document.getElementById('modalCategoryName');
+  if(el) el.value = catName;
+  document.getElementById('productModal').classList.remove('hidden');
+  setTimeout(()=>{ document.getElementById('modalProductName').focus(); },100);
+}
+
+window.closeProductModal = function(){
+  document.getElementById('productModal').classList.add('hidden');
+  document.getElementById('modalProductName').value = '';
+  document.getElementById('modalMRP').value = '';
+  document.getElementById('modalDiscount').value = '';
+  document.getElementById('modalSalePrice').value = '';
+  document.getElementById('modalStock').value = '';
+  document.getElementById('modalCost').value = '';
+  const prev = document.getElementById('modalImagePreview');
+  if(prev) prev.innerHTML = '<div class="text-4xl">🖼️</div>';
+  tempProductImage = '';
+}
+
+window.handleModalImage = function(input){
+  if(input.files && input.files[0]){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      tempProductImage = e.target.result;
+      document.getElementById('modalImagePreview').innerHTML = '<img src="'+tempProductImage+'" class="w-full h-full object-cover rounded-xl">';
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+window.saveProductFromModal = async function(){
+  let name = document.getElementById('modalProductName').value.trim();
+  if(!name){ alert('Product name likho'); return; } // BAS NAME SE SAVE
+
+  let mrp = Number(document.getElementById('modalMRP').value || 0);
+  let discount = Number(document.getElementById('modalDiscount').value || 0);
+  let salePrice = Number(document.getElementById('modalSalePrice').value || 0);
+  let stock = Number(document.getElementById('modalStock').value || 0);
+  let costPrice = Number(document.getElementById('modalCost').value || 0);
+
+  if(!salePrice && mrp){ salePrice = mrp - (mrp * discount / 100); }
+  if(!salePrice) salePrice = mrp || 0;
+
   let p = {
     id: Date.now().toString(),
-    name: name.trim(),
-    price: price,
+    name: name,
+    price: salePrice,
+    mrp: mrp,
+    discount: discount,
     costPrice: costPrice,
     stock: stock,
-    image: '',
-    img: '',
-    categoryId: selectedCat
+    image: tempProductImage || '',
+    img: tempProductImage || '',
+    categoryId: selectedCat,
+    cat: selectedCat,
+    createdAt: Date.now()
   };
-  
-  // Firebase me image ke saath save
+
   try{
     const { getFirestore, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const { getApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
     const db = getFirestore(getApp());
     const prodCol = collection(db, "products");
-    let docRef = await addDoc(prodCol, {
-      id: p.id,
-      name: p.name,
-      price: Number(p.price||0),
-      costPrice: Number(p.costPrice||0),
-      stock: Number(p.stock||0),
-      image: p.image || '',
-      img: p.image || '',
-      categoryId: p.categoryId,
-      createdAt: Date.now()
-    });
+    let docRef = await addDoc(prodCol, p);
     p.firebaseId = docRef.id;
   }catch(e){ console.log(e); }
-  
+
   products.push(p);
-  localStorage.setItem('products', JSON.stringify(products));
-  if(window.firebaseAddCategory) {}
+  window.products = products;
+  syncData();
   renderProducts();
-  alert('Product add ho gaya! Ab ispe click karke photo daal de - photo Firebase me save hogi!');
-};
-function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
+  closeProductModal();
+  alert('Product "'+name+'" save ho gaya ✅');
+}
+
+window.addProductWithCategory = () => { openProductModal(); }
+function addItemDirect(){ openProductModal(); }
+function addNewItemInCat(){ openProductModal(); }
+
 const fab = document.getElementById('addProductFab');
-if(fab){ fab.onclick = ()=>{ addProductWithCategory(); }; }
-function addNewItemInCat(){ addItemDirect(); }
+if(fab){ fab.onclick = ()=>{ openProductModal(); }; }
 document.getElementById('newCatBtn').onclick = async ()=>{ let name = prompt('New Category name likho:'); name = (name || '').trim(); if(!name) return; const id = Date.now().toString(); const cat = {id, name}; categories.push(cat); syncData(); renderCategories(); if(window.firebaseAddCategory){ try { await window.firebaseAddCategory(cat); } catch(e){ console.error(e); alert('Category local me save hui, Firebase save nahi hui: '+e.message); } } };
 document.getElementById('drawerOverlay').onclick = closeDrawer;
 document.getElementById('searchInput').addEventListener('input', (e)=>{ searchText = e.target.value; renderProducts(); });
@@ -1124,5 +1161,24 @@ if(origNewCatBtn){
 }
 setFbStatus("Connecting Firebase...", false);
 </script>
+ <div id="productModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center">
+  <div class="bg-white w-full sm:max-w-[420px] rounded-t-[20px] sm:rounded-2xl p-4 max-h-[90vh] overflow-y-auto">
+    <div class="bg-[#2e3ae8] -m-4 mb-4 p-4 rounded-t-[20px] flex justify-between items-center text-white">
+      <h2 class="font-bold text-[18px]">+ Product Add</h2>
+      <button onclick="closeProductModal()" class="w-8 h-8 bg-white/20 rounded-full">✕</button>
+    </div>
+    <div onclick="document.getElementById('modalImageInput').click()" id="modalImagePreview" class="w-32 h-32 mx-auto border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer mb-3 bg-gray-50"><div class="text-4xl">🖼️</div></div>
+    <input type="file" id="modalImageInput" accept="image/*" class="hidden" onchange="handleModalImage(this)">
+    <button onclick="document.getElementById('modalImageInput').click()" class="mx-auto block mb-4 px-4 py-1 bg-blue-50 text-blue-700 rounded-full text-[12px] font-bold">📷 PHOTO UPLOAD</button>
+    <p class="text-[11px] text-center text-gray-400 mb-3">Photo optional hai</p>
+    <input id="modalProductName" type="text" placeholder="Product Name *" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px]">
+    <div class="flex gap-2 mb-3"><input id="modalMRP" type="number" placeholder="MRP" class="flex-1 border rounded-xl px-4 py-3 text-[14px]"><input id="modalDiscount" type="number" placeholder="Discount %" class="flex-1 border rounded-xl px-4 py-3 text-[14px]"></div>
+    <input id="modalSalePrice" type="number" placeholder="Sale Price" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px]">
+    <input id="modalCategoryName" type="text" disabled class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px] bg-gray-100">
+    <div class="flex gap-2 mb-4"><input id="modalStock" type="number" placeholder="Stock" value="0" class="flex-1 border rounded-xl px-4 py-3"><input id="modalCost" type="number" placeholder="Cost" value="0" class="flex-1 border rounded-xl px-4 py-3"></div>
+    <button onclick="saveProductFromModal()" class="w-full bg-[#2e3ae8] text-white rounded-xl py-3 font-bold">💾 SAVE PRODUCT</button>
+    <p class="text-[10px] text-center text-gray-400 mt-2">Sirf Product Name se bhi save hoga</p>
+  </div>
+ </div>
 </body>
 </html>
