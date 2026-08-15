@@ -589,14 +589,22 @@ async function saveUpdatedProduct(){
     closeEditModal(); renderProducts();
   }
 }
-// FINAL LOCK - Image kabhi delete nahi hoga, app delete pe bhi wapas aayega
-// === NAYA PRODUCT ADD - SIRF NAME SE SAVE HOGA ===
-let tempProductImage = '';
-
-window.openProductModal = function(){
-  const catName = categories.find(c=>c.id==selectedCat)?.name || 'All';
-  const el = document.getElementById('modalCategoryName');
-  if(el) el.value = catName;
+window.openProductModal = function(prefCatId){
+  // Category dropdown bharo
+  const sel = document.getElementById('modalCategorySelect');
+  if(sel){
+    sel.innerHTML = '';
+    categories.forEach(c=>{
+      if(c.id==='all') return;
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      // Agar left se koi category select hai ya NEW ITEM se aaye ho
+      let targetCat = prefCatId || selectedCat;
+      if(String(c.id)===String(targetCat)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
   document.getElementById('productModal').classList.remove('hidden');
   setTimeout(()=>{ document.getElementById('modalProductName').focus(); },100);
 }
@@ -1174,7 +1182,9 @@ setFbStatus("Connecting Firebase...", false);
     <input id="modalProductName" type="text" placeholder="Product Name *" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px]">
     <div class="flex gap-2 mb-3"><input id="modalMRP" type="number" placeholder="MRP" class="flex-1 border rounded-xl px-4 py-3 text-[14px]"><input id="modalDiscount" type="number" placeholder="Discount %" class="flex-1 border rounded-xl px-4 py-3 text-[14px]"></div>
     <input id="modalSalePrice" type="number" placeholder="Sale Price" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px]">
-    <input id="modalCategoryName" type="text" disabled class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px] bg-gray-100">
+<select id="modalCategorySelect" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px] bg-white">
+  <option value="">Category Select Karo</option>
+</select>
     <div class="flex gap-2 mb-4"><input id="modalStock" type="number" placeholder="Stock" value="0" class="flex-1 border rounded-xl px-4 py-3"><input id="modalCost" type="number" placeholder="Cost" value="0" class="flex-1 border rounded-xl px-4 py-3"></div>
     <button onclick="saveProductFromModal()" class="w-full bg-[#2e3ae8] text-white rounded-xl py-3 font-bold">💾 SAVE PRODUCT</button>
     <p class="text-[10px] text-center text-gray-400 mt-2">Sirf Product Name se bhi save hoga</p>
