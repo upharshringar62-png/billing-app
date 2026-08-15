@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>UPHAR Billing</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f2f3f7}
+.product{background:#fff;border-radius:14px;padding:8px;box-shadow:0 1px 4px #0001}
+.product img{width:100%;height:120px;object-fit:contain;background:#f7f7fb;border-radius:10px}
+</style>
+</head>
+<body>
+
+<div id="sideMenu" class="hidden fixed inset-0 z-40">
+  <div id="menuOverlay" class="absolute inset-0 bg-black/50"></div>
+  <div class="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl animate-slide p-4">
+    <div class="flex justify-between items-center mb-6">
+      <b class="text-lg">UPHAR MENU</b>
+      <button id="closeMenu" class="text-2xl">✕</button>
+    </div>
+    <button class="menuItem w-full text-left py-3 px-3 border-b" data-go="newBill">🧾 NEW BILL</button>
+    <button class="menuItem w-full text-left py-3 px-3 border-b" data-go="report">📊 REPORT / SALES</button>
+    <button class="menuItem w-full text-left py-3 px-3 border-b" data-go="party">👥 PARTY / CUSTOMERS</button>
+    <button class="menuItem w-full text-left py-3 px-3 border-b" data-go="settings">⚙️ SETTINGS</button>
+    <button class="menuItem w-full text-left py-3 px-3 border-b" data-go="clearCache">🗑️ Clear Cache (Quota Fix)</button>
+    <div class="mt-6 p-3 bg-blue-50 rounded-xl text-xs">
+      <div>Firebase: <span id="menuStatus">Checking...</span></div>
+      <div>Products: <span id="menuCount">0</span></div>
+    </div>
+  </div>
+</div>
+
+<header class="h-14 bg-[#303be8] text-white flex items-center justify-between px-3 sticky top-0 z-20">
+<button id="menuBtn" class="text-3xl">☰</button>
+<b>UPHAR SINGHAR & GIFTS</b>
+<button id="refreshBtn" class="bg-green-500 px-4 py-2 rounded-full font-bold">↻</button>
+</header>
+
+<div class="flex" style="height:calc(100vh - 56px)">
+<aside class="w-36 bg-white border-r overflow-y-auto">
+<button id="newCat" class="m-2 w-[calc(100%-16px)] bg-[#303be8] text-white rounded-full py-2 font-bold text-xs">+ NEW CATEGORY</button>
+<div id="cats"></div>
+</aside>
+
+<main class="flex-1 min-w-0 flex flex-col">
+<div class="bg-white p-2 border-b">
+<input id="search" class="w-full h-11 rounded-full bg-[#f5f6ff] px-4 outline-none" placeholder="🔍 Search item...">
+</div>
+<div id="status" class="text-xs px-3 py-2 text-gray-500 bg-white">Connecting Firebase...</div>
+<div id="grid" class="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 content-start"></div>
+</main>
+</div>
+
+<div id="addModal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+<div class="bg-white rounded-2xl p-5 w-full max-w-sm">
+<h2 class="font-bold text-lg mb-3">NEW PRODUCT</h2>
+<input id="pName" class="w-full border rounded-lg p-3 mb-2" placeholder="Product name">
+<input id="pPrice" type="number" class="w-full border rounded-lg p-3 mb-2" placeholder="Sale price">
+<input id="pCost" type="number" class="w-full border rounded-lg p-3 mb-2" placeholder="Cost price">
+<input id="pStock" type="number" class="w-full border rounded-lg p-3 mb-2" placeholder="Stock">
+<input id="pImage" type="file" accept="image/*" class="w-full text-sm mb-3">
+<div class="flex gap-2">
+<button id="cancelAdd" class="flex-1 border rounded-lg py-3">CANCEL</button>
+<button id="saveAdd" class="flex-1 bg-[#303be8] text-white rounded-lg py-3 font-bold">SAVE</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {getFirestore,collection,addDoc,doc,deleteDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
+authDomain:"upharshringar-billing-5f4c9.firebaseapp.com",
+projectId:"upharshringar-billing-5f4c9",
+storageBucket:"upharshringar-billing-5f4c9.firebasestorage.app",
+messagingSenderId:"1070290998158",
+appId:"1:1070290998158:web:33792d0bbc4a719e6c8adf"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const productsRef=collection(db,"products");
+const catsRef=collection(db,"categories");
+
+let products=[];
+let categories=[{id:"all",name:"All Items"}];
+let selectedCat="all";
+let searchText="";
+
+const $=id=>document.getElementById(id);
+
+function status(t,ok=false){
+  $("status").textContent=t;
+  $("status").className=ok
+    ?"text-xs px-3 py-2 text-green-700 bg-green-50"
+    :"text-xs px-3 py-2 text-red-700 bg-red-50";
+}
+
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function renderCats(){
+  $("cats").innerHTML="";
+  categories.forEach(c=>{
+    const row=document.createElement("div");
+    row.className="w-full flex items-center justify-between px-3 py-4 border-b text-sm hover:bg-gray-50";
+    const b=document.createElement("button");
+    b.className="flex-1 text-left";
+    b.textContent=c.name;
+    b.onclick=()=>{selectedCat=c.id;document.querySelectorAll('#cats button').forEach(x=>x.classList.remove('font-bold','bg-blue-50')); b.classList.add('font-bold','bg-blue-50'); renderProducts();};
+    if(c.id===selectedCat) b.classList.add('font-bold','bg-blue-50');
+    row.appendChild(b);
+    if(c.id!=='all'){
+      const dots=document.createElement("button");
+      dots.textContent="⋮"; dots.className="px-2 text-xl font-bold";
+      dots.onclick=async(e)=>{
+        e.stopPropagation();
+        if(confirm(`Category "${c.name}" delete karna hai? Iske products bhi hide ho jayenge.`)){
+          try{ if(c.firebaseId) await deleteDoc(doc(db,"categories",c.firebaseId)); }catch(err){ alert(err.message); }
+        }
+      };
+      row.appendChild(dots);
+    }
+    $("cats").appendChild(row);
+  });
+}
+
+function renderProducts(){
+  const grid=$("grid");
+  grid.innerHTML="";
+
+  const list=products.filter(p=>{
+    if(selectedCat!=="all" && String(p.categoryId)!==String(selectedCat)) return false;
+    return !searchText || String(p.name||"").toLowerCase().includes(searchText.toLowerCase());
+  });
+
+  list.forEach(p=>{
+    const d=document.createElement("div");
+    d.className="product";
+
+    const img=p.image||p.img;
+
+    d.innerHTML=`
+      <div class="flex justify-between mb-2">
+        <b>₹${Number(p.price||0)}</b>
+        <span>Stock ${Number(p.stock||0)}</span>
+      </div>
+      ${img
+        ? `<img src="${img}" alt="">`
+        : `<div class="h-[120px] rounded-lg bg-gray-100 flex items-center justify-center text-4xl">🖼️</div>`}
+      <div class="font-bold text-center mt-2">${escapeHtml(p.name||"")}</div>
+      <button class="delete w-full mt-2 border border-red-300 text-red-600 rounded py-1 text-xs">DELETE</button>
+    `;
+
+    d.querySelector(".delete").onclick=async()=>{
+      if(!confirm(`"${p.name}" delete karna hai?`)) return;
+      const btn=d.querySelector(".delete"); btn.textContent="Deleting..."; btn.disabled=true;
+      try{
+        if(!p.firebaseId){ alert("firebaseId missing - page refresh karo"); return; }
+        await deleteDoc(doc(db,"products",p.firebaseId));
+      }catch(e){
+        alert("Delete error: "+e.code+" - "+e.message);
+        btn.textContent="DELETE"; btn.disabled=false;
+      }
+    };
+
+    grid.appendChild(d);
+  });
+
+  const add=document.createElement("button");
+  add.className="border-2 border-dashed border-blue-400 rounded-xl min-h-[190px] text-blue-600 font-bold";
+  add.innerHTML="<div class='text-5xl'>+</div>NEW ITEM";
+  add.onclick=()=>openAdd();
+  grid.appendChild(add);
+}
+
+function openAdd(){
+  if(selectedCat==="all"){
+    alert("Pehle category select karo.");
+    return;
+  }
+  $("addModal").classList.remove("hidden");
+  $("addModal").classList.add("flex");
+  $("pName").value="";
+  $("pPrice").value="";
+  $("pCost").value="";
+  $("pStock").value="100";
+  $("pImage").value="";
+}
+
+function closeAdd(){
+  $("addModal").classList.add("hidden");
+  $("addModal").classList.remove("flex");
+}
+
+$("cancelAdd").onclick=closeAdd;
+
+let isSaving=false;
+$("saveAdd").onclick=async()=>{
+  if(isSaving) return; // DOUBLE CLICK SE DOUBLE PRODUCT FIX
+  const name=$("pName").value.trim();
+  if(!name){ alert("Product name likho"); return; }
+  const price=Number($("pPrice").value||0);
+  const costPrice=Number($("pCost").value||0);
+  const stock=Number($("pStock").value||0);
+  const file=$("pImage").files[0];
+  isSaving=true; $("saveAdd").disabled=true; $("saveAdd").textContent="SAVING...";
+  try{
+    let image="";
+    if(file){
+      try{ image=await compressImage(file); }catch(imgErr){ console.log("Image compress fail, without image save kar rahe", imgErr); image=""; }
+    }
+    const data={
+      id:Date.now().toString(),
+      name, price, costPrice, stock,
+      categoryId:selectedCat,
+      image, img:image,
+      createdAt:Date.now()
+    };
+    // Firestore me image ke bina check - agar image >800KB to bina image save karo
+    let dataForFirebase = {...data};
+    if(image && image.length > 800000){ dataForFirebase.image=""; dataForFirebase.img=""; console.warn("Image too big, saving without image"); }
+    const ref=await addDoc(productsRef,dataForFirebase);
+    console.log("PRODUCT SAVED:",ref.id);
+    closeAdd();
+  }catch(e){
+    console.error(e);
+    alert("SAVE ERROR:\n"+e.code+" - "+e.message+"\nFirebase Rules check karo");
+  }finally{
+    isSaving=false; $("saveAdd").disabled=false; $("saveAdd").textContent="SAVE";
+  }
+};
+
+function compressImage(file){
+  // 200KB se kam rakho - quota + firebase limit fix
+
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const im=new Image();
+      im.onload=()=>{
+        const max=300;
+        let w=im.width,h=im.height;
+        if(w>h && w>max){ h=Math.round(h*max/w); w=max; }
+        if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
+        const x=c.getContext("2d");
+        x.fillStyle="#fff"; x.fillRect(0,0,w,h); x.drawImage(im,0,0,w,h);
+        // 0.45 quality = ~40-60KB max, firebase safe
+        let dataUrl = c.toDataURL("image/jpeg",0.45);
+        // Agar abhi bhi >200KB hai to aur chhota karo
+        if(dataUrl.length > 180000){
+          const c2=document.createElement("canvas");
+          c2.width=w*0.7; c2.height=h*0.7;
+          c2.getContext("2d").drawImage(c,0,0,c2.width,c2.height);
+          dataUrl = c2.toDataURL("image/jpeg",0.35);
+        }
+        resolve(dataUrl);
+      };
+
+      im.onerror=reject;
+      im.src=r.result;
+    };
+
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+$("newCat").onclick=async()=>{
+  const name=prompt("Category name:");
+  if(!name || !name.trim()) return;
+
+  try{
+    const data={
+      id:Date.now().toString(),
+      name:name.trim(),
+      createdAt:Date.now()
+    };
+
+    await addDoc(catsRef,data);
+  }catch(e){
+    alert("CATEGORY ERROR: "+e.message);
+  }
+};
+
+$("search").oninput=e=>{
+  searchText=e.target.value;
+  renderProducts();
+};
+
+$("refreshBtn").onclick=()=>location.reload();
+
+onSnapshot(
+  catsRef,
+  snap=>{
+    categories=[{id:"all",name:"All Items"}];
+
+    snap.forEach(d=>{
+      categories.push({
+        firebaseId:d.id,
+        ...d.data()
+      });
+    });
+
+    renderCats();
+  },
+  e=>{
+    console.error(e);
+    status("CATEGORY FIREBASE ERROR: "+e.message);
+  }
+);
+
+onSnapshot(
+  productsRef,
+  snap=>{
+    let list=[];
+    snap.forEach(d=>{ list.push({ firebaseId:d.id, ...d.data() }); });
+    // DEDUP FIX - same id wale double hat jayenge
+    const map=new Map();
+    list.forEach(p=>{ const key=String(p.id||p.firebaseId); if(!map.has(key)) map.set(key,p); });
+    products = Array.from(map.values());
+    // Sort by createdAt
+    products.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    renderProducts();
+    status("Firebase OK • "+products.length+" Products", true);
+  },
+  e=>{
+    console.error(e);
+    status("Firebase Error: "+e.code+" - "+e.message, false);
+  }
+);
+
+renderCats();
+renderProducts();
+
+const sideMenu=$("sideMenu");
+$("menuBtn").onclick=()=>{ sideMenu.classList.remove("hidden"); };
+$("closeMenu").onclick=()=>{ sideMenu.classList.add("hidden"); };
+$("menuOverlay").onclick=()=>{ sideMenu.classList.add("hidden"); };
+
+document.querySelectorAll(".menuItem").forEach(btn=>{
+  btn.onclick=()=>{
+    const go=btn.dataset.go;
+    sideMenu.classList.add("hidden");
+    if(go==="newBill"){ alert("New Bill pe already ho"); }
+    if(go==="report"){ alert("Report: Total Products "+products.length+"\nTotal Stock: "+products.reduce((s,p)=>s+Number(p.stock||0),0)); }
+    if(go==="party"){ const name=prompt("Party/Customer Name:"); if(name) localStorage.setItem("party_"+Date.now(), name); alert("Party saved: "+name); }
+    if(go==="settings"){ if(confirm("Firebase Rules check karna hai? Console kholun?")) window.open("https://console.firebase.google.com/project/upharshringar-billing-5f4c9/firestore/rules","_blank"); }
+    if(go==="clearCache"){ if(confirm("Saara local cache clear karna hai? Isse quota error fix hoga")){ localStorage.clear(); location.reload(); } }
+  };
+});
+
+// Update menu status from main status
+const origStatus = window.status;
+window.status = function(t,ok){ 
+  const el=document.getElementById("status");
+  if(el){ el.textContent=t; el.className= ok ? "text-xs px-3 py-2 text-green-700 bg-green-50" : "text-xs px-3 py-2 text-red-700 bg-red-50"; }
+  const ms=document.getElementById("menuStatus"); if(ms) ms.textContent=t;
+  const mc=document.getElementById("menuCount"); if(mc) mc.textContent=products.length;
+};
+
+</script>
+</body>
+</html>
