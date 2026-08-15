@@ -180,6 +180,7 @@ function syncData(){
 let productsForLocal = products.map(p=>({...p, img: '', image: ''}));
 localStorage.setItem('products', JSON.stringify(productsForLocal));
 }
+
 function renderCategories(){
   const el = document.getElementById('catList');
   if(!el) return;
@@ -197,7 +198,6 @@ function renderCategories(){
     el.appendChild(div);
   });
 }
-
 window.deleteCategory = async (id) => {
   let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id));
   if(!c) return;
