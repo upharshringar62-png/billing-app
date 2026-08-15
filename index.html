@@ -851,32 +851,41 @@ onSnapshot(prodCol, (snap)=>{
   // YEH LINE GREEN KAREGA - Firebase OK
   if(typeof setFbStatus==='function') setFbStatus("Firebase OK • "+uniq.length+" Products", true);
 });
-onSnapshot(catCol, (snap)=>{ let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); }); if(list.length >= 0){ const firebaseCats = list; const hasAll = firebaseCats.some(c => String(c.id) === 'all' || c.name === 'All Items'); if(!hasAll) firebaseCats.unshift({id:'all', name:'All Items'}); let merged = [...firebaseCats]; categories.forEach(lc=>{ if(!merged.some(fc=> String(fc.id)===String(lc.id) || fc.name===lc.name )){ if(lc.id!=='all') merged.push(lc); } }); categories = merged; window.categories = categories; localStorage.setItem('categories', JSON.stringify(categories)); if(window.renderCategories) window.renderCategories(); } });
+onSnapshot(catCol, (snap)=>{
+  let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
+  if(list.length >= 0){
+    const firebaseCats = list;
+    const hasAll = firebaseCats.some(c => String(c.id) === 'all' || c.name === 'All Items');
+    if(!hasAll) firebaseCats.unshift({id:'all', name:'All Items'});
+    let merged = [...firebaseCats];
+    categories.forEach(lc=>{ if(!merged.some(fc=> String(fc.id)===String(lc.id) || fc.name===lc.name )){
+      if(lc.id!=='all') merged.push(lc); } });
+    categories = merged; window.categories = merged;
+    localStorage.setItem('categories', JSON.stringify(categories));
+    if(window.renderCategories) window.renderCategories();
+    if(window.renderProducts) window.renderProducts();
+  }
+});
+
 window.deleteProduct = async (id) => {
   const p = window.products.find(x => String(x.firebaseId) === String(id) || String(x.id) === String(id));
   if(!p){ alert('Product nahi mila'); return; }
   if(!confirm(`"${p.name}" delete karna hai?`)) return;
   try {
-    if(p.firebaseId){ 
-  // Pehle backup collection me daalo
-  try{ await addDoc(collection(db, "deleted_products"), {...p, deletedAt: Date.now()}); }catch(e){}
-  // Fir main collection se delete
-  await deleteDoc(doc(db, "products", p.firebaseId)); 
-}
+    if(p.firebaseId){
+      try{ await addDoc(collection(db, "deleted_products"), {...p, deletedAt: Date.now()}); }catch(e){}
+      await deleteDoc(doc(db, "products", p.firebaseId));
+    }
     window.products = window.products.filter(x => String(x.firebaseId) !== String(id) && String(x.id) !== String(id));
-    products = window.products; localStorage.setItem('products', JSON.stringify(products));
+    products = window.products;
+    localStorage.setItem('products', JSON.stringify(products));
     if(typeof cart !== 'undefined'){ delete cart[p.id]; }
-    selectedProductId = null; closeActionModal(); renderProducts(); renderCategories(); updateTotal(); alert('Product Deleted');
-  } catch(e) { alert('Delete error: '+e.message); }
+    selectedProductId = null; closeActionModal();
+    renderProducts(); renderCategories(); updateTotal();
+  } catch(e){ alert('Delete error: '+e.message); }
 };
+
 window.deleteCategory = async (id) => {
-  let c = window.categories.find(x=> String(x.firebaseId)===String(id) || String(x.id)===String(id) );
-  if(!c) return; if(!confirm(`Category "${c.name}" delete karna hai?`)) return;
-  window.categories = window.categories.filter(x=> String(x.firebaseId)!==String(id) && String(x.id)!==String(id));
-  categories = window.categories; localStorage.setItem('categories', JSON.stringify(window.categories));
-  if(window.renderCategories) window.renderCategories(); if(window.renderProducts) window.renderProducts();
-  if(c.firebaseId){ try{ await deleteDoc(doc(db, "categories", c.firebaseId)); }catch(e){ console.log(e); } }
-};
 </script>
 <div id="salesPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
   <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📊 Sales Report</h2><button onclick="closePage('salesPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
