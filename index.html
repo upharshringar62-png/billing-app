@@ -751,7 +751,7 @@ window.firebaseUploadImage = async (base64, id) => {
       let ctx=canvas.getContext('2d');
       ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
       ctx.drawImage(img,0,0,w,h);
-      let smallBase64 = canvas.toDataURL('image/jpeg', 1.0);
+      let smallBase64 = canvas.toDataURL('image/jpeg', 0.40);
       try{ localStorage.setItem('img_'+id, smallBase64); }catch(e){}
       resolve(smallBase64);
     };
@@ -846,7 +846,10 @@ onSnapshot(prodCol, (snap)=>{
   for(let pr of merged){ let key=String(pr.id); if(!seen.has(key)){ seen.set(key,true); uniq.push(pr); } }
 
   window.products=uniq; products=uniq;
-  localStorage.setItem('products', JSON.stringify(uniq));
+  try{
+  let noImg = uniq.map(p=>{ let c={...p}; delete c.image; delete c.img; return c; });
+  localStorage.setItem('products', JSON.stringify(noImg));
+}catch(e){ localStorage.removeItem('products'); }
   if(window.renderProducts) renderProducts();
   // YEH LINE GREEN KAREGA - Firebase OK
   if(typeof setFbStatus==='function') setFbStatus("Firebase OK • "+uniq.length+" Products", true);
