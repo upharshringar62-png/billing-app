@@ -656,8 +656,8 @@ window.saveProductFromModal = async function(){
     stock: stock,
     image: tempProductImage || '',
     img: tempProductImage || '',
-    categoryId: selectedCat,
-    cat: selectedCat,
+    categoryId: document.getElementById('modalCategorySelect')?.value || selectedCat,
+cat: document.getElementById('modalCategorySelect')?.value || selectedCat,
     createdAt: Date.now()
   };
 
@@ -1185,6 +1185,7 @@ setFbStatus("Connecting Firebase...", false);
 <select id="modalCategorySelect" class="w-full border rounded-xl px-4 py-3 mb-3 text-[14px] bg-white">
   <option value="">Category Select Karo</option>
 </select>
+  
     <div class="flex gap-2 mb-4"><input id="modalStock" type="number" placeholder="Stock" value="0" class="flex-1 border rounded-xl px-4 py-3"><input id="modalCost" type="number" placeholder="Cost" value="0" class="flex-1 border rounded-xl px-4 py-3"></div>
     <button onclick="saveProductFromModal()" class="w-full bg-[#2e3ae8] text-white rounded-xl py-3 font-bold">💾 SAVE PRODUCT</button>
     <p class="text-[10px] text-center text-gray-400 mt-2">Sirf Product Name se bhi save hoga</p>
