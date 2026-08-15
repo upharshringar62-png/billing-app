@@ -1114,30 +1114,6 @@ window.firebaseUpdateProduct = async (p)=>{
   }catch(e){ console.error(e); }
 };
 
-onSnapshot(catsRef, snap=>{
-  let newCats=[{id:"all",name:"All Items"}];
-  snap.forEach(d=>{ const data=d.data(); newCats.push({ firebaseId:d.id, id:data.id||d.id, name:data.name,...data }); });
-  categories=newCats; window.categories=newCats;
-  if(typeof renderCategories==='function') renderCategories();
-  const cl=document.getElementById('catList');
-  if(cl){ cl.innerHTML=''; newCats.forEach(c=>{
-    const div=document.createElement('div');
-    div.className='px-3 py-3 border-b flex justify-between items-center cursor-pointer '+(String(selectedCat)===String(c.id)?'bg-blue-50 text-blue-700 font-bold':'');
-    div.innerHTML=`<div><div class="text-[13px] font-medium">${c.name}</div></div>`;
-    div.onclick=()=>{ selectedCat=c.id; renderProducts(); };
-    cl.appendChild(div);
-  });}
-  setFbStatus("Firebase OK • Cats:"+(newCats.length-1), true);
-});
-
-onSnapshot(productsRef, snap=>{
-  let newProducts=[]; snap.forEach(d=>{ newProducts.push({ firebaseId:d.id,...d.data() }); });
-  products=newProducts; window.products=newProducts;
-  try{ localStorage.setItem('products', JSON.stringify(newProducts)); }catch{}
-  if(typeof renderProducts==='function') renderProducts();
-  setFbStatus("Firebase OK • "+newProducts.length+" Products", true);
-});
-
 window.addNewItemInCat = async function(){
   const catId = (typeof selectedCat!=='undefined'?selectedCat:'all');
   if(catId==='all'){ alert("Pehle category select karo"); return; }
