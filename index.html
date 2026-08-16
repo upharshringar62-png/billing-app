@@ -1015,18 +1015,22 @@ window.compressImage = function(file){
     r.onerror=reject; r.readAsDataURL(file);
   });
 }
-
 window.firebaseUpdateProduct = async (p)=>{
   try{
     const prod = (window.products||[]).find(x=>String(x.id)===String(p.id));
     if(prod && prod.firebaseId){
-      await updateDoc(doc(db,"products",prod.firebaseId), {
+      let data = {
         name:p.name, price:Number(p.price||0), costPrice:Number(p.costPrice||0),
-        stock:Number(p.stock||0), cat:p.cat||p.categoryId||'', categoryId:p.categoryId||p.cat||'',
-        img:p.img||p.image||'', image:p.image||p.img||''
-      });
+        stock:Number(p.stock||0), cat:p.cat||p.categoryId||'', categoryId:p.categoryId||p.cat||''
+      };
+      if(p.image && p.image.length>100 && p.image.length<70000){
+        data.img = p.image; data.image = p.image;
+      } else if(p.img && p.img.length>100 && p.img.length<70000){
+        data.img = p.img; data.image = p.img;
+      }
+      await updateDoc(doc(db,"products",prod.firebaseId), data);
     }
-  }catch(e){ console.error(e); }
+  }catch(e){ console.log("skip",e.message); }
 };
 
 onSnapshot(catsRef, snap=>{
