@@ -525,27 +525,10 @@ function chooseProductImage(){
     input.click();
   });
 }
-
-async function saveUpdatedProduct(){
-  let prod = products.find(p => String(p.id) == String(selectedProductId) || String(p.firebaseId) == String(selectedProductId));
-  if(!prod) return;
-  prod.name = document.getElementById('editProductName').value.trim();
-  prod.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
-  const imageInput = document.getElementById('editProductImageInput');
-  try{
-    let update={name:prod.name, price:prod.price};
-    if(imageInput.files && imageInput.files[0]){
-      const image = await compressProductImage(imageInput.files[0]);
-      update.img=image; update.image=image; prod.img=image; prod.image=image;
-    }
-    if(prod.firebaseId){
-      await updateDoc(doc(db,'products',prod.firebaseId), update);
-    } else if(window.firebaseAddProduct){
-      const ref=await window.firebaseAddProduct({...prod,...update}); prod.firebaseId=ref.id;
-    }
-    syncData(); closeEditModal(); renderProducts(); updateTotal(); alert('Product Firebase me save ho gaya ✅');
-  }catch(e){ alert('Upload Error: '+e.message); }
+if(window.firebaseUpdateProduct){
+  await window.firebaseUpdateProduct(prod);
 }
+
 
 async function addProductWithCategory(){
   let catList = categories.map((c,i)=>`${i+1}. ${c.name}`).join('\n');
