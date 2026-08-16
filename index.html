@@ -968,5 +968,121 @@ window.refreshAllReports=function(){ if(!document.getElementById('salesPage')?.c
 const ov = document.getElementById('drawerOverlay');
 if(ov){ ov.onclick = () => { closeDrawer(); }; }
 </script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {getFirestore,collection,addDoc,doc,deleteDoc,onSnapshot,updateDoc,getDocs} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyAFHfi_ahHoYVZfCpyYGxCyU6JMmyL9KMw",
+  authDomain:"upharshringar-billing-5f4c9.firebaseapp.com",
+  projectId:"upharshringar-billing-5f4c9",
+  storageBucket:"upharshringar-billing-5f4c9.firebasestorage.app",
+  messagingSenderId:"1070290998158",
+  appId:"1:1070290998158:web:33792d0bbc4a719e6c8adf"
+};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const productsRef=collection(db,"products");
+const catsRef=collection(db,"categories");
+
+function setFbStatus(t,ok){
+  let el=document.getElementById('firebaseStatus');
+  if(!el){
+    el=document.createElement('span');
+    el.id='firebaseStatus';
+    const h=document.querySelector('header div.flex.items-center.gap-2');
+    if(h) h.prepend(el);
+  }
+  el.textContent=t;
+  el.style.cssText="font-size:10px;padding:4px 8px;border-radius:9999px;margin-left:8px;color:white;background:"+(ok?"#22c55e":"#ef4444");
+}
+
+window.compressImage = function(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const im=new Image();
+      im.onload=()=>{
+        const max=500; let w=im.width,h=im.height;
+        if(w>h && w>max){ h=Math.round(h*max/w); w=max; }
+        if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+        const c=document.createElement("canvas"); c.width=w; c.height=h;
+        const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,w,h); x.drawImage(im,0,0,w,h);
+        resolve(c.toDataURL("image/jpeg",.72));
+      };
+      im.onerror=reject; im.src=r.result;
+    };
+    r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+
+window.firebaseUpdateProduct = async (p)=>{
+  try{
+    const prod = (window.products||[]).find(x=>String(x.id)===String(p.id));
+    if(prod && prod.firebaseId){
+      await updateDoc(doc(db,"products",prod.firebaseId), {
+        name:p.name, price:Number(p.price||0), costPrice:Number(p.costPrice||0),
+        stock:Number(p.stock||0), cat:p.cat||p.categoryId||'', categoryId:p.categoryId||p.cat||'',
+        img:p.img||p.image||'', image:p.image||p.img||''
+      });
+    }
+  }catch(e){ console.error(e); }
+};
+
+onSnapshot(catsRef, snap=>{
+  let newCats=[{id:"all",name:"All Items"}];
+  snap.forEach(d=>{ const data=d.data(); newCats.push({ firebaseId:d.id, id:data.id||d.id, name:data.name,...data }); });
+  categories=newCats; window.categories=newCats;
+  if(typeof renderCategories==='function') renderCategories();
+  const cl=document.getElementById('catList');
+  if(cl){ cl.innerHTML=''; newCats.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='px-3 py-3 border-b flex justify-between items-center cursor-pointer '+(String(selectedCat)===String(c.id)?'bg-blue-50 text-blue-700 font-bold':'');
+    div.innerHTML=`<div><div class="text-[13px] font-medium">${c.name}</div></div>`;
+    div.onclick=()=>{ selectedCat=c.id; renderProducts(); };
+    cl.appendChild(div);
+  });}
+  setFbStatus("Firebase OK • Cats:"+(newCats.length-1), true);
+});
+
+onSnapshot(productsRef, snap=>{
+  let newProducts=[]; snap.forEach(d=>{ newProducts.push({ firebaseId:d.id,...d.data() }); });
+  products=newProducts; window.products=newProducts;
+  try{ localStorage.setItem('products', JSON.stringify(newProducts)); }catch{}
+  if(typeof renderProducts==='function') renderProducts();
+  setFbStatus("Firebase OK • "+newProducts.length+" Products", true);
+});
+
+window.addNewItemInCat = async function(){
+  const catId = (typeof selectedCat!=='undefined'?selectedCat:'all');
+  if(catId==='all'){ alert("Pehle category select karo"); return; }
+  let name=prompt("Product name:"); if(!name||!name.trim()) return;
+  let price=Number(prompt("Sale price:","0")||0);
+  let costPrice=Number(prompt("Cost price:","0")||0);
+  let stock=Number(prompt("Stock:","100")||100);
+  let image=""; const input=document.getElementById('imgInput');
+  if(input && input.files && input.files[0]){ try{ image=await window.compressImage(input.files[0]); }catch{} }
+  try{
+    const data={ id:Date.now().toString(), name:name.trim(), price, costPrice, stock, cat:catId, categoryId:catId, img:image, image:image, createdAt:Date.now() };
+    await addDoc(productsRef, data); alert("Product Firebase me save ho gaya ✅");
+  }catch(e){ alert("Firebase Save Error: "+e.message); }
+};
+
+window.deleteProduct = async function(id){
+  if(!confirm("Product delete karein?")) return;
+  try{
+    const prod=(window.products||[]).find(p=>String(p.id)===String(id));
+    if(prod && prod.firebaseId){ await deleteDoc(doc(db,"products",prod.firebaseId)); }
+  }catch(e){ alert("Delete error: "+e.message); }
+};
+
+const origNewCatBtn=document.getElementById('newCatBtn');
+if(origNewCatBtn){
+  const newBtn=origNewCatBtn.cloneNode(true);
+  origNewCatBtn.parentNode.replaceChild(newBtn, origNewCatBtn);
+  newBtn.onclick=async()=>{ const name=prompt("Category name:"); if(!name||!name.trim()) return; try{ await addDoc(catsRef,{ id:Date.now().toString(), name:name.trim(), createdAt:Date.now() }); }catch(e){ alert("Category Error: "+e.message); } };
+}
+setFbStatus("Connecting Firebase...", false);
+</script> 
 </body>
 </html>
