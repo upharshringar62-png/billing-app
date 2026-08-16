@@ -852,7 +852,7 @@ onSnapshot(prodCol, (snap)=>{
 }catch(e){ localStorage.removeItem('products'); }
   if(window.renderProducts) renderProducts();
   // YEH LINE GREEN KAREGA - Firebase OK
-  if(typeof setFbStatus==='function') setFbStatus("Firebase OK • "+uniq.length+" Products", true);
+  status("Firebase OK • "+uniq.length+" Products", true);
 });
 onSnapshot(catCol, (snap)=>{
   let list = []; snap.forEach(d=>{ let data=d.data(); data.firebaseId=d.id; if(!data.id) data.id=d.id; list.push(data); });
