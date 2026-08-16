@@ -1052,7 +1052,12 @@ onSnapshot(catsRef, snap=>{
 onSnapshot(productsRef, snap=>{
   let newProducts=[]; snap.forEach(d=>{ newProducts.push({ firebaseId:d.id,...d.data() }); });
   products=newProducts; window.products=newProducts;
-  try{ localStorage.setItem('products', JSON.stringify(newProducts)); }catch{}
+  try{ 
+    let safe = newProducts.map(x=>({id:x.id, firebaseId:x.firebaseId, name:x.name, price:x.price, stock:x.stock, costPrice:x.costPrice, categoryId:x.categoryId||x.cat||'', cat:x.cat||x.categoryId||''})); 
+    localStorage.setItem('products', JSON.stringify(safe)); 
+  }catch(e){ 
+    try{ localStorage.removeItem('products'); }catch(e2){} 
+  }
   if(typeof renderProducts==='function') renderProducts();
   setFbStatus("Firebase OK • "+newProducts.length+" Products", true);
 });
