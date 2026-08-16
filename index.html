@@ -1003,12 +1003,12 @@ window.compressImage = function(file){
     r.onload=()=>{
       const im=new Image();
       im.onload=()=>{
-        const max=500; let w=im.width,h=im.height;
+        const max=250; let w=im.width,h=im.height;
         if(w>h && w>max){ h=Math.round(h*max/w); w=max; }
         if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
         const c=document.createElement("canvas"); c.width=w; c.height=h;
         const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,w,h); x.drawImage(im,0,0,w,h);
-        resolve(c.toDataURL("image/jpeg",.72));
+      resolve(c.toDataURL("image/jpeg",0.35));
       };
       im.onerror=reject; im.src=r.result;
     };
