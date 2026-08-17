@@ -1204,12 +1204,28 @@ document.getElementById('addImgInput').onchange=async(e=>{
  document.getElementById('addImgPreview').innerHTML='<img src='+b+' class="w-full h-full object-cover rounded-[16px]">';
 });
 async function saveSingleFormProduct(){
- let n=document.getElementById('addProdName').value.trim(); if(!n){alert('Naam likho');return;}
- let mrp=Number(document.getElementById('addProdMrp').value||0); 
- let sale=Number(document.getElementById('addProdPrice').value||0); 
- let cat=document.getElementById('addProdCat').value||'cream';
- await window.myAddDoc(window.myProductsRef,{id:Date.now().toString(),name:n,price:sale||mrp||0,mrp:mrp,cat:cat,categoryId:cat,img:_addImageBase64,image:_addImageBase64,createdAt:Date.now()});
- document.getElementById('addProductModal').classList.add('hidden');
+ try{
+  let n=document.getElementById('addProdName').value.trim(); 
+  if(!n){alert('Naam likho');return;}
+  let mrp=Number(document.getElementById('addProdMrp').value||0); 
+  let sale=Number(document.getElementById('addProdPrice').value||0); 
+  if(!sale && mrp) sale=mrp;
+  let cat=document.getElementById('addProdCat').value||'cream';
+  if(!cat || cat==='all') cat='cream';
+  let btn=document.querySelector('button[onclick="saveSingleFormProduct()"]');
+  if(btn) btn.textContent='⏳ Saving...';
+  if(!window.myAddDoc || !window.myProductsRef){
+    alert('Firebase load ho raha hai, 2 sec baad try karo!'); 
+    if(btn) btn.textContent='💾 SAVE PRODUCT'; return;
+  }
+  await window.myAddDoc(window.myProductsRef,{
+    id:Date.now().toString(),name:n,price:sale||mrp||0,mrp:mrp,cat:cat,categoryId:cat,
+    stock:Number(document.getElementById('addProdStock')?.value||100),
+    costPrice:0,img:_addImageBase64||'',image:_addImageBase64||'',createdAt:Date.now()
+  });
+  document.getElementById('addProductModal').classList.add('hidden');
+  alert('✅ Saved: '+n);
+ }catch(e){ console.error(e); alert('❌ Error: '+e.message); }
 }
 window.addNewItemInCat = openAddModal;
 window.openAddModal = openAddModal;
