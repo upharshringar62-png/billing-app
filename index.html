@@ -1157,6 +1157,9 @@ if(origNewCatBtn){
 
 setFbStatus("Connecting Firebase...", false);
 console.log("Firebase fixed module loaded - products will now save to Firestore");
+ window.myAddDoc = addDoc;
+window.myProductsRef = productsRef;
+window.myCompress = (typeof compressImage!=='undefined'?compressImage:window.compressImage);
 </script>
 
 
@@ -1200,7 +1203,7 @@ function openAddModal(){
  addProductModal.classList.remove('hidden');
 }
 addImgInput.onchange=async(e)=>{
- let b=await compressImage(e.target.files[0]);
+ let b=await (window.myCompress||window.compressImage)(e.target.files[0]);
  _addImageBase64=b;
  addImgPreview.innerHTML='<img src='+b+' class=w-full h-full object-cover rounded-[16px]>';
 }
@@ -1213,7 +1216,7 @@ async function saveSingleFormProduct(){
  if(!sale && mrp) sale=Math.round(mrp-(mrp*dis/100));
  let cat=addProdCat.value||'cream';
  try{
-  await addDoc(productsRef,{id:Date.now().toString(),name:n,price:sale||mrp||0,mrp,discount:dis,stock:Number(addProdStock.value||100),costPrice:Number(addProdCost.value||0),cat,categoryId:cat,img:_addImageBase64,image:_addImageBase64,createdAt:Date.now()});
+  await window.myAddDoc(window.myProductsRef,{
   addProductModal.classList.add('hidden');
  }catch(e){ alert(e.message); }
 }
