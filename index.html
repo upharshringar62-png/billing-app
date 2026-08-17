@@ -1116,7 +1116,32 @@ onSnapshot(productsRef, snap=>{
 // --- Override Add New Item logic to save to Firebase ---
 // Hook the original addNewItemInCat function if exists
 const origAddNewItem = window.addNewItemInCat;
-window.addNewItemInCat = function(){ openAddModal(); };
+window.addNewItemInCat = async function() {
+  const catId = (typeof selectedCat!== 'undefined'? selectedCat : 'all');
+  if (catId === 'all') { alert("Pehle category select karo"); return; }
+  let name = prompt("Product Name:");
+  if (!name ||!name.trim()) return;
+  let price = Number(prompt("Sale price:", "0") || 0);
+  let costPrice = Number(prompt("Cost price:", "0") || 0);
+  let stock = Number(prompt("Stock:", "100") || 100);
+  let image = "";
+  const input = document.getElementById('imgInput');
+  if (input && input.files && input.files[0]) {
+    try { image = await window.compressImage(input.files[0]); } catch {}
+  }
+  try {
+    const data = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      price, costPrice, stock,
+      cat: catId, categoryId: catId,
+      img: image, image: image,
+      createdAt: Date.now()
+    };
+    const ref = await addDoc(productsRef, data);
+    alert("Product save ho gaya ✅");
+  } catch (e) { alert("Error: " + e.message); }
+};
 
 // --- Override delete to use Firebase ---
 window.deleteProduct = async function(id){
@@ -1172,55 +1197,6 @@ try{
     console.log('Cleared big products cache');
   }
 }catch(e){}
-</script>
- <div id="addProductModal" class="fixed inset-0 bg-black/50 z-[999] hidden flex items-center justify-center p-2">
-<div class="bg-white w-full max-w-[400px] rounded-[20px] max-h-[90vh] overflow-y-auto">
-<div class="bg-[#3f51b5] text-white p-4 flex justify-between rounded-t-[20px]"><b>➕ Product Add</b><button onclick="addProductModal.classList.add('hidden')">✕</button></div>
-<div class="p-4 space-y-3">
-<div id="addImgPreview" class="w-[130px] h-[130px] border-2 border-dashed rounded-[16px] mx-auto flex items-center justify-center bg-gray-50">🖼️</div>
-<input type="file" id="addImgInput" hidden><button onclick="addImgInput.click()" class="mx-auto block bg-[#eef0ff] text-[#3f51b5] px-4 py-2 rounded-full font-bold text-[13px]">📷 PHOTO UPLOAD</button>
-<div class="text-[11px] text-center text-gray-500">Photo auto compress hokar Firebase me save hogi</div>
-<input id="addProdName" placeholder="Product Name *" class="w-full h-12 border rounded-[12px] px-4">
-<div class="grid grid-cols-2 gap-2"><input id="addProdMrp" type="number" placeholder="MRP" class="h-12 border rounded-[12px] px-4"><input id="addProdDiscount" type="number" placeholder="Discount %" class="h-12 border rounded-[12px] px-4"></div>
-<input id="addProdPrice" type="number" placeholder="Sale Price" class="w-full h-12 border rounded-[12px] px-4">
-<select id="addProdCat" class="w-full h-12 border rounded-[12px] px-4 bg-white"></select>
-<div class="grid grid-cols-2 gap-2"><input id="addProdStock" value="100" type="number" class="h-12 border rounded-[12px] px-4"><input id="addProdCost" value="0" type="number" class="h-12 border rounded-[12px] px-4"></div>
-<button onclick="saveSingleFormProduct()" class="w-full bg-[#3f51b5] text-white h-14 rounded-[14px] font-bold">💾 SAVE PRODUCT</button>
-</div></div></div>
-
-<script>
-let _addImageBase64="";
-function openAddModal(){
- let sel=document.getElementById('addProdCat');
- sel.innerHTML='';
- (categories||[]).filter(c=>c.id!=='all').forEach(c=>{
-  let o=document.createElement('option'); o.value=c.id; o.textContent=c.name;
-  if(String(c.id)===String(selectedCat)) o.selected=true;
-  sel.appendChild(o);
- });
- if(!sel.value) sel.value=(categories||[]).filter(c=>c.id!=='all')[0]?.id||'cream';
- addProdName.value=''; addProdMrp.value=''; addProdDiscount.value=''; addProdPrice.value=''; addProdStock.value='100'; addProdCost.value='0'; _addImageBase64=''; addImgPreview.innerHTML='🖼️';
- addProductModal.classList.remove('hidden');
-}
-addImgInput.onchange=async(e)=>{
- let b=await (window.myCompress||window.compressImage)(e.target.files[0]);
- _addImageBase64=b;
- addImgPreview.innerHTML='<img src='+b+' class=w-full h-full object-cover rounded-[16px]>';
-}
-async function saveSingleFormProduct(){
- let n=addProdName.value.trim();
- if(!n){ alert('Naam likho'); return; }
- let mrp=Number(addProdMrp.value||0);
- let dis=Number(addProdDiscount.value||0);
- let sale=Number(addProdPrice.value||0);
- if(!sale && mrp) sale=Math.round(mrp-(mrp*dis/100));
- let cat=addProdCat.value||'cream';
- try{
-  await window.myAddDoc(window.myProductsRef,{
-  addProductModal.classList.add('hidden');
- }catch(e){ alert(e.message); }
-}
-document.getElementById('addProductFab').onclick=openAddModal;
 </script>
 </body>
 
