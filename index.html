@@ -1114,7 +1114,11 @@ onSnapshot(productsRef, snap=>{
   }catch(e){ console.error(e); setFbStatus("PROD ERROR:"+e.message,false); }
 }, e=>{ console.error(e); setFbStatus("PRODUCTS ERROR:"+e.message,false); });
 
-window.addNewItemInCat = function(){ openAddModal(); };
+window.addNewItemInCat = function(){ 
+  let m=document.getElementById('addProductModal');
+  if(m) m.classList.remove('hidden');
+  if(typeof openAddModal==='function') openAddModal();
+};
 
 // --- Override delete to use Firebase ---
 window.deleteProduct = async function(id){
@@ -1201,13 +1205,15 @@ document.getElementById('addImgInput').onchange=async(e=>{
 });
 async function saveSingleFormProduct(){
  let n=document.getElementById('addProdName').value.trim(); if(!n){alert('Naam likho');return;}
- let mrp=Number(document.getElementById('addProdMrp').value||0); let sale=Number(document.getElementById('addProdPrice').value||0);
+ let mrp=Number(document.getElementById('addProdMrp').value||0); 
+ let sale=Number(document.getElementById('addProdPrice').value||0); 
  let cat=document.getElementById('addProdCat').value||'cream';
- await window.myAddDoc(window.myProductsRef,{id:Date.now().toString(),name:n,price:sale||mrp||0,mrp,cat,categoryId:cat,img:_addImageBase64,image:_addImageBase64,createdAt:Date.now()});
+ await window.myAddDoc(window.myProductsRef,{id:Date.now().toString(),name:n,price:sale||mrp||0,mrp:mrp,cat:cat,categoryId:cat,img:_addImageBase64,image:_addImageBase64,createdAt:Date.now()});
  document.getElementById('addProductModal').classList.add('hidden');
 }
+window.addNewItemInCat = openAddModal;
+window.openAddModal = openAddModal;
 let fab=document.getElementById('addProductFab'); if(fab) fab.onclick=openAddModal;
-</script>
 </body>
 
 </html>
