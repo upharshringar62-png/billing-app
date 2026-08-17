@@ -1116,45 +1116,31 @@ onSnapshot(productsRef, snap=>{
 // --- Override Add New Item logic to save to Firebase ---
 // Hook the original addNewItemInCat function if exists
 const origAddNewItem = window.addNewItemInCat;
-window.addNewItemInCat = async function(){
-  const catId = (typeof selectedCat!=='undefined'?selectedCat:'all');
-  if(catId==='all'){
-    alert("Pehle category select karo - left side se");
-    return;
+window.addNewItemInCat = async function() {
+  const catId = (typeof selectedCat!== 'undefined'? selectedCat : 'all');
+  if (catId === 'all') { alert("Pehle category select karo"); return; }
+  let name = prompt("Product Name:");
+  if (!name ||!name.trim()) return;
+  let price = Number(prompt("Sale price:", "0") || 0);
+  let costPrice = Number(prompt("Cost price:", "0") || 0);
+  let stock = Number(prompt("Stock:", "100") || 100);
+  let image = "";
+  const input = document.getElementById('imgInput');
+  if (input && input.files && input.files[0]) {
+    try { image = await window.compressImage(input.files[0]); } catch {}
   }
-  // 1. Naam - sirf ye jaruri
-  let name = prompt("Product Name (sirf naam likho):");
-  if(!name ||!name.trim()) return;
-
-  // 2. Baki sab optional - khali chhod sakte ho
-  let mrp = prompt("MRP (khali chhod sakte ho):","");
-  let price = prompt("Sale Price (khali chhod sakte ho):", mrp||"0");
-  let costPrice = prompt("Cost Price (khali chhod sakte ho):","0");
-  let stock = prompt("Stock (khali chhod sakte ho):","100");
-
-  let image="";
-  const input=document.getElementById('imgInput');
-  if(input && input.files && input.files[0]){
-    try{ image = await window.compressImage(input.files[0]); }catch{}
-  }
-
-  try{
-    const data={
-      id:Date.now().toString(),
-      name:name.trim(),
-      price:Number(price||mrp||0),
-      mrp:Number(mrp||0),
-      costPrice:Number(costPrice||0),
-      stock:Number(stock||0),
-      cat: catId,
-      categoryId: catId,
-      img: image,
-      image: image,
+  try {
+    const data = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      price, costPrice, stock,
+      cat: catId, categoryId: catId,
+      img: image, image: image,
       createdAt: Date.now()
     };
-    await addDoc(productsRef, data);
-    alert("✅ Save ho gaya - "+name);
-  }catch(e){ alert("Error: "+e.message); }
+    const ref = await addDoc(productsRef, data);
+    alert("Product save ho gaya ✅");
+  } catch (e) { alert("Error: " + e.message); }
 };
 
 // --- Override delete to use Firebase ---
