@@ -1175,7 +1175,7 @@ try{
   }
 }catch(e){}
 </script>
- <div id="addProductModal" class="fixed inset-0 bg-black/50 z-[999] hidden flex items-center justify-center p-2">
+ <div id="addProductModal" class="fixed inset-0 bg-black/50 z-[9999] hidden flex items-center justify-center p-2">
 <div class="bg-white w-full max-w-[400px] rounded-[20px] max-h-[90vh] overflow-y-auto">
 <div class="bg-[#3f51b5] text-white p-4 flex justify-between rounded-t-[20px]"><b>➕ Product Add</b><button onclick="document.getElementById('addProductModal').classList.add('hidden')">✕</button></div>
 <div class="p-4 space-y-3">
@@ -1186,50 +1186,45 @@ try{
 <input id="addProdPrice" type="number" placeholder="Sale Price" class="w-full h-12 border rounded-[12px] px-4">
 <select id="addProdCat" class="w-full h-12 border rounded-[12px] px-4 bg-white"></select>
 <div class="grid grid-cols-2 gap-2"><input id="addProdStock" value="100" type="number" class="h-12 border rounded-[12px] px-4"><input id="addProdCost" value="0" type="number" class="h-12 border rounded-[12px] px-4"></div>
-<button onclick="saveSingleFormProduct()" class="w-full bg-[#3f51b5] text-white h-14 rounded-[14px] font-bold">💾 SAVE PRODUCT</button>
+<button id="saveProductBtn" class="w-full bg-[#3f51b5] text-white h-14 rounded-[14px] font-bold">💾 SAVE PRODUCT</button>
 </div></div></div>
+
 <script>
 let _addImageBase64="";
 function openAddModal(){
- let sel=document.getElementById('addProdCat'); sel.innerHTML='';
+ let sel=document.getElementById('addProdCat'); if(!sel) return;
+ sel.innerHTML='';
  let cats=(window.categories||[]).filter(c=>c.id!=='all');
- if(cats.length===0) cats=[{id:'cream',name:'cream'}];
+ if(cats.length===0) cats=[{id:'cream',name:'cream'},{id:'oil',name:'Oil'}];
  cats.forEach(c=>{let o=document.createElement('option');o.value=c.id;o.textContent=c.name;if(String(c.id)===String(window.selectedCat))o.selected=true;sel.appendChild(o);});
- if(!sel.value) sel.value=cats[0].id;
- document.getElementById('addProdName').value=''; _addImageBase64=''; document.getElementById('addImgPreview').innerHTML='🖼️';
  document.getElementById('addProductModal').classList.remove('hidden');
 }
-document.getElementById('addImgInput').onchange=async(e=>{
- let b=await (window.myCompress||window.compressImage)(e.target.files[0]); _addImageBase64=b;
- document.getElementById('addImgPreview').innerHTML='<img src='+b+' class="w-full h-full object-cover rounded-[16px]">';
+window.openAddModal=openAddModal;
+window.addNewItemInCat=openAddModal;
+document.getElementById('addImgInput').addEventListener('change', async(e)=>{
+ let f=e.target.files[0]; if(!f) return;
+ let b=await (window.myCompress||window.compressImage)(f); _addImageBase64=b;
+ document.getElementById('addImgPreview').innerHTML='<img src="'+b+'" class="w-full h-full object-cover rounded-[16px]">';
 });
 async function saveSingleFormProduct(){
-  alert('CLICKED: ' + document.getElementById('addProdName').value);
-  try{
-    let n=document.getElementById('addProdName').value.trim();
-    if(!n){ alert('Naam likho'); return; }
-    let mrp=Number(document.getElementById('addProdMrp').value||0);
-    let sale=Number(document.getElementById('addProdPrice').value||0);
-    let cat=document.getElementById('addProdCat').value||'cream';
-    if(!cat || cat==='all') cat='cream';
-    
-    console.log('myAddDoc', !!window.myAddDoc, 'myProductsRef', !!window.myProductsRef);
-    
-    if(!window.myAddDoc || !window.myProductsRef){
-      alert('Firebase abhi ready nahi hai! 5 sec baad reload karke try karo');
-      return;
-    }
-
-    await window.myAddDoc(window.myProductsRef,{
-      id:Date.now().toString(), name:n, price:sale||mrp||0, mrp:mrp, cat:cat, categoryId:cat,
-      stock:100, img:_addImageBase64||'', image:_addImageBase64||'', createdAt:Date.now()
-    });
-    document.getElementById('addProductModal').classList.add('hidden');
-    alert('✅ SAVE HO GAYA: ' + n);
-  }catch(e){ alert('❌ ERROR: ' + e.message); console.error(e); }
+ alert('SAVE CLICKED: '+document.getElementById('addProdName').value);
+ try{
+  let n=document.getElementById('addProdName').value.trim();
+  if(!n){ alert('Naam likho'); return; }
+  let mrp=Number(document.getElementById('addProdMrp').value||0);
+  let sale=Number(document.getElementById('addProdPrice').value||0);
+  if(!sale) sale=mrp;
+  let cat=document.getElementById('addProdCat').value||'cream';
+  if(!window.myAddDoc ||!window.myProductsRef){ alert('Firebase loading... 3 sec baad try karo. Doc='+!!window.myAddDoc+' Ref='+!!window.myProductsRef); return; }
+  await window.myAddDoc(window.myProductsRef,{id:Date.now().toString(),name:n,price:sale||mrp||0,mrp:mrp,cat:cat,categoryId:cat,stock:100,img:_addImageBase64||'',image:_addImageBase64||'',createdAt:Date.now()});
+  document.getElementById('addProductModal').classList.add('hidden');
+  alert('✅ SAVE HO GAYA: '+n);
+ }catch(e){ alert('❌ Error: '+e.message); console.error(e); }
 }
-window.addNewItemInCat = openAddModal;
-window.openAddModal = openAddModal;
+window.saveSingleFormProduct=saveSingleFormProduct;
+document.getElementById('saveProductBtn').addEventListener('click', saveSingleFormProduct);
+let fab=document.getElementById('addProductFab'); if(fab) fab.onclick=openAddModal;
+</script>
 </body>
 
 </html>
