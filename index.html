@@ -1114,35 +1114,7 @@ onSnapshot(productsRef, snap=>{
   }catch(e){ console.error(e); setFbStatus("PROD ERROR:"+e.message,false); }
 }, e=>{ console.error(e); setFbStatus("PRODUCTS ERROR:"+e.message,false); });
 
-// --- Override Add New Item logic to save to Firebase ---
-// Hook the original addNewItemInCat function if exists
-const origAddNewItem = window.addNewItemInCat;
-window.addNewItemInCat = async function() {
-  const catId = (typeof selectedCat!== 'undefined'? selectedCat : 'all');
-  if (catId === 'all') { alert("Pehle category select karo"); return; }
-  let name = prompt("Product Name:");
-  if (!name ||!name.trim()) return;
-  let price = Number(prompt("Sale price:", "0") || 0);
-  let costPrice = Number(prompt("Cost price:", "0") || 0);
-  let stock = Number(prompt("Stock:", "100") || 100);
-  let image = "";
-  const input = document.getElementById('imgInput');
-  if (input && input.files && input.files[0]) {
-    try { image = await window.compressImage(input.files[0]); } catch {}
-  }
-  try {
-    const data = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      price, costPrice, stock,
-      cat: catId, categoryId: catId,
-      img: image, image: image,
-      createdAt: Date.now()
-    };
-    const ref = await addDoc(productsRef, data);
-    alert("Product save ho gaya ✅");
-  } catch (e) { alert("Error: " + e.message); }
-};
+window.addNewItemInCat = function(){ openAddModal(); };
 
 // --- Override delete to use Firebase ---
 window.deleteProduct = async function(id){
