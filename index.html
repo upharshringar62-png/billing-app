@@ -1229,36 +1229,59 @@ try{
 </div>
 
 <script>
-let _addImageBase64="";
+let _addImageBase64=""; let _currentCatForAdd="all";
+
+// Photo ko 400px pe compress - 11MB -> 120KB banega
+async function compressToSmall(base64){
+  return new Promise(res=>{
+    let img=new Image(); img.onload=()=>{
+      let canvas=document.createElement('canvas');
+      let max=400; let w=img.width, h=img.height;
+      if(w>max||h>max){ if(w>h){h=h*max/w; w=max;} else {w=w*max/h; h=max;} }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      res(canvas.toDataURL('image/jpeg',0.5));
+    }; img.src=base64;
+  });
+}
+
 function openAddModal(){
- document.getElementById('addProductModal').classList.remove('hidden');
- let sel=document.getElementById('addProdUnit'); // unit already
+  _currentCatForAdd = (typeof selectedCat!=='undefined'? selectedCat : window.selectedCat || 'all');
+  if(_currentCatForAdd==='all'){ alert("⚠️ Pehle Oil category select karo, All pe mat raho!"); return; }
+  console.log("Adding in:", _currentCatForAdd);
+  document.getElementById('addProductModal').classList.remove('hidden');
 }
 window.openAddModal=openAddModal;
 window.addNewItemInCat=openAddModal;
-document.getElementById('addImgInput').addEventListener('change', async(e)=>{
- let f=e.target.files[0]; if(!f) return;
- let r=new FileReader(); r.onload=()=>{ _addImageBase64=r.result; document.getElementById('addImgPreview').innerHTML='<img src="'+r.result+'" class="w-full h-full object-cover rounded-[12px]">'; }; r.readAsDataURL(f);
+
+document.getElementById('addImgInput').addEventListener('change', e=>{
+  let f=e.target.files[0]; if(!f) return;
+  let r=new FileReader(); r.onload=async()=>{
+    let small = await compressToSmall(r.result);
+    _addImageBase64=small;
+    document.getElementById('addImgPreview').innerHTML='<img src="'+small+'" class="w-full h-full object-cover rounded-[12px]">';
+  }; r.readAsDataURL(f);
 });
-// Enable Add button only when name & sale price filled
-['addProdName','addProdPrice'].forEach(id=>{document.getElementById(id)?.addEventListener('input',()=>{ let n=document.getElementById('addProdName').value.trim(); let p=document.getElementById('addProdPrice').value; let btn=document.getElementById('saveProductBtn'); if(n&&p){btn.classList.remove('bg-[#c9c9cf]');btn.classList.add('bg-[#4338ff]');}else{btn.classList.add('bg-[#c9c9cf]');btn.classList.remove('bg-[#4338ff]');}})});
+
 async function saveSingleFormProduct(){
  let n=document.getElementById('addProdName').value.trim(); if(!n){alert('Product Name *');return;}
  let sale=Number(document.getElementById('addProdPrice').value||0); if(!sale){alert('Sale Price *');return;}
  let btn=document.getElementById('saveProductBtn'); btn.textContent='Saving...';
+ let finalImg = _addImageBase64;
+ if(finalImg && finalImg.length > 300000){ finalImg = await compressToSmall(finalImg); }
  try{
-  if(!window.myAddDoc||!window.myProductsRef){ alert('Firebase loading, 2 sec baad try karo'); btn.textContent='Add Product'; return; }
   await window.myAddDoc(window.myProductsRef,{
-    id:Date.now().toString(), name:n, sku:document.getElementById('addProdSku').value||'', barcode:document.getElementById('addProdBarcode').value||'',
-    unit:document.getElementById('addProdUnit').value||'PCS', price:sale, mrp:sale, costPrice:Number(document.getElementById('addProdCost').value||0),
-    cat:window.selectedCat||'cream', categoryId:window.selectedCat||'cream', stock:100,
-    expiry:document.getElementById('addProdExpiry').value||'', img:_addImageBase64||'', image:_addImageBase64||'', createdAt:Date.now()
+    id:Date.now().toString(), name:n, price:sale, mrp:sale,
+    cat:_currentCatForAdd, categoryId:_currentCatForAdd, stock:100,
+    img:finalImg||'', image:finalImg||'', createdAt:Date.now()
   });
-  document.getElementById('addProductModal').classList.add('hidden'); alert('✅ '+n+' Saved'); btn.textContent='Add Product';
+  document.getElementById('addProductModal').classList.add('hidden');
+  _addImageBase64=""; alert('✅ '+n+' '+_currentCatForAdd+' me save ho gaya!'); btn.textContent='Add Product';
  }catch(e){ alert('❌ '+e.message); btn.textContent='Add Product'; }
 }
 window.saveSingleFormProduct=saveSingleFormProduct;
 document.getElementById('saveProductBtn').addEventListener('click', saveSingleFormProduct);
+</script>
 </script>
 </body>
 
