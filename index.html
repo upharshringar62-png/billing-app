@@ -1277,17 +1277,17 @@ async function saveSingleFormProduct(){
 }
 window.saveSingleFormProduct=saveSingleFormProduct;
 document.getElementById('saveProductBtn').addEventListener('click', saveSingleFormProduct);
-</script>
- <div id="creditorsPage" style="position:fixed;inset:0;background:#f5f5f7;z-index:99999;display:none;flex-direction:column;">
+<div id="creditorsPage" style="position:fixed;inset:0;background:#f5f5f7;z-index:99999;display:none;flex-direction:column;">
   <div style="background:#4338ff;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
     <h2 style="font-weight:bold;font-size:18px;">💸 Creditors Manage</h2>
     <button onclick="document.getElementById('creditorsPage').style.display='none'" style="background:white;color:black;padding:4px 16px;border-radius:8px;font-weight:bold;">X</button>
   </div>
   <div style="padding:16px;overflow-y:auto;flex:1;">
     <div style="background:white;border-radius:12px;padding:16px;border:1px solid #e5e5e5;display:flex;flex-direction:column;gap:12px;">
-      <div style="font-weight:bold;color:#4338ff;font-size:13px;">BINA BILL KE UDHAR ADD KARO</div>
-      <input id="credCreditorsName" placeholder="Cream Name" style="width:100%;height:48px;border:1px solid #ccc;border-radius:10px;padding:0 16px;">
+      <div style="font-weight:bold;color:#4338ff;font-size:13px;">CREDITORS NAME + AMOUNT + DATE</div>
+      <input id="credCreditorsName" placeholder="Creditors Name" style="width:100%;height:48px;border:1px solid #ccc;border-radius:10px;padding:0 16px;">
       <input id="credAmount" type="number" placeholder="Amount ₹" style="width:100%;height:48px;border:1px solid #ccc;border-radius:10px;padding:0 16px;">
+      <input id="credDate" type="date" style="width:100%;height:48px;border:1px solid #ccc;border-radius:10px;padding:0 16px;">
       <button onclick="addCreditor()" style="width:100%;height:48px;background:#4338ff;color:white;border-radius:10px;font-weight:bold;">+ Add Udhar</button>
     </div>
     <div id="creditorsList" style="margin-top:16px;display:flex;flex-direction:column;gap:8px;"></div>
@@ -1297,18 +1297,23 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
 function getCreds(){ try{return JSON.parse(localStorage.getItem('my_creditors')||'[]')}catch(e){return []} }
 function saveCreds(arr){ localStorage.setItem('my_creditors', JSON.stringify(arr)); }
 function addCreditor(){
-  let n=document.getElementById('credCreamName').value.trim();
+  let n=document.getElementById('credCreditorsName').value.trim();
   let a=document.getElementById('credAmount').value.trim();
+  let d=document.getElementById('credDate').value;
   if(!n||!a){alert('Naam + Amount likho'); return;}
-  let arr=getCreds(); arr.push({id:Date.now(),name:n,amount:a});
-  saveCreds(arr); document.getElementById('credCreamName').value=''; document.getElementById('credAmount').value='';
+  if(!d){ d = new Date().toISOString().split('T')[0]; }
+  let arr=getCreds(); arr.push({id:Date.now(),name:n,amount:a,date:d});
+  saveCreds(arr);
+  document.getElementById('credCreditorsName').value='';
+  document.getElementById('credAmount').value='';
+  document.getElementById('credDate').value='';
   loadCreditorsNew();
 }
 function loadCreditorsNew(){
   let list=document.getElementById('creditorsList'); let arr=getCreds(); let html='';
   arr.forEach(function(c){
     html+='<div style="background:white;padding:14px;border-radius:12px;border:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;">'
-        +'<div><div style="font-weight:bold;font-size:16px;">'+c.name+'</div><div style="color:gray;font-size:14px;">₹'+c.amount+'</div></div>'
+        +'<div><div style="font-weight:bold;font-size:16px;">'+c.name+'</div><div style="color:gray;font-size:13px;">₹'+c.amount+' • '+c.date+'</div></div>'
         +'<button onclick="payCreditorNew('+c.id+')" style="background:#00c853;color:white;padding:8px 20px;border-radius:999px;font-weight:bold;">PAID</button></div>';
   });
   if(!html) html='<p style="text-align:center;padding:40px;color:#999;">Koi udhar nahi ✅</p>';
@@ -1318,18 +1323,10 @@ function payCreditorNew(id){
   if(!confirm('Paid kar du?')) return;
   let arr=getCreds().filter(function(c){return c.id!=id}); saveCreds(arr); loadCreditorsNew();
 }
-function openCreditorsPage(){
-  document.getElementById('creditorsPage').style.display='flex';
-  loadCreditorsNew();
-}
+function openCreditorsPage(){ document.getElementById('creditorsPage').style.display='flex'; loadCreditorsNew(); }
 window.openCreditorsManage=openCreditorsPage;
 window.openCreditorsPage=openCreditorsPage;
-// Menu me jahan bhi Creditors Manage likha hai uspe click se ye khule
-document.addEventListener('click',function(e){
-  if(e.target && e.target.textContent && e.target.textContent.includes('Creditors Manage')){
-    openCreditorsPage();
-  }
-});
+</script>
 </script>
 </body>
 </html>
