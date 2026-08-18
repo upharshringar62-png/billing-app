@@ -1113,32 +1113,6 @@ onSnapshot(productsRef, snap=>{
   }catch(e){ console.error(e); setFbStatus("PROD ERROR:"+e.message,false); }
 }, e=>{ console.error(e); setFbStatus("PRODUCTS ERROR:"+e.message,false); });
 
-// --- Override Add New Item logic to save to Firebase ---
-// Hook the original addNewItemInCat function if exists
-const origAddNewItem = window.addNewItemInCat;
-window.addNewItemInCat = async function() {
-  const catId = (typeof selectedCat!=='undefined'? selectedCat : 'all');
-  if (catId === 'all') { alert("Pehle category select karo"); return; }
-  let name = prompt("Product Name:");
-  if (!name ||!name.trim()) return;
-  let price = Number(prompt("Sale price:", "0") || 0);
-  let costPrice = Number(prompt("Cost price:", "0") || 0);
-  let stock = Number(prompt("Stock:", "100") || 100);
-  try{
-    await window.myAddDoc(window.myProductsRef,{
-      id:Date.now().toString(),
-      name:name.trim(),
-      price:price,
-      costPrice:costPrice,
-      stock:stock,
-      cat:catId,
-      categoryId:catId,
-      createdAt:Date.now()
-    });
-  }catch(e){
-    alert("Product Error: "+e.message);
-  }
-};
 
 // --- Override delete to use Firebase ---
 window.deleteProduct = async function(id){
@@ -1195,6 +1169,96 @@ try{
   }
 }catch(e){}
 
+</script>
+ <!-- NEW ADD PRODUCT FULL PAGE - Photo 1 Jaisa -->
+<div id="addProductModal" class="fixed inset-0 bg-[#f5f5f7] z-[9999] hidden flex flex-col">
+  <!-- Blue Header -->
+  <div class="bg-[#4338ff] text-white h-[86px] flex items-center px-4 gap-4">
+    <button onclick="document.getElementById('addProductModal').classList.add('hidden')" class="text-[30px]">←</button>
+    <div>
+      <div class="text-[26px] font-bold leading-none">Add Product</div>
+      <div class="text-[13px] opacity-80 mt-1">1.0.195 | 7256050678 | 707</div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <!-- Product Image -->
+    <div onclick="document.getElementById('addImgInput').click()" class="bg-white border-2 border-dashed border-[#c5c9e0] rounded-[12px] h-[120px] flex items-center justify-center relative">
+      <div id="addImgPreview" class="w-full h-full flex items-center justify-center">
+        <div class="w-[82px] h-[82px] rounded-full border-[3px] border-[#0d8bf2] flex items-center justify-center text-[#0d8bf2] text-[60px] font-light">+</div>
+      </div>
+      <input type="file" id="addImgInput" hidden accept="image/*">
+    </div>
+    <div class="text-center text-[18px] text-[#666] -mt-2">Product Image</div>
+
+    <input id="addProdName" placeholder="Product Name *" class="w-full h-[60px] bg-white border border-[#e6e6f0] rounded-[12px] px-5 text-[17px] outline-none">
+    <input id="addProdSku" placeholder="SKU Code (optional)" class="w-full h-[60px] bg-white border border-[#e6e6f0] rounded-[12px] px-5 text-[17px] outline-none">
+
+    <div class="flex gap-2 items-center">
+      <input id="addProdBarcode" placeholder="Bar Code (optional)" class="flex-1 h-[60px] bg-white border border-[#e6e6f0] rounded-[12px] px-5 text-[17px] outline-none">
+      <button class="w-[44px] h-[44px] text-[28px]">📷</button>
+    </div>
+
+    <div class="bg-white border border-[#e6e6f0] rounded-[12px] h-[60px] flex items-center px-5 justify-between">
+      <select id="addProdUnit" class="text-[17px] bg-transparent outline-none"><option>Select Unit</option><option>PCS</option><option>KG</option><option>ML</option><option>LTR</option></select>
+      <select id="addProdQtyType" class="font-bold text-[18px] bg-transparent outline-none"><option>QUANTITY</option><option>QUANTITY</option></select>
+    </div>
+
+    <div class="text-[18px] text-[#666] mt-2">Price</div>
+    <div class="grid grid-cols-2 gap-3">
+      <input id="addProdCost" type="number" placeholder="Purchase Pri..." class="h-[60px] bg-white border border-[#e6e6f0] rounded-[12px] px-5 text-[17px] outline-none">
+      <input id="addProdPrice" type="number" placeholder="Sale Price*" class="h-[60px] bg-white border border-[#e6e6f0] rounded-[12px] px-5 text-[17px] outline-none">
+    </div>
+
+    <div class="flex justify-between items-center py-2">
+      <div class="text-[20px] font-medium">Stock Managment</div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="addProdStockToggle" class="sr-only peer"><div class="w-[56px] h-[32px] bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-[28px] after:w-[28px] after:transition-all peer-checked:bg-[#6c6cff]"></div>
+      </label>
+    </div>
+
+    <div class="flex justify-between items-center">
+      <div class="text-[18px] text-[#666]">Expiry Date : <span id="expiryShow">00 00 0000</span></div>
+      <input type="date" id="addProdExpiry" class="hidden" onchange="document.getElementById('expiryShow').textContent=this.value">
+      <button onclick="document.getElementById('addProdExpiry').showPicker()" class="text-[#6c6cff] text-[34px]">📅+</button>
+    </div>
+
+    <button id="saveProductBtn" class="w-full h-[58px] bg-[#c9c9cf] text-white rounded-[10px] text-[20px] mt-4">Add Product</button>
+    <div class="h-[80px]"></div>
+  </div>
+</div>
+
+<script>
+let _addImageBase64="";
+function openAddModal(){
+ document.getElementById('addProductModal').classList.remove('hidden');
+ let sel=document.getElementById('addProdUnit'); // unit already
+}
+window.openAddModal=openAddModal;
+window.addNewItemInCat=openAddModal;
+document.getElementById('addImgInput').addEventListener('change', async(e)=>{
+ let f=e.target.files[0]; if(!f) return;
+ let r=new FileReader(); r.onload=()=>{ _addImageBase64=r.result; document.getElementById('addImgPreview').innerHTML='<img src="'+r.result+'" class="w-full h-full object-cover rounded-[12px]">'; }; r.readAsDataURL(f);
+});
+// Enable Add button only when name & sale price filled
+['addProdName','addProdPrice'].forEach(id=>{document.getElementById(id)?.addEventListener('input',()=>{ let n=document.getElementById('addProdName').value.trim(); let p=document.getElementById('addProdPrice').value; let btn=document.getElementById('saveProductBtn'); if(n&&p){btn.classList.remove('bg-[#c9c9cf]');btn.classList.add('bg-[#4338ff]');}else{btn.classList.add('bg-[#c9c9cf]');btn.classList.remove('bg-[#4338ff]');}})});
+async function saveSingleFormProduct(){
+ let n=document.getElementById('addProdName').value.trim(); if(!n){alert('Product Name *');return;}
+ let sale=Number(document.getElementById('addProdPrice').value||0); if(!sale){alert('Sale Price *');return;}
+ let btn=document.getElementById('saveProductBtn'); btn.textContent='Saving...';
+ try{
+  if(!window.myAddDoc||!window.myProductsRef){ alert('Firebase loading, 2 sec baad try karo'); btn.textContent='Add Product'; return; }
+  await window.myAddDoc(window.myProductsRef,{
+    id:Date.now().toString(), name:n, sku:document.getElementById('addProdSku').value||'', barcode:document.getElementById('addProdBarcode').value||'',
+    unit:document.getElementById('addProdUnit').value||'PCS', price:sale, mrp:sale, costPrice:Number(document.getElementById('addProdCost').value||0),
+    cat:window.selectedCat||'cream', categoryId:window.selectedCat||'cream', stock:100,
+    expiry:document.getElementById('addProdExpiry').value||'', img:_addImageBase64||'', image:_addImageBase64||'', createdAt:Date.now()
+  });
+  document.getElementById('addProductModal').classList.add('hidden'); alert('✅ '+n+' Saved'); btn.textContent='Add Product';
+ }catch(e){ alert('❌ '+e.message); btn.textContent='Add Product'; }
+}
+window.saveSingleFormProduct=saveSingleFormProduct;
+document.getElementById('saveProductBtn').addEventListener('click', saveSingleFormProduct);
 </script>
 </body>
 
