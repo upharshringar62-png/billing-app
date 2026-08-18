@@ -1301,7 +1301,7 @@ function addCreditor(){
   let a=document.getElementById('credAmount').value.trim();
   let d=document.getElementById('credDate').value;
   if(!n||!a){alert('Naam + Amount likho'); return;}
-  if(!d){ d = new Date().toISOString().split('T')[0]; }
+  if(d==""){ d = new Date().toISOString().split('T')[0]; }
   let arr=getCreds(); arr.push({id:Date.now(),name:n,amount:a,date:d});
   saveCreds(arr);
   document.getElementById('credCreditorsName').value='';
@@ -1326,7 +1326,6 @@ function payCreditorNew(id){
 function openCreditorsPage(){ document.getElementById('creditorsPage').style.display='flex'; loadCreditorsNew(); }
 window.openCreditorsManage=openCreditorsPage;
 window.openCreditorsPage=openCreditorsPage;
-</script>
 </script>
 </body>
 </html>
