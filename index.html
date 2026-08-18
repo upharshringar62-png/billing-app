@@ -1114,10 +1114,31 @@ onSnapshot(productsRef, snap=>{
   }catch(e){ console.error(e); setFbStatus("PROD ERROR:"+e.message,false); }
 }, e=>{ console.error(e); setFbStatus("PRODUCTS ERROR:"+e.message,false); });
 
-window.addNewItemInCat = function(){ 
-  let m=document.getElementById('addProductModal');
-  if(m) m.classList.remove('hidden');
-  if(typeof openAddModal==='function') openAddModal();
+// --- Override Add New Item logic to save to Firebase ---
+// Hook the original addNewItemInCat function if exists
+const origAddNewItem = window.addNewItemInCat;
+window.addNewItemInCat = async function() {
+  const catId = (typeof selectedCat!=='undefined'? selectedCat : 'all');
+  if (catId === 'all') { alert("Pehle category select karo"); return; }
+  let name = prompt("Product Name:");
+  if (!name ||!name.trim()) return;
+  let price = Number(prompt("Sale price:", "0") || 0);
+  let costPrice = Number(prompt("Cost price:", "0") || 0);
+  let stock = Number(prompt("Stock:", "100") || 100);
+  try{
+    await window.myAddDoc(window.myProductsRef,{
+      id:Date.now().toString(),
+      name:name.trim(),
+      price:price,
+      costPrice:costPrice,
+      stock:stock,
+      cat:catId,
+      categoryId:catId,
+      createdAt:Date.now()
+    });
+  }catch(e){
+    alert("Product Error: "+e.message);
+  }
 };
 
 // --- Override delete to use Firebase ---
