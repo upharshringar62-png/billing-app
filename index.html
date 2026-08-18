@@ -1278,9 +1278,9 @@ async function saveSingleFormProduct(){
 }
 window.saveSingleFormProduct=saveSingleFormProduct;
 document.getElementById('saveProductBtn').addEventListener('click', saveSingleFormProduct);
+ 
 </script>
-
-<div id="creditorsPage" style="position:fixed;inset:0;background:#f5f5f7;z-index:99999;display:none;flex-direction:column;">
+ <div id="creditorsPage" style="position:fixed;inset:0;background:#f5f5f7;z-index:99999;display:none;flex-direction:column;">
   <div style="background:#4338ff;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
     <h2 style="font-weight:bold;font-size:18px;">💸 Creditors Manage</h2>
     <button onclick="document.getElementById('creditorsPage').style.display='none'" style="background:white;color:black;padding:4px 16px;border-radius:8px;font-weight:bold;">X</button>
@@ -1329,6 +1329,5 @@ function payCreditorNew(id){
 function openCreditorsPage(){ document.getElementById('creditorsPage').style.display='flex'; loadCreditorsNew(); }
 window.openCreditorsManage=openCreditorsPage;
 window.openCreditorsPage=openCreditorsPage;
-</script>
 </body>
 </html>
