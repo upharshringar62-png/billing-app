@@ -1324,7 +1324,7 @@ function loadCreditorsNew(){
 }
 function payCreditorNew(id){
   if(!confirm('Paid kar du?')) return;
-  let arr=getCreds().filter(function(c){return c.id!=id}); saveCreds(arr); loadCreditorsNew();
+  let arr=getCreds().filter(function(c){return c.id!==id}); saveCreds(arr); loadCreditorsNew();
 }
 function openCreditorsPage(){ document.getElementById('creditorsPage').style.display='flex'; loadCreditorsNew(); }
 window.openCreditorsManage=openCreditorsPage;
