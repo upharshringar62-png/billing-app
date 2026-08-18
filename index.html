@@ -828,10 +828,51 @@ window.deleteCategory = async (id) => {
   <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📦 Stock Manage</h2><button onclick="closePage('stockPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
   <div id="stockReportContainer" class="flex-1 overflow-y-auto p-3"></div>
 </div>
-<div id="creditorsPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
-  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">💸 Creditors Manage</h2><button onclick="closePage('creditorsPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
-  <div id="creditorsReportContainer" class="flex-1 overflow-y-auto p-3"></div>
+<div id="creditorsPage" class="fixed inset-0 bg-[#f5f5f7] z-[999] hidden flex flex-col">
+  <div class="bg-[#4338ff] text-white p-4 flex justify-between items-center">
+    <h2 class="font-bold text-[20px]">💸 Creditors Manage</h2>
+    <button onclick="document.getElementById('creditorsPage').classList.add('hidden')" class="bg-white text-black px-4 py-1 rounded font-bold">X</button>
+  </div>
+
+  <div class="p-4 space-y-3 overflow-y-auto flex-1">
+    <div class="bg-white rounded-xl p-4 border shadow-sm space-y-3">
+      <div class="font-bold text-[#4338ff]">Bina Bill Ke Add Karo</div>
+      <input id="credCreamName" placeholder="Cream Name" class="w-full h-[50px] border rounded-lg px-4">
+      <input id="credAmount" type="number" placeholder="Amount ₹" class="w-full h-[50px] border rounded-lg px-4">
+      <button onclick="addCreditor()" class="w-full h-[50px] bg-[#4338ff] text-white rounded-lg font-bold">+ Add Udhar</button>
+    </div>
+    <div id="creditorsList" class="space-y-2">Loading...</div>
+  </div>
 </div>
+<script>
+async function addCreditor(){
+  let n=document.getElementById('credCreamName').value.trim();
+  let a=Number(document.getElementById('credAmount').value);
+  if(!n||!a){alert("Naam + Amount likho"); return;}
+  await window.myAddDoc(window.myCollection(window.myDb,"creditors"),{name:n,amount:a,createdAt:Date.now()});
+  document.getElementById('credCreamName').value=""; document.getElementById('credAmount').value="";
+  loadCreditorsNew();
+}
+async function loadCreditorsNew(){
+  let list=document.getElementById('creditorsList');
+  try{
+    let snap=await window.myGetDocs(window.myCollection(window.myDb,"creditors"));
+    let h=""; snap.forEach(s=>{
+      let d=s.data();
+      h+=`<div class="bg-white p-4 rounded-xl flex justify-between items-center border"><div><div class="font-bold">${d.name}</div><div class="text-gray-600">₹${d.amount}</div></div><button onclick="payCreditorNew('${s.id}')" class="bg-[#00c853] text-white px-6 py-2 rounded-full font-bold">PAID</button></div>`;
+    });
+    list.innerHTML=h||"<p class='text-center py-10 text-gray-400'>Koi udhar nahi ✅</p>";
+  }catch(e){list.innerHTML=e.message;}
+}
+async function payCreditorNew(id){
+  if(!confirm("Paid kar du? Hat jayega!")) return;
+  await window.myDeleteDoc(window.myDoc(window.myDb,"creditors",id));
+  loadCreditorsNew();
+}
+window.addCreditor=addCreditor; window.payCreditorNew=payCreditorNew; window.loadCreditorsNew=loadCreditorsNew;
+function openCreditorsPage(){ document.getElementById('creditorsPage').classList.remove('hidden'); loadCreditorsNew(); }
+window.openCreditorsManage=openCreditorsPage;
+</script>
 <div id="profitPage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
   <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">📈 Profit & Loss</h2><button onclick="closePage('profitPage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
   <div id="profitReportContainer" class="flex-1 overflow-y-auto p-3"></div>
