@@ -209,32 +209,14 @@ function renderCategories(){
 }
 function renderProducts(){
   const grid = document.getElementById('productGrid'); grid.innerHTML = '';
-  let filtered = products.filter(p=>{ if(selectedCat!=='all' && String(p.cat)!==String(selectedCat)) return false; if(searchText && !p.name.toLowerCase().includes(searchText.toLowerCase())) return false; return true; });
- filtered.sort((a,b)=> String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
+  let filtered = products.filter(p=>{ if(selectedCat!=='all' && String(p.cat)!==String(selectedCat)) return false; if(searchText &&!p.name.toLowerCase().includes(searchText.toLowerCase())) return false; return true; });
   filtered.forEach(p=>{
     const qty = cart[p.id] || p.qty || 0;
     const isSelected = qty > 0;
     const card = document.createElement('div');
     card.className = `product-card bg-white rounded-xl p-2 flex flex-col relative ${isSelected?'product-selected':''}`;
-    card.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return;
-      document.querySelectorAll('.product-card').forEach(function(c) {
-        c.classList.remove('product-selected');
-        c.style.removeProperty('background'); c.style.removeProperty('height'); c.style.removeProperty('min-height');
-      });
-      card.classList.add('product-selected');
-      card.style.setProperty('background', '#b9ffbf', 'important');
-      card.style.setProperty('height', '350px', 'important');
-      card.style.setProperty('min-height', '350px', 'important');
-    });
-    card.innerHTML = `<div class="flex justify-between w-full mb-1"><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white">₹ ${p.price}.0</div><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white min-w-[30px] text-center">${qty}</div></div><div class="w-full h-[110px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}</div><div class="mt-2 text-[13px] font-bold text-center min-h-[32px]">${p.name}</div><div class="flex justify-between items-center w-full mt-2"><button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="text-[20px]">⋮</button>${isSelected? `<button onclick="event.stopPropagation(); decQty('${p.id}'); if((cart['${p.id}']||0)<=0) renderProducts();" class="w-6 h-6 border border-black rounded flex items-center justify-center bg-white">✕</button>` : ``}</div>`;
+    card.innerHTML = `<div class="flex justify-between w-full mb-1"><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white">₹ ${p.price}.0</div><div class="border border-dashed rounded-lg px-2 py-1 text-[12px] font-bold bg-white min-w-[30px] text-center">${qty}</div></div><div class="w-full h-[110px] bg-[#f6f7ff] rounded-lg flex items-center justify-center overflow-hidden">${p.img? `<img src="${p.img}" class="w-full h-full object-cover">` : `🖼️`}</div><div class="mt-2 text-[13px] font-bold text-center min-h-[32px]">${p.name}</div><div class="flex justify-between items-center w-full mt-2"><button onclick="event.stopPropagation(); showActionModal('${p.id}')" class="text-[20px]">⋮</button>${isSelected? `<button onclick="event.stopPropagation(); decQty('${p.id}')" class="w-6 h-6 border border-black rounded flex items-center justify-center bg-white">✕</button>` : ``}</div>`;
     card.onclick = () => incQty(p.id);
-    card.onmousedown = () => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-    card.onmouseup = () => clearTimeout(longPressTimer);
-    card.onmouseleave = () => clearTimeout(longPressTimer);
-    card.ontouchstart = (e) => { longPressTimer = setTimeout(()=>showActionModal(p.id), 600); };
-    card.ontouchend = () => clearTimeout(longPressTimer);
-    card.ontouchcancel = () => clearTimeout(longPressTimer);
     grid.appendChild(card);
   });
   const newCard = document.createElement('div');
@@ -242,8 +224,8 @@ function renderProducts(){
   newCard.innerHTML = `<div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-blue-500 text-[32px]">+</div><div class="text-[14px] font-bold mt-3 text-blue-600">NEW ITEM</div>`;
   newCard.onclick = ()=> addNewItemInCat(); grid.appendChild(newCard);
 }
-function incQty(id){ cart[id] = (cart[id]||0) + 1; let prod = products.find(p=>p.id===id); if(prod) prod.qty = cart[id]; syncData(); updateTotal(); renderProducts(); renderPreview(); }
-function decQty(id){ if(!cart[id]) return; cart[id] = cart[id] - 1; if(cart[id]<=0) delete cart[id]; let prod = products.find(p=>p.id===id); if(prod) prod.qty = cart[id]||0; syncData(); updateTotal(); renderProducts(); renderPreview(); }
+function incQty(id){ cart[id] = (cart[id]||0) + 1; let prod = products.find(p=>p.id==id); if(prod) prod.qty = cart[id]; syncData(); updateTotal(); renderProducts(); renderPreview(); }
+function decQty(id){ if(!cart[id]) return; cart[id] = cart[id] - 1; if(cart[id]<=0) delete cart[id]; let prod = products.find(p=>p.id==id); if(prod) prod.qty = cart[id]||0; syncData(); updateTotal(); renderProducts(); renderPreview(); }
 function updateTotal(){ let total = 0; Object.keys(cart).forEach(id=>{ let prod = products.find(p=>p.id===id); if(prod){ total += prod.price * cart[id]; } }); document.getElementById('totalAmt').innerText = '₹'+total.toFixed(1); }
 function handleKOT(){ alert('KOT Printed'); }
 let selectedPaymentMode = 'DUE';
@@ -298,7 +280,7 @@ async function handleRealPrint(){
       let img=new Image();
       img.onload=()=>{
         let canvas=document.createElement('canvas');
-        let w=380; // pehle 250 tha - ab 380 HD
+        let w=280; // pehle 250 tha - ab 380 HD
         let h=Math.round((img.height/img.width)*w);
         if(h>380) { h=380; w=Math.round((img.width/img.height)*h); }
         canvas.width=w; canvas.height=h;
