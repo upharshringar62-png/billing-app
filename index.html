@@ -920,6 +920,14 @@ async function loadDueList(){
     }
        // NUMBER BY NUMBER - 1 monu 200, 2 pinku 170 jaise
     container.innerHTML = `
+   <div style="background:white;padding:12px;border-bottom:2px solid #4338ff;">
+  <div style="font-size:12px;font-weight:bold;margin-bottom:6px;">➕ Due Without Bill - Manual Add</div>
+  <div style="display:flex;gap:6px;">
+    <input id="dueManName" placeholder="Monu jaisa naam" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;">
+    <input id="dueManAmt" type="number" placeholder="200" style="width:80px;padding:10px;border:1px solid #ccc;border-radius:8px;">
+    <button onclick="addDueWithoutBill()" style="background:#4338ff;color:white;padding:10px 14px;border-radius:8px;font-weight:bold;">Add</button>
+  </div>
+</div> 
       <div class="bg-gray-100 grid grid-cols-[35px_1fr_70px_50px] p-2 text-[11px] font-bold border-b rounded-t-lg"><span>No</span><span>Name</span><span>Due</span><span>✓</span></div>
       ${due.map((b, i) => `
       <div class="grid grid-cols-[35px_1fr_70px_50px] items-center p-3 border-b bg-white">
