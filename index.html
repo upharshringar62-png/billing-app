@@ -478,12 +478,43 @@ t += 'Thank You Visit Again!\n';
       let data=enc.encode(t);
       for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,30)); }
       let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
-      let upiString = `upi://pay?pa=${upiId}&am=${subtotal.toFixed(2)}&cu=INR`;
-      let len=upiString.length+3, pL=len&0xFF, pH=(len>>8)&0xFF, c=[];
-      c.push(...[0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08, 0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x30, 0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30]);
-      for(let i=0;i<upiString.length;i++) c.push(upiString.charCodeAt(i));
-      c.push(...[0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]);
-      let qrBytes=new Uint8Array(c);
+            let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
+      let upiString = 'upi://pay?pa='+upiId+'&am='+subtotal.toFixed(2)+'&cu=INR';
+      
+      // --- HD QR AS IMAGE (Logo jaisa HD print hoga) ---
+      async function getQRasImage(text, size=350){
+        return new Promise(async (resolve)=>{
+          // QR ko pehle HD image bana rahe hain
+          let qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&data='+encodeURIComponent(text);
+          let img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = async ()=>{
+            let canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            let ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#FFF"; ctx.fillRect(0,0,size,size);
+            ctx.drawImage(img,0,0,size,size);
+            let base64 = canvas.toDataURL();
+            let bytes = await getLogoBytes(base64);
+            resolve(bytes);
+          };
+          img.onerror = ()=>resolve(null);
+          img.src = qrUrl;
+        });
+      }
+
+      let qrBytes = await getQRasImage(upiString, 350); // 350 = bada HD
+      if(qrBytes){
+        await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01])); // CENTER
+        for(let i=0;i<qrBytes.length;i+=120){
+          await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+120));
+          await new Promise(r=>setTimeout(r,20));
+        }
+      }
+
+      let enc=new TextEncoder();
+      let foot=enc.encode("\nSCAN TO PAY\n\n\n");
+      await btCharacteristic.writeValueWithoutResponse(foot);
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
       for(let i=0;i<qrBytes.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+100)); await new Promise(r=>setTimeout(r,40)); }
       let foot=enc.encode("\nSCAN TO PAY\n\n\n\n");
