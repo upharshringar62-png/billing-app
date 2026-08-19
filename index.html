@@ -897,27 +897,59 @@ window.deleteCategory = async (id) => {
   <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
 </div>
 <script>
-async function loadDueList(){
+function loadDueList(){
   const container = document.getElementById('dueListContainer');
-  container.innerHTML = 'Loading Due from Firebase...';
-  try {
-    let bills = [];
-    if(window.sales && Array.isArray(window.sales) && window.sales.length){
-      bills = window.sales;
-    } else {
-      try {
-        const stored = localStorage.getItem('sales') || localStorage.getItem('bills');
-        bills = stored ? JSON.parse(stored) : [];
-      } catch(e) { bills = []; }
-    }
-    const due = bills.filter(b => {
-      const pay = String(b.payment || b.paymentType || '').toUpperCase().trim();
-      return pay === 'DUE' || pay.includes('DUE') || Number(b.due || 0) > 0;
-    });
-    if(due.length===0){
-      container.innerHTML = '<p class="text-center mt-10">Koi Due nahi mila<br>Total Bills: '+bills.length+'</p>';
-      return;
-    }
+  if(!container) return;
+
+  let bills = [];
+  try{ bills = JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
+  if(window.sales && window.sales.length) bills = window.sales;
+
+  let dueBills = bills.filter(b=>{
+    let p = String(b.payment||b.paymentType||'').toUpperCase();
+    return p.includes('DUE') || Number(b.due||0)>0;
+  });
+
+  let manual = [];
+  try{ manual = JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){}
+
+  let totalDue = dueBills.reduce((s,b)=>s+Number(b.due||b.total||0),0) + manual.reduce((s,m)=>s+Number(m.amount||0),0);
+
+  let html = `
+  <div style="background:white;padding:12px;border-bottom:2px solid #4338ff;">
+    <div style="font-size:12px;font-weight:bold;margin-bottom:6px;">➕ Due Without Bill - Manual Add</div>
+    <div style="display:flex;gap:6px;">
+      <input id="dueManName" placeholder="Name - Monu" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="dueManAmt" type="number" placeholder="200" style="width:80px;padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <button onclick="addDueWithoutBill()" style="background:#4338ff;color:white;padding:10px 14px;border-radius:8px;font-weight:bold;">Add</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:50px 1fr 90px 60px;background:#f5f5f5;padding:12px;font-weight:bold;border-bottom:1px solid #ddd;">
+    <span>No</span><span>Name</span><span>Due</span><span>✓</span>
+  </div>
+  `;
+
+  let allList = [];
+  dueBills.forEach(b=>{ allList.push({type:'bill', name:b.customer||'Customer', due:b.due||b.total||0, billNo:b.billNo||b.id, firebaseId:b.firebaseId}) });
+  manual.forEach((m,i)=>{ allList.push({type:'manual', name:m.name, due:m.amount, idx:i, date:m.date}) });
+
+  if(!allList.length){
+    html += `<div style="text-align:center;padding:30px;color:#999;">Koi Due nahi</div>`;
+  }else{
+    html += allList.map((it,i)=>`
+      <div style="display:grid;grid-template-columns:50px 1fr 90px 60px;padding:12px;border-bottom:1px solid #eee;align-items:center;">
+        <span>${i+1}</span>
+        <div><b>${it.name}</b><div style="font-size:11px;color:#666;">${it.type==='bill'?'Bill:'+it.billNo:'Manual | '+(it.date||'')}</div></div>
+        <span style="color:#e53935;font-weight:bold;font-size:16px;">₹${it.due}</span>
+        <button onclick="${it.type==='bill'?`markDuePaid('${it.firebaseId||''}','${it.billNo}')`:`deleteManualDue(${it.idx})`}" style="background:#4caf50;color:white;width:40px;height:40px;border-radius:50%;font-size:18px;">✓</button>
+      </div>
+    `).join('');
+  }
+
+  html += `<div style="background:#e8f5e9;padding:12px;text-align:center;font-weight:bold;margin-top:8px;">Total Due: ₹${totalDue}</div>`;
+  container.innerHTML = html;
+}
        // NUMBER BY NUMBER - 1 monu 200, 2 pinku 170 jaise
     container.innerHTML = `
    <div style="background:white;padding:12px;border-bottom:2px solid #4338ff;">
