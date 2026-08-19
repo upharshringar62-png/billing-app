@@ -995,7 +995,19 @@ window.deleteManualDue = function(idx){
   localStorage.setItem('manualCreditors', JSON.stringify(m));
   loadDueList();
 };
-function openPage(id){ openReportPage(id); } 
+function openPage(id){ 
+  openReportPage(id); 
+  if(id==='duePage'){ setTimeout(loadDueList,100); }
+}
+function openReportPage(id){
+  closeDrawer();
+  ['salesPage','itemPage','stockPage','creditorsPage','profitPage','duePage'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.classList.add('hidden');
+  });
+  const target=document.getElementById(id);
+  if(target) target.classList.remove('hidden');
+  if(id==='duePage') loadDueList();
+}
 function closePage(id){
   document.getElementById(id).classList.add('hidden');
 }
