@@ -624,18 +624,68 @@ document.getElementById('newCatBtn').onclick = async ()=>{ let name = prompt('Ne
 document.getElementById('drawerOverlay').onclick = closeDrawer;
 document.getElementById('searchInput').addEventListener('input', (e)=>{ searchText = e.target.value; renderProducts(); });
 let btDevice = null; let btServer = null; let btCharacteristic = null;
+let manualDisconnect = false;
+let reconnectTries = 0;
+
+function onBtDisconnected(){
+  document.getElementById('printerStatus').innerText = 'Disconnected - Reconnecting...';
+  document.getElementById('printerStatus').className = 'text-[10px] px-2 py-1 rounded-full bg-yellow-100 text-yellow-700';
+  if(manualDisconnect) return;
+  setTimeout(async ()=>{
+    if(btDevice &&!manualDisconnect){
+      try{
+        btServer = await btDevice.gatt.connect();
+        const services = await btServer.getPrimaryServices();
+        for(let service of services){
+          const chars = await service.getCharacteristics();
+          for(let char of chars){
+            if(char.properties.write || char.properties.writeWithoutResponse){ btCharacteristic = char; break; }
+          }
+          if(btCharacteristic) break;
+        }
+        if(btCharacteristic){
+          document.getElementById('printerStatus').innerText = 'Connected: '+btDevice.name;
+          document.getElementById('printerStatus').className = 'text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700';
+          reconnectTries = 0;
+        }
+      }catch(e){
+        reconnectTries++;
+        if(reconnectTries < 10) onBtDisconnected();
+      }
+    }
+  }, 1500);
+}
+
 async function connectBluetooth(){
   try{
+    manualDisconnect = false;
+    reconnectTries = 0;
     document.getElementById('printerStatus').innerText = 'Connecting...';
     btDevice = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] });
+    btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
     btServer = await btDevice.gatt.connect();
     const services = await btServer.getPrimaryServices();
     for(let service of services){ const chars = await service.getCharacteristics(); for(let char of chars){ if(char.properties.write || char.properties.writeWithoutResponse){ btCharacteristic = char; break; } } if(btCharacteristic) break; }
-    if(btCharacteristic){ document.getElementById('printerStatus').innerText = 'Connected: '+btDevice.name; document.getElementById('printerStatus').className = 'text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700'; document.getElementById('printerName').innerText = btDevice.name; alert('Printer Connected!'); } else { alert('Printer mila par write support nahi'); }
-  }catch(err){ document.getElementById('printerStatus').innerText = 'Disconnected'; alert('Bluetooth Error: '+err.message); }
+    if(btCharacteristic){
+      document.getElementById('printerStatus').innerText = 'Connected: '+btDevice.name;
+      document.getElementById('printerStatus').className = 'text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700';
+      document.getElementById('printerName').innerText = btDevice.name;
+      alert('Printer Connected! Ab back jane pe bhi disconnect nahi hoga!');
+    } else { alert('Printer mila par write support nahi'); }
+  }catch(err){
+    document.getElementById('printerStatus').innerText = 'Disconnected';
+    if(err.name!== 'NotFoundError') alert('Bluetooth Error: '+err.message);
+  }
 }
+
 document.getElementById('printBtn').onclick = ()=>{ handlePreview(); };
 document.getElementById('btConnectBtn').onclick = connectBluetooth;
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && btDevice &&!btDevice.gatt.connected &&!manualDisconnect){
+    onBtDisconnected();
+  }
+});
 let logoInput=document.getElementById('logoInput'); let logoIcon=document.getElementById('logoIcon'); let logoImg=document.getElementById('logoImg');
 if(logoInput){ logoInput.onchange=e=>{ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=()=>{ logoIcon.style.display='none'; logoImg.src=r.result; logoImg.classList.remove('hidden'); localStorage.setItem('shopLogo',r.result); }; r.readAsDataURL(f); }; let s=localStorage.getItem('shopLogo'); if(s){logoIcon.style.display='none';logoImg.src=s;logoImg.classList.remove('hidden');} }
  async function loadProductsFromFirebase(){
