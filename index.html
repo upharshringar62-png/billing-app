@@ -474,8 +474,9 @@ t += 'Thank You Visit Again!\n';
         }
       }
               let enc=new TextEncoder();
-        // Fix for Hindi / clear text - use CP437
-        let data=enc.encode(t);
+// DARK PRINT - Bold + Double Strike
+t = '\x1B\x45\x01' + '\x1B\x47\x01' + t + '\x1B\x47\x00' + '\x1B\x45\x00';
+let data=enc.encode(t);
         for(let i=0;i<data.length;i+=100){ await btCharacteristic.writeValueWithoutResponse(data.slice(i,i+100)); await new Promise(r=>setTimeout(r,10)); }
         
         let upiId = localStorage.getItem('upiId') || '7256050678@ybl';
@@ -502,7 +503,7 @@ t += 'Thank You Visit Again!\n';
           });
         }
 
-        let qrBytes = await getQRasImage(upiString, 350);
+        let qrBytes = await getQRasImage(upiString, 200);
         if(qrBytes){
           await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
           for(let i=0;i<qrBytes.length;i+=120){
