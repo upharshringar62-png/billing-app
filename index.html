@@ -130,7 +130,7 @@
 <button onclick="openPage('salesPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📊 Sales Report</button>
 <button onclick="openPage('itemPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Item-wise Report</button>
 <button onclick="openPage('stockPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📦 Stock Manage</button>
-<button onclick="openPage('expensePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">💸 Creditors Manage</button>
+<button onclick="openCreditorsPage()" class="w-full text-left px-3 py-2.5 rounded text-[13px]">💸 Creditors Manage</button>
 <button onclick="openPage('profitPage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📈 Profit & Loss</button>
 <button onclick="openPage('duePage')" class="w-full text-left px-3 py-2.5 rounded text-[13px]">📋 Due List</button>
   </div><div class="p-3 text-[10px] text-center text-gray-400 border-t">UPHAR SINGHAR & GIFTS v1.0.195</div></div>
@@ -1280,8 +1280,6 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
  
 </script>
  
-<button id="testCreditorsBtn" onclick="openCreditorsPage()" style="position:fixed;bottom:80px;right:16px;background:#4338ff;color:white;padding:12px 20px;border-radius:999px;font-weight:bold;z-index:100000;box-shadow:0 4px 12px rgba(0,0,0,0.3);">💸 Creditors TEST</button>
-
 <div id="creditorsPage" style="position:fixed;inset:0;background:#f5f5f7;z-index:99999;display:none;flex-direction:column;">
   <div style="background:#4338ff;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
     <h2 style="font-weight:bold;font-size:18px;">💸 Creditors Manage</h2>
