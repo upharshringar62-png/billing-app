@@ -969,6 +969,24 @@ window.markDuePaid = async function(firebaseId, billNo){
     alert('Error: '+e.message);
     console.log(e);
   }
+ window.addDueWithoutBill = function(){
+  let n=document.getElementById('dueManName').value.trim();
+  let a=Number(document.getElementById('dueManAmt').value);
+  if(!n || !a){ alert('Naam + Amount likho'); return; }
+  let m=JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+  m.push({name:n, amount:a, date:new Date().toLocaleDateString(), id:Date.now()});
+  localStorage.setItem('manualCreditors', JSON.stringify(m));
+  alert(n+' ka ₹'+a+' add ho gaya');
+  loadDueList();
+};
+
+window.deleteManualDue = function(idx){
+  if(!confirm('Paid ho gaya? Hata du?')) return;
+  let m=JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+  m.splice(idx,1);
+  localStorage.setItem('manualCreditors', JSON.stringify(m));
+  loadDueList();
+};
 };
 function openPage(id){ openReportPage(id); } 
 function closePage(id){
