@@ -906,6 +906,16 @@ function loadDueList(){
   if(!c) return;
   var bills=[];
   try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
+  // DUPLICATE HATAO - billNo se unique karo
+  var uniqueMap = {};
+  var cleanBills = [];
+  for(var i=0;i<bills.length;i++){
+    var b=bills[i];
+    var key = String(b.billNo) + '_' + String(b.date||'');
+    if(!uniqueMap[key]){ uniqueMap[key]=true; cleanBills.push(b); }
+  }
+  bills = cleanBills;
+
   var dueBills=[];
   for(var i=0;i<bills.length;i++){
     var b=bills[i];
@@ -925,8 +935,8 @@ function loadDueList(){
   }else{
     for(var i=0;i<dueBills.length;i++){
       var b=dueBills[i];
-      var d=b.date||b.createdAt||'';
-      html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><div><b>Bill '+b.billNo+'</b> - '+(b.customer||'Customer')+'<div style="font-size:11px;color:#666">'+d+'</div></div><div style="display:flex;align-items:center;gap:8px"><b style="color:red">Rs '+(b.due||b.total)+'</b><button onclick="markDuePaid(\''+(b.firebaseId||'')+'\',\''+b.billNo+'\')" style="background:#00c853;color:white;padding:6px 14px;border-radius:8px;font-weight:bold">Paid</button></div></div>';
+      var d=b.date||'';
+      html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><div><b>Bill '+b.billNo+'</b> - '+(b.customer||'Customer')+'<div style="font-size:11px;color:#666">'+d+'</div></div><div style="display:flex;align-items:center;gap:8px"><b style="color:red">Rs '+(b.due||b.total)+'</b><button onclick="markDuePaid(\''+(b.firebaseId||'')+'\',\''+b.billNo+'\',\''+b.date+'\')" style="background:#00c853;color:white;padding:6px 14px;border-radius:8px;font-weight:bold">Paid</button></div></div>';
     }
     for(var i=0;i<manual.length;i++){
       var m=manual[i];
@@ -934,24 +944,27 @@ function loadDueList(){
     }
   }
   c.innerHTML=html;
-  var today=new Date().toISOString().split('T')[0];
-  var dateEl=document.getElementById('dueManDate');
-  if(dateEl &&!dateEl.value) dateEl.value=today;
 }
 
-function markDuePaid(firebaseId,billNo){
+function markDuePaid(firebaseId,billNo,billDate){
   if(!confirm('Bill No '+billNo+' ko Paid kar du?')) return;
   var bills=[];
   try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
+  var newBills=[];
   for(var i=0;i<bills.length;i++){
-    if((firebaseId && bills[i].firebaseId==firebaseId) || bills[i].billNo==billNo){
-      bills[i].payment='PAID';
-      bills[i].due=0;
-      bills[i].paidDate=new Date().toLocaleDateString();
+    // sirf ek hi bill ko paid karo, dono nahi
+    if(billDate && bills[i].date==billDate && String(bills[i].billNo)==String(billNo)){
+      bills[i].payment='PAID'; bills[i].due=0;
     }
+    newBills.push(bills[i]);
   }
-  localStorage.setItem('sales',JSON.stringify(bills));
-  try{ if(window.sales){ for(var j=0;j<window.sales.length;j++){ if(window.sales[j].billNo==billNo){ window.sales[j].payment='PAID'; window.sales[j].due=0; } } } }catch(e){}
+  // duplicate hata ke save karo
+  var uniqueMap={}; var finalBills=[];
+  for(var i=0;i<newBills.length;i++){
+    var key=String(newBills[i].billNo)+'_'+String(newBills[i].date||'');
+    if(!uniqueMap[key]){ uniqueMap[key]=true; finalBills.push(newBills[i]); }
+  }
+  localStorage.setItem('sales',JSON.stringify(finalBills));
   loadDueList();
   alert('Paid ho gaya!');
 }
