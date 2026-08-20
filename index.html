@@ -911,45 +911,67 @@ function loadDueList(){
   });
 
   let manual = [];
-  try{ manual = JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){}
+  try{ manual = JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
 
   let totalDue = dueBills.reduce((s,b)=>s+Number(b.due||b.total||0),0) + manual.reduce((s,m)=>s+Number(m.amount||0),0);
 
   let html = `
-  <div style="background:white;padding:12px;border-bottom:2px solid #4338ff;">
-    <div style="font-size:12px;font-weight:bold;margin-bottom:6px;">➕ Due Without Bill - Manual Add</div>
-    <div style="display:flex;gap:6px;">
-      <input id="dueManName" placeholder="Name - Monu" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;">
-      <input id="dueManAmt" type="number" placeholder="200" style="width:80px;padding:10px;border:1px solid #ccc;border-radius:8px;">
-      <button onclick="addDueWithoutBill()" style="background:#4338ff;color:white;padding:10px 14px;border-radius:8px;font-weight:bold;">Add</button>
-    </div>
+<div style="background:white;padding:12px;border-bottom:2px solid #4338ff;">
+  <div style="font-size:12px;font-weight:bold;margin-bottom:6px;">+ Due Without Bill - Manual Add</div>
+  <div style="display:flex;gap:6px;">
+    <input id="dueManName" placeholder="Name - Monu" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px">
+    <input id="dueManAmt" type="number" placeholder="200" style="width:80px;padding:10px;border:1px solid #ccc;border-radius:8px">
+    <button onclick="addDueWithoutBill()" style="background:#4338ff;color:white;padding:10px 14px;border-radius:8px;font-weight:bold;">Add</button>
   </div>
+</div>
 
-  <div style="display:grid;grid-template-columns:50px 1fr 90px 60px;background:#f5f5f5;padding:12px;font-weight:bold;border-bottom:1px solid #ddd;">
-    <span>No</span><span>Name</span><span>Due</span><span>✓</span>
-  </div>
-  `;
+<div style="display:grid;grid-template-columns:50px 1fr 90px 60px;background:#f5f5f5;padding:12px;font-weight:bold;border-bottom:1px solid #ddd">
+  <span>No</span><span>Name</span><span>Due</span><span>✓</span>
+</div>
+`;
 
   let allList = [];
-  dueBills.forEach(b=>{ allList.push({type:'bill', name:b.customer||'Customer', due:b.due||b.total||0, billNo:b.billNo||b.id, firebaseId:b.firebaseId}) });
+  dueBills.forEach(b=>{ allList.push({type:'bill', name:b.customer||'Customer', due:b.due||b.total||0, billNo:b.billNo||'', firebaseId:b.firebaseId||''}) });
   manual.forEach((m,i)=>{ allList.push({type:'manual', name:m.name, due:m.amount, idx:i, date:m.date}) });
 
   if(!allList.length){
     html += `<div style="text-align:center;padding:30px;color:#999;">Koi Due nahi</div>`;
   }else{
     html += allList.map((it,i)=>`
-      <div style="display:grid;grid-template-columns:50px 1fr 90px 60px;padding:12px;border-bottom:1px solid #eee;align-items:center;">
-        <span>${i+1}</span>
-        <div><b>${it.name}</b><div style="font-size:11px;color:#666;">${it.type==='bill'?'Bill:'+it.billNo:'Manual | '+(it.date||'')}</div></div>
-        <span style="color:#e53935;font-weight:bold;font-size:16px;">₹${it.due}</span>
-        <button onclick="${it.type==='bill'?`markDuePaid('${it.firebaseId||''}','${it.billNo}')`:`deleteManualDue(${it.idx})`}" style="background:#4caf50;color:white;width:40px;height:40px;border-radius:50%;font-size:18px;">✓</button>
-      </div>
-    `).join('');
+  <div style="display:grid;grid-template-columns:50px 1fr 90px 60px;padding:12px;border-bottom:1px solid #eee;align-items:center">
+    <span>${i+1}</span>
+    <div><b>${it.name}</b><div style="font-size:11px;color:#666;">${it.type==='bill'?'Bill:'+it.billNo:'Manual'}</div></div>
+    <span style="color:#e53935;font-weight:bold;">₹${it.due}</span>
+    <button onclick="${it.type==='bill'?`markDuePaid('${it.firebaseId||''}','${it.billNo}')`:`deleteManualDue(${it.idx})`}" style="background:#00c853;color:white;padding:6px 10px;border-radius:6px">✓</button>
+  </div>
+`).join('');
   }
 
   html += `<div style="background:#e8f5e9;padding:12px;text-align:center;font-weight:bold;margin-top:8px;">Total Due: ₹${totalDue}</div>`;
   container.innerHTML = html;
 }
+
+function addDueWithoutBill(){
+  let name = document.getElementById('dueManName')?.value.trim();
+  let amt = parseFloat(document.getElementById('dueManAmt')?.value);
+  if(!name || !amt){ alert('Name aur Amount bharo'); return; }
+  let manual = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+  manual.push({id:Date.now(), name:name, amount:amt, date:new Date().toLocaleDateString('en-IN')});
+  localStorage.setItem('manualCreditors', JSON.stringify(manual));
+  document.getElementById('dueManName').value=''; document.getElementById('dueManAmt').value='';
+  loadDueList();
+}
+
+function deleteManualDue(idx){
+  if(!confirm('Delete karna hai?')) return;
+  let manual = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+  manual.splice(idx,1);
+  localStorage.setItem('manualCreditors', JSON.stringify(manual));
+  loadDueList();
+}
+
+window.addDueWithoutBill = addDueWithoutBill;
+window.deleteManualDue = deleteManualDue;
        
 window.markDuePaid = async function(firebaseId, billNo){
   if(!firebaseId &&!billNo) return;
