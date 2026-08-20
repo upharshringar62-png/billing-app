@@ -243,8 +243,37 @@ function setPayMode(mode){
 function handlePreview(){ renderPreview(); document.getElementById('previewModal').classList.remove('hidden'); document.getElementById('previewModal').classList.add('flex'); }
 function closePreview(){ document.getElementById('previewModal').classList.add('hidden'); }
 function switchTab(tab){ if(tab==='SETTINGS'){ document.getElementById('settingsPage')?.classList.remove('hidden'); } else if(tab==='BILL'){ document.getElementById('settingsPage')?.classList.add('hidden'); closeDrawer(); } else { alert(tab+' - Coming Soon'); } }
-function openDrawer(){ document.getElementById('leftDrawer').classList.remove('-translate-x-full'); document.getElementById('drawerOverlay').classList.remove('hidden'); }
-function closeDrawer(){ document.getElementById('leftDrawer').classList.add('-translate-x-full'); document.getElementById('drawerOverlay').classList.add('hidden'); }
+function openDrawer(){ 
+  var d=document.getElementById('leftDrawer'); 
+  var o=document.getElementById('drawerOverlay'); 
+  if(d) d.classList.remove('-translate-x-full'); 
+  if(o) o.classList.remove('hidden'); 
+}
+function closeDrawer(){ 
+  var d=document.getElementById('leftDrawer'); 
+  var o=document.getElementById('drawerOverlay'); 
+  if(d) d.classList.add('-translate-x-full'); 
+  if(o) o.classList.add('hidden'); 
+}
+function closePage(id){
+  var el=document.getElementById(id);
+  if(!el){
+    ['salesPage','salesReportPage','itemPage','stockPage','creditorsPage','profitPage','duePage','settingsPage'].forEach(function(x){
+      var e=document.getElementById(x); if(e) e.classList.add('hidden');
+    });
+    return;
+  }
+  el.classList.add('hidden');
+}
+function openReportPage(id){
+  closeDrawer();
+  ['salesPage','salesReportPage','itemPage','stockPage','creditorsPage','profitPage','duePage','settingsPage'].forEach(function(x){
+    var e=document.getElementById(x); if(e) e.classList.add('hidden');
+  });
+  var t=document.getElementById(id); if(t) t.classList.remove('hidden');
+}
+window.closePage=closePage;
+window.openReportPage=openReportPage;
 document.getElementById('menuBtn').onclick=openDrawer;
 document.getElementById('drawerOverlay').onclick=closeDrawer;
 (function initBillNumber(){
