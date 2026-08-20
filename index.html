@@ -212,7 +212,11 @@ function renderCategories(){
   if(!grid) return;
   grid.innerHTML = '';
   window.cart = window.cart || cart || {};
-  let filtered = products.filter(p=>{ if(selectedCat!=='all' && String(p.cat)!==String(selectedCat)) return false; if(searchText &&!p.name.toLowerCase().includes(searchText.toLowerCase())) return false; return true; });
+  let filtered = products.filter(p=>{
+    if(selectedCat!=='all' && String(p.cat)!==String(selectedCat)) return false;
+    if(searchText &&!p.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+    return true;
+  }).sort((a,b)=> String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
   filtered.forEach(p=>{
     const qty = window.cart[p.id] || 0;
     const isSelected = qty > 0;
