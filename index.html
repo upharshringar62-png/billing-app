@@ -1063,9 +1063,20 @@ window.deleteManualDue=deleteManualDue;
 // ================= REPORTS / STOCK / CREDITORS =================
 function getAllSales(){
   try{
-    if(Array.isArray(window.sales) && window.sales.length) return window.sales;
-    const x=JSON.parse(localStorage.getItem('sales')||'[]');
-    return Array.isArray(x)?x:[];
+    let arr = [];
+    if(Array.isArray(window.sales) && window.sales.length) arr = window.sales;
+    else {
+      const x=JSON.parse(localStorage.getItem('sales')||'[]');
+      arr = Array.isArray(x)?x:[];
+    }
+    // duplicate billNo + date + total ko ek hi rakho
+    let seen = new Set();
+    let uniq = [];
+    arr.forEach(b=>{
+      let key = String(b.billNo||b.id)+'_'+String(b.total||'')+'_'+String(b.date||b.createdAt||'');
+      if(!seen.has(key)){ seen.add(key); uniq.push(b); }
+    });
+    return uniq;
   }catch(e){ return []; }
 }
 function money(n){ return '₹'+Number(n||0).toFixed(2); }
