@@ -1063,18 +1063,35 @@ window.deleteManualDue=deleteManualDue;
 // ================= REPORTS / STOCK / CREDITORS =================
 function getAllSales(){
   try{
-    let arr = [];
-    if(Array.isArray(window.sales) && window.sales.length) arr = window.sales;
-    else {
-      const x=JSON.parse(localStorage.getItem('sales')||'[]');
-      arr = Array.isArray(x)?x:[];
-    }
-    // duplicate billNo + date + total ko ek hi rakho
+    let fb = Array.isArray(window.sales) ? window.sales : [];
+    let local = [];
+    try{ 
+      let x = JSON.parse(localStorage.getItem('sales')||'[]');
+      if(Array.isArray(x)) local = x;
+    }catch(e){}
+    
+    // dono ko milao - Firebase + Local
+    let all = [...fb];
+    local.forEach(l=>{
+      if(!all.find(f=> String(f.billNo)===String(l.billNo) || String(f.id)===String(l.id) || String(f.createdAt)===String(l.createdAt))){
+        all.push(l);
+      }
+    });
+    
+    // khali wala bill hatao (jisme items nahi hai)
+    all = all.filter(b=> b.items && b.items.length>0);
+    
+    // duplicate hatao
     let seen = new Set();
     let uniq = [];
-    arr.forEach(b=>{
-      let key = String(b.billNo||b.id)+'_'+String(b.total||'')+'_'+String(b.date||b.createdAt||'');
-      if(!seen.has(key)){ seen.add(key); uniq.push(b); }
+    all.forEach(b=>{
+      let key = String(b.billNo);
+      if(b.billNo && !seen.has(key)){
+        seen.add(key);
+        uniq.push(b);
+      } else if(!b.billNo){
+        uniq.push(b);
+      }
     });
     return uniq;
   }catch(e){ return []; }
