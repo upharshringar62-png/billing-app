@@ -660,7 +660,39 @@ window.addProductWithCategory = async () => {
   renderProducts();
   alert('Product add ho gaya! Ab ispe click karke photo daal de - photo Firebase me save hogi!');
 };
-function addItemDirect(){ let name = prompt(`Product Name (${categories.find(c=>c.id===selectedCat)?.name || 'All'}):`); if(!name) return; let price = prompt('Price:', '20'); window.products.push({ id: Date.now().toString(), name: name, price: parseFloat(price)||20, cat: selectedCat==='all'?'1':selectedCat, qty: 0, stock: 100, costPrice: 0, img: '' }); syncData(); renderProducts(); renderCategories(); }
+function addItemDirect(){
+  let catName = '';
+  try{ catName = categories.find(c=>c.id===selectedCat)?.name || ''; }catch(e){}
+  let name = prompt('Product Name ('+catName+') likho:');
+  if(!name || !name.trim()) return;
+  name = name.trim();
+  let priceStr = prompt('Price likho (jaise 135):');
+  if(!priceStr) return;
+  let price = Number(priceStr);
+  if(!price) return;
+
+  // HAMESHA NAYA PRODUCT - purana naam kabhi reuse nahi hoga
+  let p = {
+    id: String(Date.now()),
+    firebaseId: '',
+    name: name,
+    price: price,
+    costPrice: 0,
+    stock: 0,
+    image: '',
+    img: '',
+    categoryId: selectedCat,
+    createdAt: Date.now()
+  };
+  products.push(p);
+  try{
+    let _safe = products.map(x=>({id:x.id, firebaseId:x.firebaseId, name:x.name, price:x.price, stock:x.stock, image:x.image, img:x.img, categoryId:x.categoryId, createdAt:x.createdAt}));
+    localStorage.setItem('products', JSON.stringify(_safe));
+  }catch(e){}
+  if(window.firebaseAddProduct) window.firebaseAddProduct(p);
+  renderProducts();
+  alert('✅ '+name+' add ho gaya!');
+}
 const fab = document.getElementById('addProductFab');
 if(fab){ fab.onclick = ()=>{ addProductWithCategory(); }; }
 function addNewItemInCat(){ addItemDirect(); }
