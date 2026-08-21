@@ -559,7 +559,9 @@ let data=enc.encode(t);
        sales.unshift(sale);
        localStorage.setItem('sales', JSON.stringify(sales));
        window.sales = sales;
-       if(window.firebaseSaveSale){
+if(window.renderSalesReport) window.renderSalesReport();
+if(window.refreshAllReports) window.refreshAllReports();
+if(window.firebaseSaveSale){
          try { await window.firebaseSaveSale(sale); }
          catch(firebaseErr){ console.error('Sale Firebase save error:', firebaseErr); }
        }
