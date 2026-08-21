@@ -1086,22 +1086,40 @@ function openReportPage(id){
 window.openPage = openReportPage;
 function renderSalesReport(){
   const c=document.getElementById('salesReportContainer'); if(!c) return;
-  const bills=getAllSales().slice().sort((a,b)=>Number(b.createdAt||b.billNo||0)-Number(a.createdAt||a.billNo||0)).reverse();
+  // getAllSales me hi sab aa raha hai, duplicate hatao
+  let bills = [];
+  try{ bills = getAllSales() || []; }catch(e){ bills = window.sales || []; }
   
-  if(!bills.length){ c.innerHTML='<div style="text-align:center;padding:40px;color:#999;">Koi sale nahi</div>'; return; }
-
+  // Duplicate Bill No + Date ko ek hi rakho
+  let seen = new Set();
+  let unique = [];
+  bills.forEach(b=>{
+    let key = String(b.billNo||b.id) + '_' + String(b.date||b.createdAt);
+    // agar same billNo + same total hai to duplicate hai
+    let key2 = String(b.billNo) + '_' + String(b.total||'') + '_' + String(b.date);
+    if(!seen.has(key2)){
+      seen.add(key2);
+      unique.push(b);
+    }
+  });
+  
+  // Naya wala sabse upar - createdAt se sort
+  unique = unique.slice().sort((a,b)=> Number(b.createdAt||0) - Number(a.createdAt||0));
+  
+  if(!unique.length){ c.innerHTML='<div style="text-align:center;padding:40px;color:#999;">Koi sale nahi</div>'; return; }
+  
   // Header
   let html = `
-  <div style="overflow-x:auto;">
-  <table style="width:100%;border-collapse:collapse;font-size:13px;">
-    <tr style="background:#6c5ce7;color:white;">
-      <th style="padding:10px;border:1px solid #ccc;">Sr.No.</th>
-      <th style="padding:10px;border:1px solid #ccc;">Bill NO</th>
-      <th style="padding:10px;border:1px solid #ccc;">Particulars</th>
-      <th style="padding:10px;border:1px solid #ccc;">Date</th>
-    </tr>`;
-
-  bills.forEach((b,i)=>{
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <tr style="background:#6c5ce7;color:white;">
+    <th style="padding:10px;border:1px solid #ccc;">Sr.No.</th>
+    <th style="padding:10px;border:1px solid #ccc;">Bill NO</th>
+    <th style="padding:10px;border:1px solid #ccc;">Particulars</th>
+    <th style="padding:10px;border:1px solid #ccc;">Date</th>
+  </tr>`;
+  
+  unique.forEach((b,i)=>{
     let items = b.items||[];
     let part = items.map((it,idx)=>{
       let name = it.name||'Item';
@@ -1111,20 +1129,19 @@ function renderSalesReport(){
       return `${idx+1}. ${name} ₹${price}X${qty}(QTY)= ₹${amt}`;
     }).join('<br>');
     if(items.length>0) part += `<br>Total Products: (${items.length}), Total Qty: (${items.reduce((s,x)=>s+Number(x.qty||0),0)})`;
-
+    
     let d = b.date|| (b.createdAt ? new Date(Number(b.createdAt)).toLocaleString() : '');
-    // Short date
     if(d.includes('T')) d = d.split('T')[0];
     
     html += `
-    <tr onclick="showSaleDetails('${b.billNo||b.id}')" style="cursor:pointer;background:${i%2==0?'#fff':'#f3f3f3'};">
-      <td style="padding:10px;border:1px solid #ccc;text-align:center;">${i+1}.</td>
-      <td style="padding:10px;border:1px solid #ccc;text-align:center;">${b.billNo||'-'}</td>
-      <td style="padding:10px;border:1px solid #ccc;">${part}</td>
-      <td style="padding:10px;border:1px solid #ccc;text-align:center;">${d}</td>
-    </tr>`;
+  <tr onclick="showSaleDetails('${b.billNo||b.id}')" style="cursor:pointer;background:${i%2==0?'#fff':'#f3f3ff'}">
+    <td style="padding:10px;border:1px solid #ccc;text-align:center;">${i+1}.</td>
+    <td style="padding:10px;border:1px solid #ccc;text-align:center;">${b.billNo||'-'}</td>
+    <td style="padding:10px;border:1px solid #ccc;">${part}</td>
+    <td style="padding:10px;border:1px solid #ccc;text-align:center;">${d}</td>
+  </tr>`;
   });
-
+  
   html += `</table></div>`;
   c.innerHTML = html;
 }
