@@ -998,18 +998,6 @@ function loadDueList(){
   for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
 
   var html='';
-  html+='<div style="padding:12px;background:#eef0ff;border-radius:10px;margin-bottom:10px">';
-  html+='<b>+ Due Without Bill</b>';
-  html+='<div style="display:flex;gap:8px;margin-top:8px">';
-  html+='<input id="dueManName" placeholder="Name" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px">';
-  html+='<input id="dueManAmt" type="number" placeholder="200" style="width:90px;padding:10px;border:1px solid #ccc;border-radius:8px">';
-  html+='</div>';
-  html+='<div style="display:flex;gap:8px;margin-top:8px">';
-  html+='<input id="dueManDate" type="date" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px" value="'+new Date().toISOString().split('T')[0]+'">';
-  html+='<button onclick="addDueWithoutBill()" style="width:90px;background:#2e3ae8;color:white;border-radius:8px;font-weight:bold">Add</button>';
-  html+='</div>';
-  html+='</div>';
-
   html+='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
 
   if(dueBills.length==0 && manual.length==0){
@@ -1051,33 +1039,32 @@ function markDuePaid(firebaseId,billNo,billDate){
 }
 
 function addDueWithoutBill(){
-  var nameEl = document.getElementById('dueManName') || document.querySelector('#duePage input[placeholder="Name"]') || document.querySelector('input[placeholder="Name"]');
-  var amtEl = document.getElementById('dueManAmt') || document.querySelector('#duePage input[type="number"]') || document.querySelector('input[placeholder="200"]') || document.querySelector('#duePage input[placeholder="300"]');
-  var dateEl = document.getElementById('dueManDate') || document.querySelector('#duePage input[type="date"]');
+  var nameEl = document.getElementById('dueManName');
+  var amtEl = document.getElementById('dueManAmt');
+  var dateEl = document.getElementById('dueManDate');
 
-  if(!nameEl || !amtEl){ alert('Form load nahi hua, page dobara kholo'); return; }
+  if(!nameEl ||!amtEl){
+    // agar duePage ke bahar se bhi form aaya to
+    nameEl = document.querySelector('input[placeholder="Name"]');
+    amtEl = document.querySelector('input[placeholder="200"]');
+    dateEl = document.querySelector('input[type="date"]');
+  }
+
+  if(!nameEl ||!amtEl){ alert('Form load nahi hua'); return; }
 
   var name = nameEl.value.trim();
   var amt = parseFloat(amtEl.value);
-  var dateVal = dateEl && dateEl.value ? dateEl.value : new Date().toLocaleDateString();
+  var dateVal = dateEl && dateEl.value? dateEl.value : new Date().toISOString().split('T')[0];
 
-  if(!name || !amt || isNaN(amt)){ alert('Name Amount bharo'); return; }
+  if(!name ||!amt || isNaN(amt)){ alert('Name Amount bharo'); return; }
 
   var manual=[];
   try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); if(!Array.isArray(manual)) manual=[]; }catch(e){ manual=[]; }
-  
-  manual.push({name:name, amount:amt, date:dateVal, id: Date.now()});
+
+  manual.unshift({name:name, amount:amt, date:dateVal, id:Date.now()});
   localStorage.setItem('manualCreditors', JSON.stringify(manual));
 
   nameEl.value=''; amtEl.value='';
-  loadDueList();
-}
-
-function deleteManualDue(idx){
-  if(!confirm('Delete karna hai?')) return;
-  var manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]');
-  manual.splice(idx,1);
-  localStorage.setItem('manualCreditors',JSON.stringify(manual));
   loadDueList();
 }
 window.markDuePaid=markDuePaid;
