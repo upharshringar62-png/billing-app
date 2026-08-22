@@ -1483,32 +1483,60 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
   </div>
 </div>
 <script>
-function getCreds(){ try{return JSON.parse(localStorage.getItem('my_creditors')||'[]')}catch(e){return []} }
-function saveCreds(arr){ localStorage.setItem('my_creditors', JSON.stringify(arr)); }
+function getCreds(){
+  try{ return JSON.parse(localStorage.getItem('my_creditors')||'[]'); }catch(e){ return []; }
+}
+function saveCreds(arr){
+  localStorage.setItem('my_creditors', JSON.stringify(arr));
+  // Due List wala bhi same key use karega taaki dono jagah dikhe
+  localStorage.setItem('manualCreditors', JSON.stringify(arr.map(c=>({name:c.name, amount:c.amount, date:c.date, id:c.id}))));
+}
 function addCreditor(){
-  let n=document.getElementById('credCreditorsName').value.trim();
-  let a=document.getElementById('credAmount').value.trim();
-  let d=document.getElementById('credDate').value;
-  if(!n||!a){alert('Naam + Amount likho'); return;}
-  if(d==""){ d = new Date().toISOString().split('T')[0]; }
-  let arr=getCreds(); arr.push({id:Date.now(),name:n,amount:a,date:d});
+  const nameEl = document.getElementById('credCreditorsName');
+  const amountEl = document.getElementById('credAmount');
+  const dateEl = document.getElementById('credDate');
+  if(!nameEl ||!amountEl){ alert('Fields nahi mile - reload karo'); return; }
+  const name = nameEl.value.trim();
+  const amount = amountEl.value.trim();
+  const date = (dateEl && dateEl.value)? dateEl.value : new Date().toISOString().split('T')[0];
+  if(!name){ alert('Creditor Name likhiye'); return; }
+  if(!amount || Number(amount)<=0){ alert('Amount likhiye'); return; }
+  let arr = getCreds();
+  arr.push({id:Date.now(), name:name, amount:Number(amount), date:date});
   saveCreds(arr);
-  document.getElementById('credCreditorsName').value='';
-  document.getElementById('credAmount').value='';
-  document.getElementById('credDate').value='';
+  nameEl.value=''; amountEl.value=''; if(dateEl) dateEl.value='';
   loadCreditorsNew();
+  if(typeof loadDueList==='function') loadDueList();
 }
 function loadCreditorsNew(){
-  let list=document.getElementById('creditorsList'); let arr=getCreds(); let html='';
+  const list = document.getElementById('creditorsList');
+  if(!list) return;
+  const arr = getCreds();
+  if(!arr.length){ list.innerHTML='<p style="text-align:center;padding:40px;color:#999;">Koi udhar nahi ✅</p>'; return; }
+  let html='';
   arr.forEach(function(c){
-    html+='<div style="background:white;padding:14px;border-radius:12px;border:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;">'
-        +'<div><div style="font-weight:bold;font-size:16px;">'+c.name+'</div><div style="color:gray;font-size:13px;">₹'+c.amount+' • '+c.date+'</div></div>'
-        +'<button onclick="payCreditorNew('+c.id+')" style="background:#00c853;color:white;padding:8px 20px;border-radius:999px;font-weight:bold;">PAID</button></div>';
+    html+=`<div style="background:white;padding:14px;border-radius:12px;border:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="flex:1;"><div style="font-weight:bold;font-size:16px;">${c.name}</div><div style="color:#666;font-size:13px;margin-top:4px;">Date: ${c.date||'-'}</div><div style="font-weight:bold;color:#d00;font-size:16px;margin-top:4px;">₹${Number(c.amount||0).toFixed(2)}</div></div><button onclick="payCreditorNew(${c.id})" style="background:#00a853;color:white;padding:9px 16px;border:0;border-radius:8px;font-weight:bold;">Paid</button></div>`;
   });
-  if(!html) html='<p style="text-align:center;padding:40px;color:#999;">Koi udhar nahi ✅</p>';
   list.innerHTML=html;
 }
 function payCreditorNew(id){
+  if(!confirm('Paid kar du?')) return;
+  const arr = getCreds().filter(function(c){ return String(c.id)!==String(id); });
+  saveCreds(arr);
+  loadCreditorsNew();
+  if(typeof loadDueList==='function') loadDueList();
+}
+function openCreditorsPage(){
+  const page=document.getElementById('creditorsPage');
+  if(!page){ alert('Creditors page nahi mila'); return; }
+  page.style.display='flex';
+  loadCreditorsNew();
+}
+window.openCreditorsPage=openCreditorsPage;
+window.addCreditor=addCreditor;
+window.payCreditorNew=payCreditorNew;
+window.loadCreditorsNew=loadCreditorsNew;
+</script>
   if(!confirm('Paid kar du?')) return;
   let arr=getCreds().filter(function(c){return c.id!==id}); saveCreds(arr); loadCreditorsNew();
 }
