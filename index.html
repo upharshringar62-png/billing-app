@@ -968,6 +968,13 @@ window.deleteCategory = async (id) => {
   <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
 </div>
 <script>
+ </div>
+<div id="duePage" class="hidden fixed inset-0 bg-white z-[99] flex flex-col">
+  <div class="bg-[#2e3ae8] text-white p-3 flex justify-between items-center"><h2 class="font-bold">Due List</h2><button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button></div>
+  <div style="padding:12px;background:#eef0ff"><b>+ Due Without Bill</b><div style="display:flex;gap:8px;margin-top:8px"><input id="dueManName" placeholder="Name" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px"><input id="dueManAmt" type="number" placeholder="200" style="width:90px;padding:10px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:8px;margin-top:8px"><input id="dueManDate" type="date" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px"><button id="dueManAddBtn" type="button" style="width:90px;background:#2e3ae8;color:white;border-radius:8px;font-weight:bold">Add</button></div></div>
+  <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
+</div>
+<script>
 function loadDueList(){
   var c = document.getElementById('dueListContainer');
   if(!c) return;
@@ -1000,77 +1007,37 @@ function loadDueList(){
   var html='';
   html+='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
 
-  if(dueBills.length==0 && manual.length==0){
-    html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>';
-  }else{
-    for(var i=0;i<manual.length;i++){
-      var m=manual[i];
-      html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:#fffde7">';
-      html+='<div><div style="font-weight:bold">'+m.name+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div>';
-      html+='<div style="display:flex;align-items:center;gap:10px"><span style="color:red;font-weight:bold">Rs '+m.amount+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%">X</button></div>';
-      html+='</div>';
-    }
-  }
 
+<script>
+function loadDueList(){
+  var c=document.getElementById('dueListContainer'); if(!c) return;
+  var bills=[]; try{bills=JSON.parse(localStorage.getItem('sales')||'[]');}catch(e){bills=[];}
+  var dueBills=[]; for(var i=0;i<bills.length;i++){ var b=bills[i]; if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b); }
+  var manual=[]; try{manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); if(!Array.isArray(manual)) manual=[];}catch(e){manual=[];}
+  var total=0; for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0); for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
+  var html='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
+  if(dueBills.length==0 && manual.length==0){ html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>'; }
+  else{ for(var i=0;i<manual.length;i++){ var m=manual[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+m.name+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px"><span style="color:red;font-weight:bold">Rs '+m.amount+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%">X</button></div></div>'; } }
   c.innerHTML=html;
 }
-
-function markDuePaid(firebaseId,billNo,billDate){
-  if(!confirm('Bill No '+billNo+' ko Paid kar du?')) return;
-  var bills=[];
-  try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
-  var newBills=[];
-  for(var i=0;i<bills.length;i++){
-    // sirf ek hi bill ko paid karo, dono nahi
-    if(billDate && bills[i].date==billDate && String(bills[i].billNo)==String(billNo)){
-      bills[i].payment='PAID'; bills[i].due=0;
-    }
-    newBills.push(bills[i]);
-  }
-  // duplicate hata ke save karo
-  var uniqueMap={}; var finalBills=[];
-  for(var i=0;i<newBills.length;i++){
-    var key=String(newBills[i].billNo)+'_'+String(newBills[i].date||'');
-    if(!uniqueMap[key]){ uniqueMap[key]=true; finalBills.push(newBills[i]); }
-  }
-  localStorage.setItem('sales',JSON.stringify(finalBills));
-  loadDueList();
-  alert('Paid ho gaya!');
-}
-
 function addDueWithoutBill(){
-  var nameEl = document.getElementById('dueManName');
-  var amtEl = document.getElementById('dueManAmt');
-  var dateEl = document.getElementById('dueManDate');
-
-  if(!nameEl ||!amtEl){
-    // agar duePage ke bahar se bhi form aaya to
-    nameEl = document.querySelector('input[placeholder="Name"]');
-    amtEl = document.querySelector('input[placeholder="200"]');
-    dateEl = document.querySelector('input[type="date"]');
-  }
-
-  if(!nameEl ||!amtEl){ alert('Form load nahi hua'); return; }
-
-  var name = nameEl.value.trim();
-  var amt = parseFloat(amtEl.value);
-  var dateVal = dateEl && dateEl.value? dateEl.value : new Date().toISOString().split('T')[0];
-
+  var n=document.getElementById('dueManName'); var a=document.getElementById('dueManAmt'); var d=document.getElementById('dueManDate');
+  if(!n ||!a){ alert('Form nahi mila'); return; }
+  var name=n.value.trim(); var amt=parseFloat(a.value); var dateVal=d && d.value? d.value : new Date().toISOString().split('T')[0];
   if(!name ||!amt || isNaN(amt)){ alert('Name Amount bharo'); return; }
-
-  var manual=[];
-  try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); if(!Array.isArray(manual)) manual=[]; }catch(e){ manual=[]; }
-
-  manual.unshift({name:name, amount:amt, date:dateVal, id:Date.now()});
-  localStorage.setItem('manualCreditors', JSON.stringify(manual));
-
-  nameEl.value=''; amtEl.value='';
-  loadDueList();
+  var manual=[]; try{manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]');}catch(e){manual=[];} if(!Array.isArray(manual)) manual=[];
+  manual.unshift({name:name,amount:amt,date:dateVal,id:Date.now()}); localStorage.setItem('manualCreditors',JSON.stringify(manual));
+  n.value=''; a.value=''; loadDueList();
 }
-window.markDuePaid=markDuePaid;
-window.addDueWithoutBill=addDueWithoutBill;
-window.deleteManualDue=deleteManualDue;
-
+function deleteManualDue(idx){ if(!confirm('Delete?')) return; var m=[]; try{m=JSON.parse(localStorage.getItem('manualCreditors')||'[]');}catch(e){m=[];} m.splice(idx,1); localStorage.setItem('manualCreditors',JSON.stringify(m)); loadDueList(); }
+function markDuePaid(firebaseId,billNo,billDate){ if(!confirm('Bill No '+billNo+' ko Paid kar du?')) return; var bills=[]; try{bills=JSON.parse(localStorage.getItem('sales')||'[]');}catch(e){bills=[];} var newBills=[]; for(var i=0;i<bills.length;i++){ if(billDate && bills[i].date==billDate && String(bills[i].billNo)==String(billNo)){ bills[i].payment='PAID'; bills[i].due=0; } newBills.push(bills[i]); } localStorage.setItem('sales',JSON.stringify(newBills)); loadDueList(); alert('Paid ho gaya!'); }
+window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue; window.markDuePaid=markDuePaid;
+document.addEventListener('DOMContentLoaded', function(){
+  var btn=document.getElementById('dueManAddBtn'); if(btn) btn.addEventListener('click', addDueWithoutBill);
+  var d=document.getElementById('dueManDate'); if(d) d.valueAsDate=new Date();
+});
+</script>
+<script>
 // ================= REPORTS / STOCK / CREDITORS =================
 function getAllSales(){
   try{
