@@ -954,6 +954,17 @@ window.deleteCategory = async (id) => {
     <h2 class="font-bold">Due List</h2>
     <button onclick="closePage('duePage')" class="bg-white text-black px-3 py-1 rounded">X</button>
   </div>
+  <div class="p-3 bg-[#eef0ff]">
+    <b>+ Due Without Bill</b>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="dueManName" placeholder="Name" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px">
+      <input id="dueManAmt" type="number" placeholder="200" style="width:90px;padding:10px;border:1px solid #ccc;border-radius:8px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="dueManDate" type="date" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px">
+      <button onclick="addDueWithoutBill()" style="width:90px;background:#2e3ae8;color:white;border-radius:8px;font-weight:bold">Add</button>
+    </div>
+  </div>
   <div id="dueListContainer" class="flex-1 overflow-y-auto p-2">Loading...</div>
 </div>
 <script>
