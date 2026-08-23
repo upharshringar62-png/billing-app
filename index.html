@@ -1567,14 +1567,7 @@ function openCreditorsPage(){
 window.openCreditorsPage=openCreditorsPage;
 window.addCreditor=addCreditor;
 window.payCreditorNew=payCreditorNew;
-window.loadCreditorsNew=loadCreditorsNew;
-</script>
-  if(!confirm('Paid kar du?')) return;
-  let arr=getCreds().filter(function(c){return c.id!==id}); saveCreds(arr); loadCreditorsNew();
-}
-function openCreditorsPage(){ document.getElementById('creditorsPage').style.display='flex'; loadCreditorsNew(); }
-window.openCreditorsManage=openCreditorsPage;
-window.openCreditorsPage=openCreditorsPage;
+window.loadCreditorsNew=loadCreditorsNew; 
  </script>
 </body>
 </html>
