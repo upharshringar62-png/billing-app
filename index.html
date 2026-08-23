@@ -970,28 +970,40 @@ window.deleteCategory = async (id) => {
 <script>
 function loadDueList(){
   var c=document.getElementById('dueListContainer'); if(!c) return;
-  var bills=[]; try{bills=JSON.parse(localStorage.getItem('sales')||'[]')}catch(e){bills=[]}
-  var dueBills=[]; for(var i=0;i<bills.length;i++){ if(String(bills[i].payment||'').toUpperCase().indexOf('DUE')>=0 || Number(bills[i].due||0)>0) dueBills.push(bills[i]); }
-  var manual=[]; try{manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); if(!Array.isArray(manual)) manual=[]}catch(e){manual=[]}
-  var total=0; for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0); for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
+  var bills=[]; try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
+  if(!Array.isArray(bills)) bills=[];
+  var dueBills=[];
+  for(var i=0;i<bills.length;i++){
+    var b=bills[i];
+    if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b);
+  }
+  var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
+  if(!Array.isArray(manual)) manual=[];
+  var total=0;
+  for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
+  for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
   var html='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
-  if(dueBills.length==0 && manual.length==0) html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>';
-  else{ for(var i=0;i<manual.length;i++){ var m=manual[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+m.name+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px"><span style="color:red;font-weight:bold">Rs '+m.amount+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%">X</button></div></div>'; } }
+  if(dueBills.length==0 && manual.length==0){
+    html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>';
+  } else {
+    for(var i=0;i<manual.length;i++){
+      var m=manual[i];
+      html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+(m.name||'-')+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(m.amount||0)+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%;background:white">X</button></div></div>';
+    }
+  }
   c.innerHTML=html;
 }
 function addDueWithoutBill(){
   var n=document.getElementById('dueManName');
   var a=document.getElementById('dueManAmt');
   var d=document.getElementById('dueManDate');
-  var name = n? n.value.trim() : '';
-  var rawAmt = a? a.value.trim() : '';
-  var amt = Number(String(rawAmt).replace(/[^0-9.]/g,''));
-  var dateVal = (d && d.value)? d.value : new Date().toISOString().split('T')[0];
-  console.log('ADD TRY', name, rawAmt, amt);
+  var name=n? n.value.trim() : '';
+  var rawAmt=a? a.value.trim() : '';
+  var amt=Number(String(rawAmt).replace(/[^0-9.]/g,''));
+  var dateVal=(d&&d.value)? d.value : new Date().toISOString().split('T')[0];
   if(!name){ alert('Name bharo'); return; }
   if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount sahi bharo: '+rawAmt); return; }
-  var arr=[];
-  try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; }
+  var arr=[]; try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; }
   if(!Array.isArray(arr)) arr=[];
   arr.unshift({name:name, amount:amt, date:dateVal, id:Date.now()});
   localStorage.setItem('manualCreditors', JSON.stringify(arr));
@@ -1000,11 +1012,20 @@ function addDueWithoutBill(){
   loadDueList();
   alert('✅ Add ho gaya: '+name+' Rs '+amt);
 }
-function deleteManualDue(i){ if(!confirm('Delete?')) return; var m=[]; try{m=JSON.parse(localStorage.getItem('manualCreditors')||'[]')}catch(e){m=[]} m.splice(i,1); localStorage.setItem('manualCreditors',JSON.stringify(m)); loadDueList(); }
-window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue;
+function deleteManualDue(i){
+  if(!confirm('Delete?')) return;
+  var m=[]; try{ m=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ m=[]; }
+  m.splice(i,1);
+  localStorage.setItem('manualCreditors', JSON.stringify(m));
+  localStorage.setItem('my_creditors', JSON.stringify(m));
+  loadDueList();
+}
+window.loadDueList=loadDueList;
+window.addDueWithoutBill=addDueWithoutBill;
+window.deleteManualDue=deleteManualDue;
 document.addEventListener('DOMContentLoaded', function(){
   var b=document.getElementById('dueManAddBtn'); if(b) b.addEventListener('click', addDueWithoutBill);
-  var d=document.getElementById('dueManDate'); if(d) d.valueAsDate=new Date();
+  var dd=document.getElementById('dueManDate'); if(dd) dd.valueAsDate=new Date();
 });
 </script>
 <script> 
