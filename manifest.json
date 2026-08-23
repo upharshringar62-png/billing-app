@@ -1,18 +1,17 @@
 {
   "name": "Uphar Shringar Billing App",
   "short_name": "Billing",
-  "description": "Best billing app for Uphar Shringar shop management",
-  "start_url": "/billing-app/",
-  "scope": "/billing-app/",
+  "description": "Billing App",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/4290/4290854.png",
+      "src": "./icon.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
