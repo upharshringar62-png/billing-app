@@ -972,59 +972,32 @@ function loadDueList(){
   var c=document.getElementById('dueListContainer'); if(!c) return;
   var bills=[]; try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
   if(!Array.isArray(bills)) bills=[];
-  var dueBills=[];
-  for(var i=0;i<bills.length;i++){
-    var b=bills[i];
-    if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b);
-  }
-var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
-if(!Array.isArray(manual)) manual=[];
-var total=0;
-  for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
+  var dueBills=[]; for(var i=0;i<bills.length;i++){ var b=bills[i]; if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b); }
+  var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
+  if(!Array.isArray(manual)) manual=[];
+  var total=0; for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
   for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
   var html='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
-  if(dueBills.length==0 && manual.length==0){
-    html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>';
-  } else {
-    for(var i=0;i<manual.length;i++){
-      var m=manual[i];
-      html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+(m.name||'-')+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(m.amount||0)+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%;background:white">X</button></div></div>';
-    }
-  }
+  if(dueBills.length==0 && manual.length==0){ html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>'; }
+  else { for(var i=0;i<manual.length;i++){ var m=manual[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+(m.name||'-')+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(m.amount||0)+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%;background:white">X</button></div></div>'; } }
   c.innerHTML=html;
 }
 function addDueWithoutBill(){
-  var n=document.getElementById('dueManName');
-  var a=document.getElementById('dueManAmt');
-  var d=document.getElementById('dueManDate');
-  var name=n? n.value.trim() : '';
-  var rawAmt=a? a.value.trim() : '';
-  var amt=Number(String(rawAmt).replace(/[^0-9.]/g,''));
+  var n=document.getElementById('dueManName'); var a=document.getElementById('dueManAmt'); var d=document.getElementById('dueManDate');
+  var name=n? n.value.trim() : ''; var rawAmt=a? a.value.trim() : ''; var amt=Number(String(rawAmt).replace(/[^0-9.]/g,''));
   var dateVal=(d&&d.value)? d.value : new Date().toISOString().split('T')[0];
-  if(!name){ alert('Name bharo'); return; }
-  if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount sahi bharo: '+rawAmt); return; }
-  var arr=[]; try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; }
-  if(!Array.isArray(arr)) arr=[];
+  if(!name){ alert('Name bharo'); return; } if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount sahi bharo'); return; }
+  var arr=[]; try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; } if(!Array.isArray(arr)) arr=[];
   arr.push({name:name, amount:amt, date:dateVal, id:Date.now()});
-  localStorage.setItem('manualCreditors', JSON.stringify(arr));
-  if(n) n.value=''; if(a) a.value=''; 
-  loadDueList();
-  alert('✅ Add ho gaya: '+name+' Rs '+amt);
+  try{ localStorage.setItem('manualCreditors', JSON.stringify(arr)); }
+  catch(e){ localStorage.removeItem('sales'); localStorage.setItem('manualCreditors', JSON.stringify(arr)); }
+  if(n) n.value=''; if(a) a.value=''; loadDueList(); alert('✅ Add ho gaya: '+name);
 }
 function deleteManualDue(i){
-  if(!confirm('Delete?')) return;
   var m=[]; try{ m=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ m=[]; }
-  m.splice(i,1);
-  localStorage.setItem('manualCreditors', JSON.stringify(m));
-  localStorage.setItem('my_creditors', JSON.stringify(m));
-  loadDueList();
+  m.splice(i,1); try{ localStorage.setItem('manualCreditors', JSON.stringify(m)); }catch(e){} loadDueList();
 }
-window.loadDueList=loadDueList;
-window.addDueWithoutBill=addDueWithoutBill;
-window.deleteManualDue=deleteManualDue;
-document.addEventListener('DOMContentLoaded', function(){
-  var dd=document.getElementById('dueManDate'); if(dd) dd.valueAsDate=new Date();
-});
+window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue;
 </script>
 <script> 
 // ================= REPORTS / STOCK / CREDITORS =================
@@ -1515,58 +1488,31 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
   </div>
 </div>
 <script>
-function getCreds(){
-try{ return JSON.parse(localStorage.getItem('my_creditors')||'[]'); }catch(e){ return []; }
-}
+function getCreds(){ try{ return JSON.parse(localStorage.getItem('my_creditors')||'[]'); }catch(e){ return []; } }
 function saveCreds(arr){
-  localStorage.setItem('my_creditors', JSON.stringify(arr));
+  try{ localStorage.setItem('my_creditors', JSON.stringify(arr)); }
+  catch(e){
+    // storage full ho gaya to sales ka purana data hata ke save karo
+    try{ localStorage.removeItem('sales'); localStorage.setItem('my_creditors', JSON.stringify(arr)); }
+    catch(e2){ alert('Storage full hai - Phone ka cache clear karo'); }
+  }
 }
 function addCreditor(){
-  const nameEl = document.getElementById('credCreditorsName');
-  const amountEl = document.getElementById('credAmount');
-  const dateEl = document.getElementById('credDate');
-  if(!nameEl ||!amountEl){ alert('Fields nahi mile - reload karo'); return; }
-  const name = nameEl.value.trim();
-  const amount = amountEl.value.trim();
-  const date = (dateEl && dateEl.value)? dateEl.value : new Date().toISOString().split('T')[0];
-  if(!name){ alert('Creditor Name likhiye'); return; }
-  if(!amount || Number(amount)<=0){ alert('Amount likhiye'); return; }
-  let arr = getCreds();
-  arr.push({id:Date.now(), name:name, amount:Number(amount), date:date});
-  saveCreds(arr);
-  nameEl.value=''; amountEl.value=''; if(dateEl) dateEl.value='';
-  loadCreditorsNew();
-  if(typeof loadDueList==='function') loadDueList();
-  alert('✅ Add ho gaya: '+name);
+  var nameEl=document.getElementById('credCreditorsName'); var amountEl=document.getElementById('credAmount'); var dateEl=document.getElementById('credDate');
+  var name=nameEl? nameEl.value.trim():''; var amount=amountEl? amountEl.value.trim():''; var date=(dateEl&&dateEl.value)? dateEl.value : new Date().toISOString().split('T')[0];
+  if(!name){ alert('Name likhiye'); return; } if(!amount || Number(amount)<=0){ alert('Amount likhiye'); return; }
+  var arr=getCreds(); arr.push({id:Date.now(), name:name, amount:Number(amount), date:date});
+  saveCreds(arr); if(nameEl) nameEl.value=''; if(amountEl) amountEl.value=''; loadCreditorsNew();
 }
 function loadCreditorsNew(){
-  const list = document.getElementById('creditorsList');
-  if(!list) return;
-  const arr = getCreds();
+  var list=document.getElementById('creditorsList'); if(!list) return; var arr=getCreds();
   if(!arr.length){ list.innerHTML='<p style="text-align:center;padding:40px;color:#999;">Koi udhar nahi ✅</p>'; return; }
-  let html='';
-  arr.forEach(function(c){
-    html+=`<div style="background:white;padding:14px;border-radius:12px;border:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="flex:1;"><div style="font-weight:bold;font-size:16px;">${c.name}</div><div style="color:#666;font-size:13px;margin-top:4px;">Date: ${c.date||'-'}</div><div style="font-weight:bold;color:#d00;font-size:16px;margin-top:4px;">₹${Number(c.amount||0).toFixed(2)}</div></div><button onclick="payCreditorNew(${c.id})" style="background:#00a853;color:white;padding:9px 16px;border:0;border-radius:8px;font-weight:bold;">Paid</button></div>`;
-  });
+  var html=''; for(var i=0;i<arr.length;i++){ var c=arr[i]; html+='<div style="background:white;padding:14px;border-radius:12px;border:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div style="font-weight:bold">'+c.name+'</div><div style="font-size:12px;color:#666">'+(c.date||'')+'</div><div style="color:red;font-weight:bold">₹'+c.amount+'</div></div><button onclick="payCreditorNew('+c.id+')" style="background:#00a853;color:white;padding:8px 14px;border-radius:8px;border:0">Paid</button></div>'; }
   list.innerHTML=html;
 }
-function payCreditorNew(id){
-  if(!confirm('Paid kar du?')) return;
-  const arr = getCreds().filter(function(c){ return String(c.id)!==String(id); });
-  saveCreds(arr);
-  loadCreditorsNew();
-  if(typeof loadDueList==='function') loadDueList();
-}
-function openCreditorsPage(){
-  const page=document.getElementById('creditorsPage');
-  if(!page){ alert('Creditors page nahi mila'); return; }
-  page.style.display='flex';
-  loadCreditorsNew();
-}
-window.openCreditorsPage=openCreditorsPage;
-window.addCreditor=addCreditor;
-window.payCreditorNew=payCreditorNew;
-window.loadCreditorsNew=loadCreditorsNew;
- </script>
+function payCreditorNew(id){ var arr=getCreds().filter(function(c){ return String(c.id)!==String(id); }); saveCreds(arr); loadCreditorsNew(); }
+function openCreditorsPage(){ var p=document.getElementById('creditorsPage'); if(p){ p.style.display='flex'; loadCreditorsNew(); } }
+window.openCreditorsPage=openCreditorsPage; window.addCreditor=addCreditor; window.payCreditorNew=payCreditorNew; window.loadCreditorsNew=loadCreditorsNew;
+</script>
 </body>
 </html>
