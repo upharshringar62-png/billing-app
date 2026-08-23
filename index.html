@@ -980,12 +980,25 @@ function loadDueList(){
   c.innerHTML=html;
 }
 function addDueWithoutBill(){
-  var n=document.getElementById('dueManName'), a=document.getElementById('dueManAmt'), d=document.getElementById('dueManDate');
-  var name=n?n.value.trim():'', amt=a?parseFloat(a.value):NaN, dateVal=d&&d.value?d.value:new Date().toISOString().split('T')[0];
-  if(!name||isNaN(amt)){ alert('Name Amount bharo'); return; }
-  var m=[]; try{m=JSON.parse(localStorage.getItem('manualCreditors')||'[]')}catch(e){m=[]} if(!Array.isArray(m)) m=[];
-  m.unshift({name:name,amount:amt,date:dateVal}); localStorage.setItem('manualCreditors',JSON.stringify(m));
-  n.value=''; a.value=''; loadDueList();
+  var n=document.getElementById('dueManName');
+  var a=document.getElementById('dueManAmt');
+  var d=document.getElementById('dueManDate');
+  var name = n? n.value.trim() : '';
+  var rawAmt = a? a.value.trim() : '';
+  var amt = Number(rawAmt.replace(/[^0-9.]/g,''));
+  var dateVal = (d && d.value)? d.value : new Date().toISOString().split('T')[0];
+  console.log('ADD TRY', name, rawAmt, amt);
+  if(!name){ alert('Name bharo'); return; }
+  if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount sahi bharo: '+rawAmt); return; }
+  var arr=[];
+  try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; }
+  if(!Array.isArray(arr)) arr=[];
+  arr.unshift({name:name, amount:amt, date:dateVal, id:Date.now()});
+  localStorage.setItem('manualCreditors', JSON.stringify(arr));
+  localStorage.setItem('my_creditors', JSON.stringify(arr));
+  if(n) n.value=''; if(a) a.value='';
+  loadDueList();
+  alert('✅ Add ho gaya: '+name+' Rs '+amt);
 }
 function deleteManualDue(i){ if(!confirm('Delete?')) return; var m=[]; try{m=JSON.parse(localStorage.getItem('manualCreditors')||'[]')}catch(e){m=[]} m.splice(i,1); localStorage.setItem('manualCreditors',JSON.stringify(m)); loadDueList(); }
 window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue;
