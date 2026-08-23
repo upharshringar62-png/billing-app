@@ -985,7 +985,7 @@ function addDueWithoutBill(){
   var d=document.getElementById('dueManDate');
   var name = n? n.value.trim() : '';
   var rawAmt = a? a.value.trim() : '';
-  var amt = Number(rawAmt.replace(/[^0-9.]/g,''));
+  var amt = Number(String(rawAmt).replace(/[^0-9.]/g,''));
   var dateVal = (d && d.value)? d.value : new Date().toISOString().split('T')[0];
   console.log('ADD TRY', name, rawAmt, amt);
   if(!name){ alert('Name bharo'); return; }
