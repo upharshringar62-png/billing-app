@@ -1021,11 +1021,9 @@ function deleteManualDue(i){
   loadDueList();
 }
 window.loadDueList=loadDueList;
-window.addDueWithoutBill=addDueWithoutBill;
-window.deleteManualDue=deleteManualDue;
 document.addEventListener('DOMContentLoaded', function(){
-  var b=document.getElementById('dueManAddBtn'); if(b) b.addEventListener('click', addDueWithoutBill);
-  var dd=document.getElementById('dueManDate'); if(dd) dd.valueAsDate=new Date();
+  var dd=document.getElementById('dueManDate'); 
+  if(dd) dd.valueAsDate=new Date();
 });
 </script>
 <script> 
