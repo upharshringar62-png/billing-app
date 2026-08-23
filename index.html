@@ -977,14 +977,9 @@ function loadDueList(){
     var b=bills[i];
     if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b);
   }
-  var manual=[]; try{
-  let a = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
-  let b = JSON.parse(localStorage.getItem('my_creditors')||'[]');
-  manual = a.length>=b.length? a : b;
-  if(!Array.isArray(manual)) manual=[];
-} catch(e){ manual=[]; }
-  if(!Array.isArray(manual)) manual=[];
-  var total=0;
+var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
+if(!Array.isArray(manual)) manual=[];
+var total=0;
   for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
   for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
   var html='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
@@ -1012,7 +1007,6 @@ function addDueWithoutBill(){
   if(!Array.isArray(arr)) arr=[];
   arr.push({name:name, amount:amt, date:dateVal, id:Date.now()});
   localStorage.setItem('manualCreditors', JSON.stringify(arr));
-  localStorage.setItem('my_creditors', JSON.stringify(arr));
   if(n) n.value=''; if(a) a.value=''; 
   loadDueList();
   alert('✅ Add ho gaya: '+name+' Rs '+amt);
@@ -1522,22 +1516,10 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
 </div>
 <script>
 function getCreds(){
-  try{
-    let a = JSON.parse(localStorage.getItem('my_creditors')||'[]');
-    let b = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
-    // dono ko milao, duplicate id hatao
-    let all = [...a];
-    b.forEach(x=>{
-      if(!all.find(y=> String(y.id)===String(x.id) || (y.name===x.name && y.amount==x.amount))){
-        all.push(x);
-      }
-    });
-    return all;
-  }catch(e){ return []; }
+try{ return JSON.parse(localStorage.getItem('my_creditors')||'[]'); }catch(e){ return []; }
 }
 function saveCreds(arr){
   localStorage.setItem('my_creditors', JSON.stringify(arr));
-  localStorage.setItem('manualCreditors', JSON.stringify(arr));
 }
 function addCreditor(){
   const nameEl = document.getElementById('credCreditorsName');
