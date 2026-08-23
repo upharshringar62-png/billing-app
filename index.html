@@ -1007,7 +1007,6 @@ function addDueWithoutBill(){
   if(!Array.isArray(arr)) arr=[];
   arr.unshift({name:name, amount:amt, date:dateVal, id:Date.now()});
   localStorage.setItem('manualCreditors', JSON.stringify(arr));
-  localStorage.setItem('my_creditors', JSON.stringify(arr));
   if(n) n.value=''; if(a) a.value='';
   loadDueList();
   alert('✅ Add ho gaya: '+name+' Rs '+amt);
@@ -1017,7 +1016,6 @@ function deleteManualDue(i){
   var m=[]; try{ m=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ m=[]; }
   m.splice(i,1);
   localStorage.setItem('manualCreditors', JSON.stringify(m));
-  localStorage.setItem('my_creditors', JSON.stringify(m));
   loadDueList();
 }
 window.loadDueList=loadDueList;
@@ -1520,8 +1518,7 @@ function getCreds(){
 }
 function saveCreds(arr){
   localStorage.setItem('my_creditors', JSON.stringify(arr));
-  // Due List wala bhi same key use karega taaki dono jagah dikhe
-  localStorage.setItem('manualCreditors', JSON.stringify(arr.map(c=>({name:c.name, amount:c.amount, date:c.date, id:c.id}))));
+  // Due List wala bhi same key use karega taaki dono jagah dikh
 }
 function addCreditor(){
   const nameEl = document.getElementById('credCreditorsName');
