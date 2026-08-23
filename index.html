@@ -972,32 +972,39 @@ function loadDueList(){
   var c=document.getElementById('dueListContainer'); if(!c) return;
   var bills=[]; try{ bills=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ bills=[]; }
   if(!Array.isArray(bills)) bills=[];
-  var dueBills=[]; for(var i=0;i<bills.length;i++){ var b=bills[i]; if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b); }
+  var dueBills=[]; for(var i=0;i<bills.length;i++){ var b=bills[i]; var isDue = String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0; if(isDue) dueBills.push(b); }
   var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
   if(!Array.isArray(manual)) manual=[];
   var total=0; for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
   for(var i=0;i<manual.length;i++) total+=Number(manual[i].amount||0);
   var html='<div style="padding:12px;background:#f5f5f5;font-weight:bold;margin-bottom:8px">Total Due: Rs '+total+' | Bills: '+dueBills.length+' Manual: '+manual.length+'</div>';
   if(dueBills.length==0 && manual.length==0){ html+='<div style="text-align:center;padding:30px;color:#999">Koi Due nahi</div>'; }
-  else { for(var i=0;i<manual.length;i++){ var m=manual[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+(m.name||'-')+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(m.amount||0)+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%;background:white">X</button></div></div>'; } }
+  else {
+    // Bills wale DUE pehle dikhao
+    for(var i=0;i<dueBills.length;i++){ var b=dueBills[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#e3f2fd"><div><div style="font-weight:bold">Bill No: '+(b.billNo||'-')+' - '+(b.customer||'Customer')+'</div><div style="font-size:12px;color:#888">'+(b.date||'')+' | '+(b.payment||'DUE')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(b.due||b.total||0)+'</span><button onclick="markBillPaid('+(b.billNo||0)+')" style="padding:6px 10px;border:1px solid green;color:green;border-radius:20px;background:white;font-size:11px">Paid</button></div></div>'; }
+    // Manual wale
+    for(var i=0;i<manual.length;i++){ var m=manual[i]; html+='<div style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;background:#fffde7"><div><div style="font-weight:bold">'+(m.name||'-')+'</div><div style="font-size:12px;color:#888">'+(m.date||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><span style="color:red;font-weight:bold">Rs '+(m.amount||0)+'</span><button onclick="deleteManualDue('+i+')" style="width:30px;height:30px;border:1px solid red;color:red;border-radius:50%;background:white">X</button></div></div>'; }
+  }
   c.innerHTML=html;
+}
+function markBillPaid(billNo){
+  if(!confirm('Bill No '+billNo+' ko Paid kar du?')) return;
+  var sales=[]; try{ sales=JSON.parse(localStorage.getItem('sales')||'[]'); }catch(e){ sales=[]; }
+  for(var i=0;i<sales.length;i++){ if(String(sales[i].billNo)==String(billNo)){ sales[i].due=0; sales[i].paid=sales[i].total; sales[i].payment='PAID'; if(sales[i].firebaseId && window.firebaseUpdateSale) window.firebaseUpdateSale(sales[i]); } }
+  localStorage.setItem('sales', JSON.stringify(sales)); window.sales=sales; loadDueList();
 }
 function addDueWithoutBill(){
   var n=document.getElementById('dueManName'); var a=document.getElementById('dueManAmt'); var d=document.getElementById('dueManDate');
   var name=n? n.value.trim() : ''; var rawAmt=a? a.value.trim() : ''; var amt=Number(String(rawAmt).replace(/[^0-9.]/g,''));
   var dateVal=(d&&d.value)? d.value : new Date().toISOString().split('T')[0];
-  if(!name){ alert('Name bharo'); return; } if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount sahi bharo'); return; }
+  if(!name){ alert('Name bharo'); return; } if(!rawAmt || isNaN(amt) || amt<=0){ alert('Amount bharo'); return; }
   var arr=[]; try{ arr=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ arr=[]; } if(!Array.isArray(arr)) arr=[];
   arr.push({name:name, amount:amt, date:dateVal, id:Date.now()});
-  try{ localStorage.setItem('manualCreditors', JSON.stringify(arr)); }
-  catch(e){ localStorage.removeItem('sales'); localStorage.setItem('manualCreditors', JSON.stringify(arr)); }
-  if(n) n.value=''; if(a) a.value=''; loadDueList(); alert('✅ Add ho gaya: '+name);
+  try{ localStorage.setItem('manualCreditors', JSON.stringify(arr)); }catch(e){ localStorage.removeItem('sales'); localStorage.setItem('manualCreditors', JSON.stringify(arr)); }
+  if(n) n.value=''; if(a) a.value=''; loadDueList(); alert('✅ Add: '+name);
 }
-function deleteManualDue(i){
-  var m=[]; try{ m=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ m=[]; }
-  m.splice(i,1); try{ localStorage.setItem('manualCreditors', JSON.stringify(m)); }catch(e){} loadDueList();
-}
-window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue;
+function deleteManualDue(i){ var m=[]; try{ m=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ m=[]; } m.splice(i,1); localStorage.setItem('manualCreditors', JSON.stringify(m)); loadDueList(); }
+window.loadDueList=loadDueList; window.addDueWithoutBill=addDueWithoutBill; window.deleteManualDue=deleteManualDue; window.markBillPaid=markBillPaid;
 </script>
 <script> 
 // ================= REPORTS / STOCK / CREDITORS =================
