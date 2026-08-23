@@ -977,7 +977,12 @@ function loadDueList(){
     var b=bills[i];
     if(String(b.payment||'').toUpperCase().indexOf('DUE')>=0 || Number(b.due||0)>0) dueBills.push(b);
   }
-  var manual=[]; try{ manual=JSON.parse(localStorage.getItem('manualCreditors')||'[]'); }catch(e){ manual=[]; }
+  var manual=[]; try{
+  let a = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+  let b = JSON.parse(localStorage.getItem('my_creditors')||'[]');
+  manual = a.length>=b.length? a : b;
+  if(!Array.isArray(manual)) manual=[];
+} catch(e){ manual=[]; }
   if(!Array.isArray(manual)) manual=[];
   var total=0;
   for(var i=0;i<dueBills.length;i++) total+=Number(dueBills[i].due||dueBills[i].total||0);
@@ -1517,10 +1522,22 @@ document.getElementById('saveProductBtn').addEventListener('click', saveSingleFo
 </div>
 <script>
 function getCreds(){
-  try{ return JSON.parse(localStorage.getItem('my_creditors')||'[]'); }catch(e){ return []; }
+  try{
+    let a = JSON.parse(localStorage.getItem('my_creditors')||'[]');
+    let b = JSON.parse(localStorage.getItem('manualCreditors')||'[]');
+    // dono ko milao, duplicate id hatao
+    let all = [...a];
+    b.forEach(x=>{
+      if(!all.find(y=> String(y.id)===String(x.id) || (y.name===x.name && y.amount==x.amount))){
+        all.push(x);
+      }
+    });
+    return all;
+  }catch(e){ return []; }
 }
 function saveCreds(arr){
   localStorage.setItem('my_creditors', JSON.stringify(arr));
+  localStorage.setItem('manualCreditors', JSON.stringify(arr));
 }
 function addCreditor(){
   const nameEl = document.getElementById('credCreditorsName');
@@ -1538,6 +1555,7 @@ function addCreditor(){
   nameEl.value=''; amountEl.value=''; if(dateEl) dateEl.value='';
   loadCreditorsNew();
   if(typeof loadDueList==='function') loadDueList();
+  alert('✅ Add ho gaya: '+name);
 }
 function loadCreditorsNew(){
   const list = document.getElementById('creditorsList');
@@ -1566,7 +1584,7 @@ function openCreditorsPage(){
 window.openCreditorsPage=openCreditorsPage;
 window.addCreditor=addCreditor;
 window.payCreditorNew=payCreditorNew;
-window.loadCreditorsNew=loadCreditorsNew; 
+window.loadCreditorsNew=loadCreditorsNew;
  </script>
 </body>
 </html>
