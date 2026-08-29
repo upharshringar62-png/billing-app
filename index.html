@@ -235,7 +235,55 @@ function renderCategories(){
 function incQty(id){ window.cart = window.cart || {}; window.cart[id] = (window.cart[id]||0) + 1; cart = window.cart; updateTotal(); renderProducts(); renderPreview(); }
 function decQty(id){ window.cart = window.cart || {}; if(!window.cart[id]) return; window.cart[id] = window.cart[id] - 1; if(window.cart[id]<=0) delete window.cart[id]; cart = window.cart; updateTotal(); renderProducts(); renderPreview(); }
 function updateTotal(){ let total = 0; Object.keys(cart).forEach(id=>{ let prod = products.find(p=>p.id===id); if(prod){ total += prod.price * cart[id]; } }); document.getElementById('totalAmt').innerText = '₹'+total.toFixed(1); }
-function handleKOT(){ alert('KOT Printed'); }
+function handleKOT(){
+  window.cart = window.cart || {};
+  let ids = Object.keys(window.cart);
+  if(ids.length === 0){ alert('Cart khali hai! Pehle product add karo'); return; }
+
+  // 1. KOT ko save karo taaki fail hone par wapas mile
+  let kotHistory = JSON.parse(localStorage.getItem('kot_history') || '[]');
+  let newKOT = {
+    id: Date.now(),
+    time: new Date().toLocaleString('hi-IN'),
+    cart: JSON.parse(JSON.stringify(window.cart)), // cart ka copy
+    total: document.getElementById('totalAmt')?.innerText || '0'
+  };
+  kotHistory.unshift(newKOT);
+  localStorage.setItem('kot_history', JSON.stringify(kotHistory));
+
+  // 2. Preview khol do - wahi print hoga
+  handlePreview();
+  showKOTHistory();
+  // alert('KOT Printed'); // isko hata diya
+}
+
+// Ye 2 function iske just niche paste kar de
+function showKOTHistory(){
+  let history = JSON.parse(localStorage.getItem('kot_history') || '[]');
+  let box = document.getElementById('kotHistoryList');
+  if(!box) return;
+  if(history.length === 0){ box.innerHTML = '<small style="color:gray">Koi saved KOT nahi</small>'; return; }
+  box.innerHTML = '';
+  history.forEach((kot, i) => {
+    let names = Object.keys(kot.cart).map(id => {
+      let p = (typeof products!== 'undefined'? products.find(x=>x.id==id) : null);
+      return p? `${p.name} x${kot.cart[id]}` : `Item ${id} x${kot.cart[id]}`;
+    }).join(', ');
+    box.innerHTML += `<div onclick="reprintKOT(${i})" style="background:white;border:1px solid #ddd;padding:8px;margin-bottom:6px;border-radius:8px;cursor:pointer"><b>${kot.time}</b> - ${kot.total}<br><small>${names}</small><br><span style="color:blue;font-size:12px">Tap to Re-Print ↗️</span></div>`;
+  });
+}
+
+function reprintKOT(index){
+  let history = JSON.parse(localStorage.getItem('kot_history') || '[]');
+  let kot = history[index];
+  if(!kot) return;
+  window.cart = kot.cart;
+  cart = window.cart;
+  if(typeof updateTotal === 'function') updateTotal();
+  if(typeof renderProducts === 'function') renderProducts();
+  if(typeof renderPreview === 'function') renderPreview();
+  handlePreview();
+}
 let selectedPaymentMode = 'DUE';
 function setPayMode(mode){
   selectedPaymentMode = mode;
