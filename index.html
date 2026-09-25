@@ -208,11 +208,14 @@ function renderCategories(){
     let isActive = String(c.id) === String(selectedCat);
 div.className = `flex items-center justify-between px-3 py-3 border-b cursor-pointer text-center ${isActive ? 'bg-[#2e3ae8] text-white' : 'bg-white text-black hover:bg-gray-50'}`;
     div.innerHTML = `<div class="w-full"><div class="text-[13px] font-medium">${c.name}</div><div class="text-[11px] ${isActive ? 'text-white/80' : 'text-gray-400'}">(0.0)</div></div><button onclick="event.stopPropagation(); deleteCategory('${c.id}')" class="w-6 h-6 ${isActive ? 'text-white' : 'text-gray-400'} text-[16px]">...</button>`;
+        const isActive = String(c.id) === String(selectedCat);
+    div.className = `flex items-center justify-between px-3 py-3 border-b cursor-pointer text-center ${isActive? 'bg-[#2e3ae8] text-white' : 'bg-white hover:bg-gray-50'}`;
+    div.innerHTML = `<div class="w-full"><div class="text-[13px] font-medium">${c.name}</div><div class="text-[11px] ${isActive? 'text-white/70' : 'text-gray-400'}">(0.0)</div></div><button onclick="event.stopPropagation(); deleteCategory('${c.id}')" class="w-6 h-6 ${isActive? 'text-white' : 'text-gray-400'} text-[16px]">...</button>`;
     div.onclick = ()=>{
-  selectedCat = c.id;
-  renderProducts();
-  document.getElementById('categorySidebar').classList.add('hidden');
-};
+      selectedCat = c.id;
+      renderCategories();
+      renderProducts();
+    };
     el.appendChild(div);
   });
 }
