@@ -1199,26 +1199,61 @@ function deleteSaleBill(id){
   localStorage.setItem('sales', JSON.stringify(sales));
   window.sales=sales;
   renderSalesReport();
+  alert('Deleted ✅');
 }
+
 function reprintSale(id){
-  let b = getAllSales().find(x=> String(x.billNo)==String(id) || String(x.id)==String(id));
-  if(!b) return;
-  window.cart={}; (b.items||[]).forEach(it=> window.cart[it.id]=it.qty);
-  if(window.updateTotal) updateTotal();
-  if(typeof handlePreview==='function') handlePreview();
-}
-function editSaleBill(id){
-  let b = getAllSales().find(x=> String(x.billNo)==String(id) || String(x.id)==String(id));
-  if(!b) return;
-  window.cart={}; (b.items||[]).forEach(it=> window.cart[it.id]=it.qty);
-  if(window.updateTotal) updateTotal();
+  let b = null;
+  try{ b = getAllSales().find(x=> String(x.billNo)==String(id) || String(x.id)==String(id)); }catch(e){}
+  if(!b){ b = JSON.parse(localStorage.getItem('sales')||'[]').find(x=> String(x.billNo)==String(id)); }
+  if(!b) return alert('Bill nahi mila');
+
+  // cart sahi se bharo - dono jagah
+  cart = {};
+  window.cart = cart;
+  (b.items||[]).forEach(it=>{
+    let pid = it.id || it.productId;
+    if(pid) cart[pid] = Number(it.qty||1);
+  });
+  window.cart = cart;
+
+  // UI update
+  if(typeof updateTotal==='function') updateTotal();
+  if(typeof renderProducts==='function') renderProducts();
   closePage('salesPage');
-  alert('Cart me load ho gaya - ab edit karke print karo');
+
+  // 0.3 sec baad preview + print modal kholo
+  setTimeout(()=>{
+    if(typeof handlePreview==='function'){ handlePreview(); }
+    else if(typeof renderPreview==='function'){ renderPreview(); document.getElementById('previewModal')?.classList.remove('hidden'); }
+  }, 300);
 }
+
+function editSaleBill(id){
+  let b = null;
+  try{ b = getAllSales().find(x=> String(x.billNo)==String(id) || String(x.id)==String(id)); }catch(e){}
+  if(!b){ b = JSON.parse(localStorage.getItem('sales')||'[]').find(x=> String(x.billNo)==String(id)); }
+  if(!b) return alert('Bill nahi mila');
+
+  // purana sale delete karo taki duplicate na bane
+  // cart bharo
+  cart = {};
+  window.cart = cart;
+  (b.items||[]).forEach(it=>{
+    let pid = it.id || it.productId;
+    if(pid) cart[pid] = Number(it.qty||1);
+  });
+  window.cart = cart;
+
+  if(typeof updateTotal==='function') updateTotal();
+  if(typeof renderProducts==='function') renderProducts();
+  closePage('salesPage');
+  alert('Cart me load ho gaya - ab qty + - karke naya bill print karo');
+}
+
 window.deleteSaleBill=deleteSaleBill;
 window.reprintSale=reprintSale;
 window.editSaleBill=editSaleBill;
-
 function showSaleDetails(billNo){
   let b = getAllSales().find(x=> String(x.billNo)===String(billNo) || String(x.id)===String(billNo));
   if(!b) return;
