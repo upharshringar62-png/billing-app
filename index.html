@@ -603,14 +603,35 @@ let data=enc.encode(t);
           });
         }
 
-        let qrBytes = await getQRasImage(upiString, 180);
-        if(qrBytes){
-          await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
-          for(let i=0;i<qrBytes.length;i+=120){
-            await btCharacteristic.writeValueWithoutResponse(qrBytes.slice(i,i+120));
-            await new Promise(r=>setTimeout(r,20));
-          }
-        }
+            // === DARK & CLEAR QR - Native Printer QR (Photo 2 jaisa kaala) ===
+    try{
+      let enc2 = new TextEncoder();
+      let qrData2 = upiString; // tumhara UPI string
+      // Model 2
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00]));
+      await new Promise(r=>setTimeout(r,50));
+      // Size 6 = perfect dark (8 karoge to aur bada)
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x06]));
+      await new Promise(r=>setTimeout(r,50));
+      // Error Correction H
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x33]));
+      await new Promise(r=>setTimeout(r,50));
+      // Store
+      let qb = enc2.encode(qrData2);
+      let len = qb.length + 3;
+      let pL = len % 256; let pH = Math.floor(len/256);
+      let store = new Uint8Array([0x1D,0x28,0x6B,pL,pH,0x31,0x50,0x30, ...qb]);
+      // 200-200 me bhejo taaki fail na ho
+      for(let i=0;i<store.length;i+=120){
+        await btCharacteristic.writeValueWithoutResponse(store.slice(i,i+120));
+        await new Promise(r=>setTimeout(r,30));
+      }
+      await new Promise(r=>setTimeout(r,80));
+      // Center me print
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x01]));
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30]));
+      await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x61,0x00]));
+    }catch(qrE){ console.log('QR native fail', qrE); }
 
         let foot=enc.encode("\nSCAN TO PAY\n\n\n");
         await btCharacteristic.writeValueWithoutResponse(foot);
