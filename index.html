@@ -538,14 +538,6 @@ t += 'Thank You Visit Again!\n';
   if(btCharacteristic && btServer && btServer.connected){
     try{
       await btCharacteristic.writeValueWithoutResponse(new Uint8Array([0x1B,0x40]));
-     // ===== DARK THERMAL PRINT =====
-await btCharacteristic.writeValueWithoutResponse(
-  new Uint8Array([
-    0x1B, 0x37, 0x0F, 0x78, 0x05
-  ])
-);
-
-await new Promise(r => setTimeout(r, 100));
       if(savedLogo){
         let logoBytes=await getLogoBytes(savedLogo);
         if(logoBytes){
