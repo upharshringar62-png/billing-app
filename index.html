@@ -602,98 +602,214 @@ let data=enc.encode(t);
             }
           });
         }
-// === DARK & CLEAR QR ===
-try {
-  let enc2 = new TextEncoder();
-  let qrData2 = upiString;
-
-  // QR Model 2
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([
-      0x1D,0x28,0x6B,0x04,0x00,
-      0x31,0x41,0x32,0x00
-    ])
-  );
-  await new Promise(r => setTimeout(r, 80));
-
-  // QR SIZE 5
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([
-      0x1D,0x28,0x6B,0x03,0x00,
-      0x31,0x43,0x05
-    ])
-  );
-  await new Promise(r => setTimeout(r, 80));
-
-  // Error correction L
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([
-      0x1D,0x28,0x6B,0x03,0x00,
-      0x31,0x45,0x30
-    ])
-  );
-  await new Promise(r => setTimeout(r, 80));
-
-  // QR DATA
-  let qb = enc2.encode(qrData2);
-  let len = qb.length + 3;
-  let pL = len & 0xff;
-  let pH = (len >> 8) & 0xff;
-
-  let store = new Uint8Array([
-    0x1D,0x28,0x6B,
-    pL,pH,
-    0x31,0x50,0x30,
-    ...qb
-  ]);
-
-  for(let i=0;i<store.length;i+=120){
+if(btCharacteristic && btServer && btServer.connected){
+  try{
     await btCharacteristic.writeValueWithoutResponse(
-      store.slice(i,i+120)
+      new Uint8Array([0x1B,0x40])
     );
-    await new Promise(r => setTimeout(r, 50));
+
+    if(savedLogo){
+      let logoBytes=await getLogoBytes(savedLogo);
+      if(logoBytes){
+        await btCharacteristic.writeValueWithoutResponse(
+          new Uint8Array([0x1B,0x61,0x01])
+        );
+
+        for(let i=0;i<logoBytes.length;i+=120){
+          await btCharacteristic.writeValueWithoutResponse(
+            logoBytes.slice(i,i+120)
+          );
+          await new Promise(r=>setTimeout(r,30));
+        }
+      }
+    }
+
+    let enc=new TextEncoder();
+
+    // DARK PRINT - Bold + Double Strike
+    t = '\x1B\x45\x01' +
+        '\x1B\x47\x01' +
+        t +
+        '\x1B\x47\x00' +
+        '\x1B\x45\x00';
+
+    let data=enc.encode(t);
+
+    for(let i=0;i<data.length;i+=100){
+      await btCharacteristic.writeValueWithoutResponse(
+        data.slice(i,i+100)
+      );
+      await new Promise(r=>setTimeout(r,10));
+    }
+
+    let upiId = localStorage.getItem('upiId') ||
+                '7256050678@ybl';
+
+    let upiString =
+      'upi://pay?pa=' + upiId +
+      '&am=' + subtotal.toFixed(2) +
+      '&cu=INR';
+
+    // --- HD QR AS IMAGE ---
+    async function getQRasImage(text, size=350){
+      return new Promise(async (resolve)=>{
+        let qrUrl =
+          'https://api.qrserver.com/v1/create-qr-code/?size=' +
+          size + 'x' + size +
+          '&data=' + encodeURIComponent(text);
+
+        let img = new Image();
+        img.crossOrigin = "anonymous";
+
+        img.onload = async ()=>{
+          let canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+
+          let ctx = canvas.getContext('2d');
+
+          ctx.fillStyle = "#FFF";
+          ctx.fillRect(0,0,size,size);
+
+          ctx.drawImage(img,0,0,size,size);
+
+          let base64 = canvas.toDataURL();
+          let bytes = await getLogoBytes(base64);
+
+          resolve(bytes);
+        };
+
+        img.onerror = ()=>resolve(null);
+        img.src = qrUrl;
+      });
+    }
+
+    let qrBytes = await getQRasImage(upiString, 200);
+
+    if(qrBytes){
+      await btCharacteristic.writeValueWithoutResponse(
+        new Uint8Array([0x1B,0x61,0x01])
+      );
+
+      for(let i=0;i<qrBytes.length;i+=120){
+        await btCharacteristic.writeValueWithoutResponse(
+          qrBytes.slice(i,i+120)
+        );
+
+        await new Promise(r=>setTimeout(r,20));
+      }
+    }
+
+    let foot=enc.encode("\nSCAN TO PAY\n\n\n");
+
+    await btCharacteristic.writeValueWithoutResponse(foot);
+
+    const sale = {
+      billNo: Number(billNo),
+      date: dateStr,
+      customer: custName || 'Customer',
+      mob: custMobile || '',
+      payment: selectedPaymentMode,
+
+      due: selectedPaymentMode === 'DUE'
+        ? Number(subtotal.toFixed(2))
+        : 0,
+
+      paid: selectedPaymentMode === 'DUE'
+        ? 0
+        : Number(subtotal.toFixed(2)),
+
+      total: Number(subtotal.toFixed(2)),
+
+      totalItems,
+      totalQty,
+
+      items: Object.keys(cart).map(id => {
+
+        const p = products.find(
+          x => String(x.id) === String(id)
+        );
+
+        return p ? {
+          id:p.id,
+          name:p.name,
+          price:Number(p.price)||0,
+          qty:Number(cart[id])||0,
+
+          amount:Number(
+            (
+              (Number(p.price)||0) *
+              (Number(cart[id])||0)
+            ).toFixed(2)
+          )
+
+        } : null;
+
+      }).filter(Boolean),
+
+      createdAt: Date.now()
+    };
+
+    let sales =
+      JSON.parse(localStorage.getItem('sales') || '[]');
+
+    if(!Array.isArray(sales)) sales = [];
+
+    sales.unshift(sale);
+
+    localStorage.setItem(
+      'sales',
+      JSON.stringify(sales)
+    );
+
+    window.sales = sales;
+
+    if(window.renderSalesReport)
+      window.renderSalesReport();
+
+    if(window.refreshAllReports)
+      window.refreshAllReports();
+
+    if(window.firebaseSaveSale){
+      try{
+        await window.firebaseSaveSale(sale);
+      }catch(firebaseErr){
+        console.error(
+          'Sale Firebase save error:',
+          firebaseErr
+        );
+      }
+    }
+
+    let nextNo = Number(billNo) + 1;
+
+    localStorage.setItem(
+      'lastBillNo',
+      nextNo
+    );
+
+    if(document.getElementById('billNoInput'))
+      document.getElementById('billNoInput').value = nextNo;
+
+    if(document.getElementById('billNoDisplay'))
+      document.getElementById('billNoDisplay').innerText = nextNo;
+
+    closePreview();
+
+  }catch(e){
+    alert('Error: '+e.message);
   }
 
-  await new Promise(r => setTimeout(r, 120));
+  return;
 
-  // CENTER
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([0x1B,0x61,0x01])
+}else{
+
+  alert(
+    'Bluetooth Printer Connect Nahi Hai! Settings me Connect karo'
   );
 
-  // PRINT QR
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([
-      0x1D,0x28,0x6B,
-      0x03,0x00,
-      0x31,0x51,0x30
-    ])
-  );
-
-  await new Promise(r => setTimeout(r, 150));
-
-  // LEFT ALIGN
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([0x1B,0x61,0x00])
-  );
-
-  // DARK/BOLD ON
-  await btCharacteristic.writeValueWithoutResponse(
-    new Uint8Array([
-      0x1B,0x45,0x01,
-      0x1B,0x47,0x01
-    ])
-  );
-
-}catch(qrE){
-  console.log("QR native fail:", qrE);
+  return;
 }
-
-let foot = enc.encode(
-  "\nSCAN TO PAY\n\n\n"
-);
-
-await btCharacteristic.writeValueWithoutResponse(foot);
 
         let foot=enc.encode("\nSCAN TO PAY\n\n\n");
         await btCharacteristic.writeValueWithoutResponse(foot);
